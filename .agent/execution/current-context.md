@@ -22,18 +22,18 @@ Expose the minimal synchronized state for currently authorized execution without
 
 ## Current State
 
-- **Context Revision**: `1`
+- **Context Revision**: `2`
 - **Context Status**: `current`
-- **Last Updated**: `not-started`
-- **Updated By**: `installer`
-- **Update Trigger**: `clean-overlay-install`
-- **Planning Roadmap ID**: `none`
+- **Last Updated**: `2026-10-24`
+- **Updated By**: `trong-hung`
+- **Update Trigger**: `project-onboarding`
+- **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_DRAFT`
-- **Onboarding State**: `not-started`
+- **Onboarding State**: `completed — awaiting DEC-001 approval`
 - **Active Epic IDs**: `none`
 - **Active Task IDs**: `none`
 - **Active Blocker IDs**: `none`
-- **Active Decision IDs**: `none`
-- **Active Risk IDs**: `none`
+- **Active Decision IDs**: `DEC-001`
+- **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `none`
-- **Current Session ID**: `none`
+- **Current Session ID**: `S-20261024-onboarding`

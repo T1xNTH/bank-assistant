@@ -22,4 +22,4 @@ Maintain the approved sequence of outcome-level roadmap items and their target w
 | Roadmap ID | Outcome | Owner | Target Window | Status | Milestone IDs | Change Request |
 |---|---|---|---|---|---|---|
 
-No roadmap records are registered.
+| `R-001` | `Deliver bank-assistant MVP (FR-01..FR-12, NFR-01..NFR-10) in 10 working days` | `trong-hung` | `N1-N10` | `ROADMAP_DRAFT` | `M-001, M-002` | `none` |

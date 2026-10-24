@@ -1,0 +1,211 @@
+openapi: 3.1.0
+info:
+  title: bank-assistant API
+  version: 0.1.0
+  description: Internal bank staff assistant. See docs/04-api/contract.md for rules.
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: {type: string}
+            message: {type: string}
+    ChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message: {type: string, minLength: 1, maxLength: 4000}
+    ChatResponse:
+      type: object
+      required: [answer, intent, needs_human, model, latency_ms]
+      properties:
+        answer: {type: string}
+        intent: {type: string, enum: [question, complaint, request, other]}
+        needs_human: {type: boolean}
+        model: {type: string}
+        latency_ms: {type: integer}
+    AskRequest:
+      type: object
+      required: [question]
+      properties:
+        question: {type: string, minLength: 1, maxLength: 2000}
+        top_k: {type: integer, minimum: 1, maximum: 20, default: 5}
+        mode: {type: string, enum: [dense, hybrid, hybrid_rerank]}
+        force_local: {type: boolean, default: false}
+    Citation:
+      type: object
+      required: [n, source, page, score]
+      properties:
+        n: {type: integer}
+        source: {type: string}
+        page: {type: integer}
+        score: {type: number}
+    AskResponse:
+      type: object
+      required: [answer, found, citations, retrieval_mode, route, latency_ms, trace_id]
+      properties:
+        answer: {type: string}
+        found: {type: boolean}
+        citations:
+          type: array
+          items: {$ref: '#/components/schemas/Citation'}
+        retrieval_mode: {type: string, enum: [dense, hybrid, hybrid_rerank]}
+        route: {type: string, enum: [cloud, local]}
+        latency_ms: {type: integer}
+        trace_id: {type: [string, 'null']}
+    JobAccepted:
+      type: object
+      required: [job_id, position]
+      properties:
+        job_id: {type: string}
+        position: {type: integer}
+    JobStatus:
+      type: object
+      required: [job_id, status]
+      properties:
+        job_id: {type: string}
+        status: {type: string, enum: [queued, running, done, failed]}
+        position: {type: [integer, 'null']}
+        result:
+          oneOf:
+            - $ref: '#/components/schemas/AskResponse'
+            - type: 'null'
+        error: {type: [string, 'null']}
+    AgentRequest:
+      type: object
+      required: [message]
+      properties:
+        message: {type: string, minLength: 1, maxLength: 4000}
+        thread_id: {type: [string, 'null']}
+    AgentResponse:
+      type: object
+      required: [thread_id, status]
+      properties:
+        thread_id: {type: string}
+        status: {type: string, enum: [completed, pending_approval]}
+        answer: {type: [string, 'null']}
+        pending_action:
+          type: [object, 'null']
+          properties:
+            tool: {type: string}
+            args: {type: object}
+    Decision:
+      type: object
+      required: [approve]
+      properties:
+        approve: {type: boolean}
+        comment: {type: string, maxLength: 500}
+    Feedback:
+      type: object
+      required: [trace_id, score]
+      properties:
+        trace_id: {type: string}
+        score: {type: integer, enum: [-1, 1]}
+        comment: {type: string, maxLength: 1000}
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+      content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+    Forbidden:
+      description: RBAC or role denied
+      content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+    RateLimited:
+      description: Per-key rate limit exceeded
+      headers:
+        Retry-After: {schema: {type: integer}}
+      content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+    Unavailable:
+      description: Queue full or dependency unavailable
+      content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+security:
+  - ApiKey: []
+paths:
+  /health:
+    get:
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: {type: string, enum: [ok]}
+  /chat:
+    post:
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/ChatRequest'}}}
+      responses:
+        '200': {description: OK, content: {application/json: {schema: {$ref: '#/components/schemas/ChatResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+  /ask:
+    post:
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/AskRequest'}}}
+      responses:
+        '200': {description: Answer or refusal, content: {application/json: {schema: {$ref: '#/components/schemas/AskResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /ask/jobs:
+    post:
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/AskRequest'}}}
+      responses:
+        '202': {description: Queued, content: {application/json: {schema: {$ref: '#/components/schemas/JobAccepted'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /ask/jobs/{job_id}:
+    get:
+      parameters:
+        - {name: job_id, in: path, required: true, schema: {type: string}}
+      responses:
+        '200': {description: Job state, content: {application/json: {schema: {$ref: '#/components/schemas/JobStatus'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {description: Unknown job or not owned by caller, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+  /agent:
+    post:
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/AgentRequest'}}}
+      responses:
+        '200': {description: Agent result, content: {application/json: {schema: {$ref: '#/components/schemas/AgentResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /agent/{thread_id}/decision:
+    post:
+      parameters:
+        - {name: thread_id, in: path, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/Decision'}}}
+      responses:
+        '200': {description: Resumed, content: {application/json: {schema: {$ref: '#/components/schemas/AgentResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {description: Unknown thread, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+        '409': {description: Decision already taken, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+  /feedback:
+    post:
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/Feedback'}}}
+      responses:
+        '204': {description: Recorded}
+        '401': {$ref: '#/components/responses/Unauthorized'}
