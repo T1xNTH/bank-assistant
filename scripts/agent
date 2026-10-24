@@ -1,0 +1,887 @@
+#!/usr/bin/env python3
+"""Lifecycle CLI for the Agentic SDLC Kit runtime records.
+
+Implements the `agent task|review|qa|epic` command contract referenced by
+docs/10-agents/, using the AGENT.md status enums (decision DEC-002).
+Only the Python standard library is used.
+"""
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import os
+import re
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+TASK_STATUSES = ("pending", "in-progress", "blocked", "review", "done", "cancelled")
+EPIC_STATUSES = (
+    "EPIC_PROPOSED",
+    "EPIC_READY",
+    "EPIC_IN_PROGRESS",
+    "EPIC_BLOCKED",
+    "EPIC_DONE",
+    "EPIC_CANCELLED",
+)
+TERMINAL_TASK = {"done", "cancelled"}
+RESOLVED_BLOCKER = {"resolved", "accepted", "cancelled"}
+
+TASK_BOARD = ".agent/execution/task-board.md"
+EPICS = ".agent/planning/epics.md"
+SESSIONS = ".agent/execution/sessions-history.md"
+IMPL_DIR = ".agent/reports/implementation"
+REVIEW_DIR = ".agent/reports/review"
+QA_DIR = ".agent/reports/qa"
+BLOCKER_DIR = ".agent/governance/blockers"
+CR_DIR = ".agent/governance/change-requests"
+
+TASK_EMPTY = "No task records are registered."
+SESSION_EMPTY = "No session records are registered."
+
+ID_RE = {
+    "task": re.compile(r"^T-\d{3,}$"),
+    "epic": re.compile(r"^E-\d{3,}$"),
+    "blocker": re.compile(r"^BLOCKER-\d{3,}$"),
+    "cr": re.compile(r"^CR-\d{3,}$"),
+}
+
+# Task board columns
+T_ID, T_EPIC, T_TITLE, T_OWNER, T_STATUS, T_DEPS, T_BLOCKERS, T_EVIDENCE, T_DATE = range(9)
+# Epic registry columns
+E_ID, E_MS, E_OUTCOME, E_OWNER, E_STATUS, E_TASKS, E_EVIDENCE, E_GOV = range(8)
+
+
+class RuleError(Exception):
+    """A lifecycle rule was violated; nothing was written."""
+
+
+# --------------------------------------------------------------------------- paths
+
+
+def repo_root() -> Path:
+    env = os.environ.get("AGENT_ROOT")
+    if env:
+        return Path(env).resolve()
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=Path(__file__).resolve().parent,
+        )
+        return Path(out.stdout.strip())
+    except (OSError, subprocess.CalledProcessError):
+        return Path(__file__).resolve().parent.parent
+
+
+def today() -> str:
+    return dt.date.today().isoformat()
+
+
+# --------------------------------------------------------------------------- tables
+
+
+def split_row(line: str) -> list[str]:
+    return [cell.strip().strip("`") for cell in line.strip().strip("|").split("|")]
+
+
+def join_row(cells: list[str]) -> str:
+    return "| " + " | ".join(f"`{cell}`" for cell in cells) + " |"
+
+
+def check_value(name: str, value: str) -> str:
+    value = value.strip()
+    if not value:
+        raise RuleError(f"{name} must not be empty")
+    if any(ch in value for ch in "|`\n"):
+        raise RuleError(f"{name} must not contain '|', '`' or newlines")
+    return value
+
+
+class Table:
+    """Markdown file holding a registry table whose records start with `| \\`<prefix>`."""
+
+    def __init__(self, root: Path, relative: str, prefix: str, width: int, empty_line: str | None):
+        self.path = root / relative
+        self.relative = relative
+        self.prefix = prefix
+        self.width = width
+        self.empty_line = empty_line
+        if not self.path.exists():
+            raise RuleError(f"{relative} not found")
+        self.lines = self.path.read_text(encoding="utf-8").split("\n")
+        self.dirty = False
+
+    def _is_record(self, line: str) -> bool:
+        return re.match(rf"^\|\s*`{re.escape(self.prefix)}", line) is not None
+
+    def find(self, record_id: str) -> tuple[int, list[str]] | None:
+        for index, line in enumerate(self.lines):
+            if self._is_record(line):
+                cells = split_row(line)
+                if cells[0] == record_id:
+                    if len(cells) != self.width:
+                        raise RuleError(
+                            f"{self.relative}: record {record_id} has {len(cells)} columns, expected {self.width}"
+                        )
+                    return index, cells
+        return None
+
+    def get(self, record_id: str) -> list[str]:
+        found = self.find(record_id)
+        if not found:
+            raise RuleError(f"{record_id} not found in {self.relative}")
+        return found[1]
+
+    def records(self) -> list[list[str]]:
+        return [split_row(line) for line in self.lines if self._is_record(line)]
+
+    def update(self, record_id: str, cells: list[str]) -> None:
+        index, _ = self.find(record_id)  # type: ignore[misc]
+        self.lines[index] = join_row(cells)
+        self.dirty = True
+
+    def append(self, cells: list[str]) -> None:
+        line = join_row(cells)
+        last_record = None
+        separator = None
+        for index, existing in enumerate(self.lines):
+            if self._is_record(existing):
+                last_record = index
+            elif separator is None and re.match(r"^\|(\s*-+\s*\|)+\s*$", existing):
+                separator = index
+        if last_record is not None:
+            self.lines.insert(last_record + 1, line)
+        elif separator is not None:
+            self.lines.insert(separator + 1, line)
+            if self.empty_line:
+                self.lines = [l for l in self.lines if l.strip() != self.empty_line]
+                # collapse a doubled blank line left behind by the removed sentence
+                for i in range(len(self.lines) - 1, 0, -1):
+                    if self.lines[i] == "" and self.lines[i - 1] == "" and i > separator:
+                        del self.lines[i]
+                        break
+        else:
+            raise RuleError(f"{self.relative}: no table found to append to")
+        self.dirty = True
+
+    def text(self) -> str:
+        return "\n".join(self.lines)
+
+
+# --------------------------------------------------------------------------- reports
+
+
+def field(text: str, name: str) -> str | None:
+    match = re.search(rf"(?m)^- \*\*{re.escape(name)}\*\*:\s*`([^`]*)`\s*$", text)
+    return match.group(1).strip() if match else None
+
+
+def set_field(text: str, name: str, value: str, all_occurrences: bool = False) -> str:
+    pattern = re.compile(rf"(?m)^(- \*\*{re.escape(name)}\*\*:\s*)`[^`]*`\s*$")
+    if not pattern.search(text):
+        raise RuleError(f"report field '{name}' not found")
+    return pattern.sub(lambda m: f"{m.group(1)}`{value}`", text, count=0 if all_occurrences else 1)
+
+
+def render_template(root: Path, template: str, *, doc_id: str, title: str, tag: str, ident: str,
+                    fields: dict[str, str]) -> str:
+    path = root / ".agent" / "templates" / template
+    if not path.exists():
+        raise RuleError(f"template {template} not found")
+    text = path.read_text(encoding="utf-8")
+    end = text.index("\n---", 3)
+    body = text[end + len("\n---"):]
+    front = (
+        "---\n"
+        f"id: {doc_id}\n"
+        f"title: {title}\n"
+        "type: report\n"
+        "domain: governance\n"
+        "module: execution\n"
+        f"tags: [{tag}, report, {ident}]\n"
+        "priority: 2\n"
+        "---"
+    )
+    body = re.sub(r"(?m)^# .*$", f"# {title}", body, count=1)
+    body = body.replace("TASK-ID", ident)
+    for name, value in fields.items():
+        body = set_field(body, name, value, all_occurrences=True)
+    body = body.replace("YYYY-MM-DD", today())
+    # Unfilled placeholders: the validator rejects `<required...>` in runtime records.
+    body = re.sub(r"<[a-z][^<>`]*>", "TBD", body)
+    return front + body
+
+
+def append_table_row(text: str, heading: str, row: str, placeholder_prefix: str) -> str:
+    lines = text.split("\n")
+    try:
+        start = lines.index(f"## {heading}")
+    except ValueError as exc:
+        raise RuleError(f"report section '## {heading}' not found") from exc
+    last_row = None
+    for index in range(start + 1, len(lines)):
+        if lines[index].startswith("## "):
+            break
+        if lines[index].startswith("|"):
+            last_row = index
+    if last_row is None:
+        raise RuleError(f"report section '## {heading}' has no table")
+    if lines[last_row].startswith(placeholder_prefix):
+        lines[last_row] = row
+    else:
+        lines.insert(last_row + 1, row)
+    return "\n".join(lines)
+
+
+def table_cell(text: str) -> str:
+    return re.sub(r"[|`\n\r]", " ", text).strip()[:200] or "no output"
+
+
+# --------------------------------------------------------------------------- transaction
+
+
+class Txn:
+    """Collects file writes; nothing touches disk until commit()."""
+
+    def __init__(self, root: Path):
+        self.root = root
+        self.writes: dict[Path, str] = {}
+
+    def put(self, path: Path, text: str) -> None:
+        self.writes[path] = text
+
+    def read(self, path: Path) -> str | None:
+        if path in self.writes:
+            return self.writes[path]
+        return path.read_text(encoding="utf-8") if path.exists() else None
+
+    def session(self, owner: str, scope: str, summary: str, evidence: str) -> None:
+        sessions = Table(self.root, SESSIONS, "S", 9, SESSION_EMPTY)
+        now = dt.datetime.now()
+        base = now.strftime("S-%Y%m%d-%H%M%S")
+        session_id, n = base, 1
+        existing = {r[0] for r in sessions.records()}
+        while session_id in existing:
+            n += 1
+            session_id = f"{base}-{n}"
+        sessions.append([
+            session_id,
+            today(),
+            today(),
+            check_value("owner", owner),
+            scope,
+            "completed",
+            table_cell(summary),
+            table_cell(evidence) if evidence else "none",
+            "none",
+        ])
+        self.put(sessions.path, sessions.text())
+
+    def commit(self) -> None:
+        staged: list[tuple[str, Path]] = []
+        try:
+            for path, text in self.writes.items():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                fd, tmp = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+                with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                    handle.write(text)
+                staged.append((tmp, path))
+        except BaseException:
+            for tmp, _ in staged:
+                os.unlink(tmp)
+            raise
+        for tmp, path in staged:
+            os.replace(tmp, path)
+
+
+# --------------------------------------------------------------------------- helpers
+
+
+def need_id(kind: str, value: str) -> str:
+    if not ID_RE[kind].match(value):
+        raise RuleError(f"invalid {kind} id '{value}'")
+    return value
+
+
+def split_ids(value: str) -> list[str]:
+    if value in ("", "none"):
+        return []
+    return [part.strip() for part in value.split(",") if part.strip()]
+
+
+def join_ids(ids: list[str]) -> str:
+    return ", ".join(ids) if ids else "none"
+
+
+def blocker_status(root: Path, blocker_id: str) -> str | None:
+    path = root / BLOCKER_DIR / f"{blocker_id}.md"
+    if not path.exists():
+        return None
+    return field(path.read_text(encoding="utf-8"), "Status") or "unknown"
+
+
+def add_evidence(cells: list[str], link: str) -> None:
+    links = split_ids(cells[T_EVIDENCE])
+    if link not in links:
+        links.append(link)
+    cells[T_EVIDENCE] = join_ids(links)
+
+
+def set_task(board: Table, cells: list[str], status: str) -> None:
+    cells[T_STATUS] = status
+    cells[T_DATE] = today()
+    board.update(cells[T_ID], cells)
+
+
+def impl_path(root: Path, task_id: str) -> Path:
+    return root / IMPL_DIR / f"{task_id}.md"
+
+
+def review_path(root: Path, task_id: str) -> Path:
+    return root / REVIEW_DIR / f"{task_id}.md"
+
+
+def qa_path(root: Path, epic_id: str) -> Path:
+    return root / QA_DIR / f"{epic_id}.md"
+
+
+def new_impl_report(root: Path, task: list[str], executor: str) -> str:
+    task_id = task[T_ID]
+    return render_template(
+        root,
+        "implementation-report-template.md",
+        doc_id=f"impl-{task_id}",
+        title=f"Implementation Report {task_id}",
+        tag="implementation",
+        ident=task_id,
+        fields={
+            "Title": task[T_TITLE],
+            "Owner": task[T_OWNER],
+            "Executor": executor,
+            "Status": "draft",
+            "Epic ID": task[T_EPIC],
+            "Review Request": "pending",
+        },
+    )
+
+
+# --------------------------------------------------------------------------- commands: epic
+
+
+def cmd_epic_status(root: Path, args) -> str:
+    epic_id = need_id("epic", args.epic)
+    target = args.status
+    epics = Table(root, EPICS, "E-", 8, None)
+    epic = epics.get(epic_id)
+    current = epic[E_STATUS]
+    board = Table(root, TASK_BOARD, "T-", 9, TASK_EMPTY)
+    tasks = [t for t in board.records() if len(t) > T_EPIC and t[T_EPIC] == epic_id]
+
+    allowed = {
+        "EPIC_PROPOSED": {"EPIC_READY", "EPIC_CANCELLED"},
+        "EPIC_READY": {"EPIC_IN_PROGRESS", "EPIC_CANCELLED"},
+        "EPIC_IN_PROGRESS": {"EPIC_BLOCKED", "EPIC_DONE", "EPIC_CANCELLED"},
+        "EPIC_BLOCKED": {"EPIC_IN_PROGRESS", "EPIC_CANCELLED"},
+    }
+    if target not in allowed.get(current, set()):
+        raise RuleError(f"{epic_id}: transition {current} -> {target} is not allowed")
+
+    governance = split_ids(epic[E_GOV])
+    if target == "EPIC_READY":
+        if epic[E_OWNER] in ("", "unassigned"):
+            raise RuleError(f"{epic_id}: EPIC_READY requires an accountable owner")
+    elif target == "EPIC_IN_PROGRESS" and current == "EPIC_READY":
+        if not tasks:
+            raise RuleError(f"{epic_id}: EPIC_IN_PROGRESS requires at least one expanded task")
+    elif target == "EPIC_IN_PROGRESS" and current == "EPIC_BLOCKED":
+        open_blockers = [b for b in governance if b.startswith("BLOCKER-")
+                         and blocker_status(root, b) not in RESOLVED_BLOCKER]
+        if open_blockers:
+            raise RuleError(f"{epic_id}: blockers not resolved: {', '.join(open_blockers)}")
+    elif target == "EPIC_BLOCKED":
+        if not args.blocker:
+            raise RuleError(f"{epic_id}: EPIC_BLOCKED requires --blocker BLOCKER-xxx")
+        need_id("blocker", args.blocker)
+        if blocker_status(root, args.blocker) is None:
+            raise RuleError(f"{args.blocker}: file {BLOCKER_DIR}/{args.blocker}.md does not exist")
+        if args.blocker not in governance:
+            governance.append(args.blocker)
+    elif target == "EPIC_DONE":
+        active = [t[T_ID] for t in tasks if t[T_STATUS] not in TERMINAL_TASK]
+        if active:
+            raise RuleError(f"{epic_id}: tasks not done or cancelled: {', '.join(active)}")
+        qa = qa_path(root, epic_id)
+        qa_status = field(qa.read_text(encoding="utf-8"), "Status") if qa.exists() else None
+        if qa_status != "passed":
+            raise RuleError(f"{epic_id}: EPIC_DONE requires {QA_DIR}/{epic_id}.md with Status passed")
+        rel = f"{QA_DIR}/{epic_id}.md"
+        epic[E_EVIDENCE] = rel
+    elif target == "EPIC_CANCELLED":
+        if not args.change_request:
+            raise RuleError(f"{epic_id}: EPIC_CANCELLED requires --change-request CR-xxx")
+        need_id("cr", args.change_request)
+        cr = root / CR_DIR / f"{args.change_request}.md"
+        if not cr.exists() or field(cr.read_text(encoding="utf-8"), "Status") not in ("approved", "implemented"):
+            raise RuleError(f"{args.change_request}: approved change request file is required")
+        if args.change_request not in governance:
+            governance.append(args.change_request)
+
+    epic[E_STATUS] = target
+    epic[E_GOV] = join_ids(governance)
+    epics.update(epic_id, epic)
+    txn = Txn(root)
+    txn.put(epics.path, epics.text())
+    txn.session(args.actor or epic[E_OWNER], epic_id, f"epic {current} -> {target}", EPICS)
+    txn.commit()
+    return f"{epic_id}: {current} -> {target}"
+
+
+# --------------------------------------------------------------------------- commands: task
+
+
+def cmd_task_add(root: Path, args) -> str:
+    task_id = need_id("task", args.task)
+    epic_id = need_id("epic", args.epic)
+    title = check_value("title", args.title)
+    owner = check_value("owner", args.owner)
+    deps = [need_id("task", d) for d in split_ids(args.deps or "")]
+    epics = Table(root, EPICS, "E-", 8, None)
+    epic = epics.get(epic_id)
+    if epic[E_STATUS] != "EPIC_READY":
+        raise RuleError(f"{epic_id} is {epic[E_STATUS]}; tasks may be added only while EPIC_READY")
+    board = Table(root, TASK_BOARD, "T-", 9, TASK_EMPTY)
+    if board.find(task_id):
+        raise RuleError(f"{task_id} already exists")
+    known = {r[0] for r in board.records()}
+    missing = [d for d in deps if d not in known]
+    if missing:
+        raise RuleError(f"unknown dependencies: {', '.join(missing)}")
+    if task_id in deps:
+        raise RuleError(f"{task_id} cannot depend on itself")
+    board.append([task_id, epic_id, title, owner, "pending", join_ids(deps), "none", "none", today()])
+    epic_tasks = split_ids(epic[E_TASKS])
+    epic_tasks.append(task_id)
+    epic[E_TASKS] = join_ids(epic_tasks)
+    epics.update(epic_id, epic)
+    txn = Txn(root)
+    txn.put(board.path, board.text())
+    txn.put(epics.path, epics.text())
+    txn.session(args.actor or owner, task_id, f"task added to {epic_id}", TASK_BOARD)
+    txn.commit()
+    return f"{task_id}: added (pending) to {epic_id}"
+
+
+def load_task(root: Path, task_id: str) -> tuple[Table, list[str]]:
+    board = Table(root, TASK_BOARD, "T-", 9, TASK_EMPTY)
+    return board, board.get(need_id("task", task_id))
+
+
+def cmd_task_start(root: Path, args) -> str:
+    board, task = load_task(root, args.task)
+    status = task[T_STATUS]
+    if status not in ("pending", "blocked"):
+        raise RuleError(f"{task[T_ID]} is {status}; only pending or blocked tasks can start")
+    if task[T_OWNER] in ("", "unassigned"):
+        raise RuleError(f"{task[T_ID]} has no accountable owner")
+    epic = Table(root, EPICS, "E-", 8, None).get(task[T_EPIC])
+    if epic[E_STATUS] != "EPIC_IN_PROGRESS":
+        raise RuleError(f"parent {task[T_EPIC]} is {epic[E_STATUS]}; it must be EPIC_IN_PROGRESS")
+    undone = [d for d in split_ids(task[T_DEPS]) if board.get(d)[T_STATUS] != "done"]
+    if undone:
+        raise RuleError(f"{task[T_ID]}: dependencies not done: {', '.join(undone)}")
+    if status == "blocked":
+        unresolved = [b for b in split_ids(task[T_BLOCKERS]) if blocker_status(root, b) not in RESOLVED_BLOCKER]
+        if unresolved:
+            raise RuleError(f"{task[T_ID]}: blockers not resolved: {', '.join(unresolved)}")
+    set_task(board, task, "in-progress")
+    txn = Txn(root)
+    txn.put(board.path, board.text())
+    txn.session(args.actor or task[T_OWNER], task[T_ID], f"task {status} -> in-progress", TASK_BOARD)
+    txn.commit()
+    return f"{task[T_ID]}: {status} -> in-progress"
+
+
+def cmd_task_block(root: Path, args) -> str:
+    board, task = load_task(root, args.task)
+    blocker = need_id("blocker", args.blocker)
+    if task[T_STATUS] != "in-progress":
+        raise RuleError(f"{task[T_ID]} is {task[T_STATUS]}; only in-progress tasks can be blocked")
+    if blocker_status(root, blocker) is None:
+        raise RuleError(f"{blocker}: file {BLOCKER_DIR}/{blocker}.md does not exist")
+    blockers = split_ids(task[T_BLOCKERS])
+    if blocker not in blockers:
+        blockers.append(blocker)
+    task[T_BLOCKERS] = join_ids(blockers)
+    set_task(board, task, "blocked")
+    txn = Txn(root)
+    txn.put(board.path, board.text())
+    txn.session(args.actor or task[T_OWNER], task[T_ID], f"task blocked by {blocker}", f"{BLOCKER_DIR}/{blocker}.md")
+    txn.commit()
+    return f"{task[T_ID]}: in-progress -> blocked ({blocker})"
+
+
+def cmd_task_report(root: Path, args) -> str:
+    board, task = load_task(root, args.task)
+    executor = check_value("executor", args.executor)
+    if task[T_STATUS] != "in-progress":
+        raise RuleError(f"{task[T_ID]} is {task[T_STATUS]}; reports are written while in-progress")
+    path = impl_path(root, task[T_ID])
+    text = path.read_text(encoding="utf-8") if path.exists() else new_impl_report(root, task, executor)
+    text = set_field(text, "Executor", executor)
+    if args.complete:
+        if not re.search(r"(?m)^\| `[^`]+` \| `passed` \|", section(text, "Verification Evidence")):
+            raise RuleError(f"{task[T_ID]}: run 'agent task verify {task[T_ID]}' successfully before --complete")
+        text = set_field(text, "Status", "complete")
+    rel = f"{IMPL_DIR}/{task[T_ID]}.md"
+    add_evidence(task, rel)
+    task[T_DATE] = today()
+    board.update(task[T_ID], task)
+    txn = Txn(root)
+    txn.put(path, text)
+    txn.put(board.path, board.text())
+    state = "complete" if args.complete else "draft"
+    txn.session(executor, task[T_ID], f"implementation report {state}", rel)
+    txn.commit()
+    return f"{task[T_ID]}: implementation report {state} at {rel}"
+
+
+def section(text: str, heading: str) -> str:
+    match = re.search(rf"(?ms)^## {re.escape(heading)}\s*$(.*?)(?=^## |\Z)", text)
+    return match.group(1) if match else ""
+
+
+def cmd_task_verify(root: Path, args) -> int:
+    board, task = load_task(root, args.task)
+    if task[T_STATUS] != "in-progress":
+        raise RuleError(f"{task[T_ID]} is {task[T_STATUS]}; verify runs while in-progress")
+    command = args.cmd
+    proc = subprocess.run(command, shell=True, cwd=root, capture_output=True, text=True)
+    output = (proc.stdout + proc.stderr).strip().splitlines()
+    tail = output[-20:]
+    result = "passed" if proc.returncode == 0 else "failed"
+    last = tail[-1] if tail else ""
+    row = f"| `{table_cell(command)}` | `{result}` | `exit {proc.returncode}; {table_cell(last)}` |"
+
+    path = impl_path(root, task[T_ID])
+    text = path.read_text(encoding="utf-8") if path.exists() else new_impl_report(root, task, "TBD")
+    text = append_table_row(text, "Verification Evidence", row, "| `TBD`")
+    rel = f"{IMPL_DIR}/{task[T_ID]}.md"
+    add_evidence(task, rel)
+    task[T_DATE] = today()
+    board.update(task[T_ID], task)
+    txn = Txn(root)
+    txn.put(path, text)
+    txn.put(board.path, board.text())
+    txn.session(args.actor or task[T_OWNER], task[T_ID], f"verify '{command}' {result}", rel)
+    txn.commit()
+    if tail:
+        print("\n".join(tail))
+    print(f"{task[T_ID]}: verify {result} (exit {proc.returncode})")
+    return 0 if proc.returncode == 0 else 1
+
+
+def cmd_task_done(root: Path, args) -> str:
+    board, task = load_task(root, args.task)
+    if task[T_STATUS] != "review":
+        raise RuleError(f"{task[T_ID]} is {task[T_STATUS]}; only tasks in review can be done")
+    path = review_path(root, task[T_ID])
+    status = field(path.read_text(encoding="utf-8"), "Status") if path.exists() else None
+    if status != "approved":
+        raise RuleError(f"{task[T_ID]}: review report {REVIEW_DIR}/{task[T_ID]}.md must be approved")
+    set_task(board, task, "done")
+    txn = Txn(root)
+    txn.put(board.path, board.text())
+    txn.session(args.actor or task[T_OWNER], task[T_ID], "task review -> done", f"{REVIEW_DIR}/{task[T_ID]}.md")
+    txn.commit()
+    return f"{task[T_ID]}: review -> done"
+
+
+def cmd_task_cancel(root: Path, args) -> str:
+    board, task = load_task(root, args.task)
+    reason = check_value("reason", args.reason)
+    if task[T_STATUS] in TERMINAL_TASK:
+        raise RuleError(f"{task[T_ID]} is already {task[T_STATUS]}")
+    previous = task[T_STATUS]
+    set_task(board, task, "cancelled")
+    txn = Txn(root)
+    txn.put(board.path, board.text())
+    txn.session(args.actor or task[T_OWNER], task[T_ID], f"task {previous} -> cancelled: {reason}", TASK_BOARD)
+    txn.commit()
+    return f"{task[T_ID]}: {previous} -> cancelled"
+
+
+# --------------------------------------------------------------------------- commands: review
+
+
+def executor_of(root: Path, task_id: str) -> str | None:
+    path = impl_path(root, task_id)
+    return field(path.read_text(encoding="utf-8"), "Executor") if path.exists() else None
+
+
+def cmd_review_request(root: Path, args) -> str:
+    board, task = load_task(root, args.task)
+    reviewer = check_value("reviewer", args.reviewer)
+    if task[T_STATUS] != "in-progress":
+        raise RuleError(f"{task[T_ID]} is {task[T_STATUS]}; review is requested from in-progress")
+    path = impl_path(root, task[T_ID])
+    text = path.read_text(encoding="utf-8") if path.exists() else ""
+    if field(text, "Status") != "complete":
+        raise RuleError(f"{task[T_ID]}: implementation report must be complete ('agent task report --complete')")
+    executor = field(text, "Executor")
+    if reviewer == executor:
+        raise RuleError(f"{task[T_ID]}: reviewer must be independent from executor '{executor}'")
+    text = set_field(text, "Review Request", reviewer)
+    set_task(board, task, "review")
+    txn = Txn(root)
+    txn.put(path, text)
+    txn.put(board.path, board.text())
+    txn.session(executor or task[T_OWNER], task[T_ID], f"review requested from {reviewer}", f"{IMPL_DIR}/{task[T_ID]}.md")
+    txn.commit()
+    return f"{task[T_ID]}: in-progress -> review (reviewer {reviewer})"
+
+
+def review_guard(root: Path, task: list[str], reviewer: str) -> str | None:
+    if task[T_STATUS] != "review":
+        raise RuleError(f"{task[T_ID]} is {task[T_STATUS]}; it must be in review")
+    executor = executor_of(root, task[T_ID])
+    if reviewer == executor:
+        raise RuleError(f"{task[T_ID]}: reviewer must be independent from executor '{executor}'")
+    return executor
+
+
+def cmd_review_start(root: Path, args) -> str:
+    board, task = load_task(root, args.task)
+    reviewer = check_value("reviewer", args.reviewer)
+    executor = review_guard(root, task, reviewer)
+    path = review_path(root, task[T_ID])
+    if path.exists():
+        text = set_field(path.read_text(encoding="utf-8"), "Status", "draft")
+        text = set_field(text, "Reviewer", reviewer)
+    else:
+        text = render_template(
+            root,
+            "review-report-template.md",
+            doc_id=f"review-{task[T_ID]}",
+            title=f"Review Report {task[T_ID]}",
+            tag="review",
+            ident=task[T_ID],
+            fields={
+                "Title": task[T_TITLE],
+                "Owner": task[T_OWNER],
+                "Reviewer": reviewer,
+                "Executor": executor or "TBD",
+                "Status": "draft",
+                "Decision": "BLOCKED",
+                "Review Type": "code",
+            },
+        )
+    rel = f"{REVIEW_DIR}/{task[T_ID]}.md"
+    add_evidence(task, rel)
+    task[T_DATE] = today()
+    board.update(task[T_ID], task)
+    txn = Txn(root)
+    txn.put(path, text)
+    txn.put(board.path, board.text())
+    txn.session(reviewer, task[T_ID], "review started", rel)
+    txn.commit()
+    return f"{task[T_ID]}: review report draft at {rel}"
+
+
+def cmd_review_decide(root: Path, args, approve: bool) -> str:
+    board, task = load_task(root, args.task)
+    reviewer = check_value("reviewer", args.reviewer)
+    review_guard(root, task, reviewer)
+    path = review_path(root, task[T_ID])
+    if not path.exists():
+        raise RuleError(f"{task[T_ID]}: run 'agent review start' first")
+    text = path.read_text(encoding="utf-8")
+    recorded = field(text, "Reviewer")
+    if recorded not in (None, "TBD", reviewer):
+        raise RuleError(f"{task[T_ID]}: review is owned by reviewer '{recorded}'")
+    text = set_field(text, "Status", "approved" if approve else "changes-required")
+    text = set_field(text, "Decision", "APPROVED" if approve else "CHANGES_REQUESTED", all_occurrences=True)
+    text = set_field(text, "Approved By", reviewer if approve else "not-approved")
+    text = set_field(text, "Decision Date", today())
+    txn = Txn(root)
+    txn.put(path, text)
+    if approve:
+        task[T_DATE] = today()
+        board.update(task[T_ID], task)
+        summary = "review approved"
+    else:
+        set_task(board, task, "in-progress")
+        impl = impl_path(root, task[T_ID])
+        if impl.exists():
+            txn.put(impl, set_field(impl.read_text(encoding="utf-8"), "Status", "draft"))
+        summary = "changes requested; task review -> in-progress"
+    txn.put(board.path, board.text())
+    txn.session(reviewer, task[T_ID], summary, f"{REVIEW_DIR}/{task[T_ID]}.md")
+    txn.commit()
+    return f"{task[T_ID]}: {summary}"
+
+
+# --------------------------------------------------------------------------- commands: qa
+
+
+def cmd_qa(root: Path, args, action: str) -> str:
+    epic_id = need_id("epic", args.epic)
+    tester = check_value("qa", args.qa)
+    epic = Table(root, EPICS, "E-", 8, None).get(epic_id)
+    if epic[E_STATUS] != "EPIC_IN_PROGRESS":
+        raise RuleError(f"{epic_id} is {epic[E_STATUS]}; QA runs while EPIC_IN_PROGRESS")
+    board = Table(root, TASK_BOARD, "T-", 9, TASK_EMPTY)
+    tasks = [t for t in board.records() if len(t) > T_EPIC and t[T_EPIC] == epic_id]
+    path = qa_path(root, epic_id)
+    rel = f"{QA_DIR}/{epic_id}.md"
+    if action == "start":
+        active = [t[T_ID] for t in tasks if t[T_STATUS] not in TERMINAL_TASK]
+        if not tasks or active:
+            raise RuleError(f"{epic_id}: QA starts after every task is done or cancelled (open: {join_ids(active)})")
+        if path.exists():
+            text = set_field(path.read_text(encoding="utf-8"), "Status", "draft")
+        else:
+            text = render_template(
+                root,
+                "qa-report-template.md",
+                doc_id=f"qa-{epic_id}",
+                title=f"QA Report {epic_id}",
+                tag="qa",
+                ident=epic_id,
+                fields={
+                    "Title": epic[E_OUTCOME],
+                    "Owner": epic[E_OWNER],
+                    "Tester": tester,
+                    "Status": "draft",
+                    "Recommendation": "no-go",
+                },
+            )
+            text = set_field(text, "Task ID", join_ids([t[T_ID] for t in tasks]))
+    else:
+        if not path.exists():
+            raise RuleError(f"{epic_id}: run 'agent qa start {epic_id}' first")
+        text = path.read_text(encoding="utf-8")
+        if field(text, "Status") != "draft":
+            raise RuleError(f"{epic_id}: QA report must be draft to record a result")
+        passed = action == "pass"
+        text = set_field(text, "Status", "passed" if passed else "failed")
+        text = set_field(text, "Recommendation", "go" if passed else "no-go")
+        text = set_field(text, "Authorized By", tester)
+    txn = Txn(root)
+    txn.put(path, text)
+    txn.session(tester, epic_id, f"qa {action}", rel)
+    txn.commit()
+    return f"{epic_id}: qa {action} ({rel})"
+
+
+# --------------------------------------------------------------------------- status
+
+
+def cmd_status(root: Path, _args) -> str:
+    epics = Table(root, EPICS, "E-", 8, None).records()
+    tasks = Table(root, TASK_BOARD, "T-", 9, TASK_EMPTY).records()
+    lines = []
+    for epic in epics:
+        lines.append(f"{epic[E_ID]} [{epic[E_STATUS]}] owner={epic[E_OWNER]}  {epic[E_OUTCOME]}")
+        for task in (t for t in tasks if t[T_EPIC] == epic[E_ID]):
+            lines.append(f"    {task[T_ID]} [{task[T_STATUS]}] {task[T_OWNER]}: {task[T_TITLE]}")
+    orphans = [t for t in tasks if t[T_EPIC] not in {e[E_ID] for e in epics}]
+    for task in orphans:
+        lines.append(f"(no epic) {task[T_ID]} [{task[T_STATUS]}] {task[T_TITLE]}")
+    return "\n".join(lines) if lines else "No epics or tasks registered."
+
+
+# --------------------------------------------------------------------------- cli
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="agent", description="Agentic SDLC lifecycle commands")
+    parser.add_argument("--actor", help="identity recorded in session history (default: record owner)")
+    groups = parser.add_subparsers(dest="group", required=True)
+
+    epic = groups.add_parser("epic").add_subparsers(dest="action", required=True)
+    p = epic.add_parser("status")
+    p.add_argument("epic")
+    p.add_argument("status", choices=EPIC_STATUSES)
+    p.add_argument("--blocker")
+    p.add_argument("--change-request")
+
+    task = groups.add_parser("task").add_subparsers(dest="action", required=True)
+    p = task.add_parser("add")
+    p.add_argument("task")
+    p.add_argument("--epic", required=True)
+    p.add_argument("--title", required=True)
+    p.add_argument("--owner", required=True)
+    p.add_argument("--deps")
+    task.add_parser("start").add_argument("task")
+    p = task.add_parser("block")
+    p.add_argument("task")
+    p.add_argument("--blocker", required=True)
+    p = task.add_parser("verify")
+    p.add_argument("task")
+    p.add_argument("--cmd", default="make check")
+    p = task.add_parser("report")
+    p.add_argument("task")
+    p.add_argument("--executor", required=True)
+    p.add_argument("--complete", action="store_true")
+    task.add_parser("done").add_argument("task")
+    p = task.add_parser("cancel")
+    p.add_argument("task")
+    p.add_argument("--reason", required=True)
+
+    review = groups.add_parser("review").add_subparsers(dest="action", required=True)
+    for name in ("request", "start", "approve", "request-changes"):
+        p = review.add_parser(name)
+        p.add_argument("task")
+        p.add_argument("--reviewer", required=True)
+
+    qa = groups.add_parser("qa").add_subparsers(dest="action", required=True)
+    for name in ("start", "pass", "fail"):
+        p = qa.add_parser(name)
+        p.add_argument("epic")
+        p.add_argument("--qa", required=True)
+
+    groups.add_parser("status")
+    return parser
+
+
+def dispatch(root: Path, args) -> int:
+    handlers = {
+        ("epic", "status"): cmd_epic_status,
+        ("task", "add"): cmd_task_add,
+        ("task", "start"): cmd_task_start,
+        ("task", "block"): cmd_task_block,
+        ("task", "report"): cmd_task_report,
+        ("task", "done"): cmd_task_done,
+        ("task", "cancel"): cmd_task_cancel,
+        ("review", "request"): cmd_review_request,
+        ("review", "start"): cmd_review_start,
+        ("review", "approve"): lambda r, a: cmd_review_decide(r, a, True),
+        ("review", "request-changes"): lambda r, a: cmd_review_decide(r, a, False),
+        ("qa", "start"): lambda r, a: cmd_qa(r, a, "start"),
+        ("qa", "pass"): lambda r, a: cmd_qa(r, a, "pass"),
+        ("qa", "fail"): lambda r, a: cmd_qa(r, a, "fail"),
+    }
+    if args.group == "status":
+        print(cmd_status(root, args))
+        return 0
+    if (args.group, args.action) == ("task", "verify"):
+        return cmd_task_verify(root, args)
+    print(handlers[(args.group, args.action)](root, args))
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    try:
+        return dispatch(repo_root(), args)
+    except RuleError as exc:
+        print(f"agent: error: {exc}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())
