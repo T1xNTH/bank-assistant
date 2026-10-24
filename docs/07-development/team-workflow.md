@@ -12,8 +12,8 @@ priority: 1
 ## Vai trò
 | Người | ID | Mảng | Vai trò kit |
 |---|---|---|---|
-| A — trong-hung | `trong-hung` | AI/dữ liệu: `src/app/rag/`, `prompts.py`, `routing.py`, `agent/graph.py` + tools, `eval/`, `ui/` | coordinator, governance (roadmap), executor cho task của mình |
-| B — bạn đồng đội | `teammate-b` | Nền tảng: `main.py`, `schemas.py`, `llm.py`, `security/`, `queue/`, `tracing.py`, `infrastructure/`, CI | executor cho task của mình, governance đồng duyệt contract/SRS |
+| A — trong-hung (@caitoithap) | `trong-hung` | AI/dữ liệu: `src/app/rag/`, `prompts.py`, `routing.py`, `agent/graph.py` + tools, `eval/`, `ui/` | coordinator, governance (roadmap), executor cho task của mình |
+| B — @Vietanhhhhhh2003 | `teammate-b` | Nền tảng: `main.py`, `schemas.py`, `llm.py`, `security/`, `queue/`, `tracing.py`, `infrastructure/`, CI | executor cho task của mình, governance đồng duyệt contract/SRS |
 
 Reviewer của mỗi task = **một phiên Claude Code mới** (không phải phiên đã code) + người còn lại duyệt PR (DEC-004).
 

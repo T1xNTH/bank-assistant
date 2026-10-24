@@ -23,3 +23,37 @@ Maintain an append-only audit of agent execution sessions, their ownership, scop
 |---|---|---|---|---|---|---|---|---|
 
 | `S-20261024-onboarding` | `2026-10-24` | `2026-10-24` | `trong-hung` | `R-001, M-001, M-002, E-001..E-016` | `completed` | `Kit installed; SRS, contract, architecture ingested; roadmap drafted; DEC-001..005 and RISK-001..004 recorded` | `docs/01-business/srs.md, .agent/planning/roadmap.md` | `none` |
+| `S-20261024-165137` | `2026-10-24` | `2026-10-24` | `trong-hung` | `E-001` | `completed` | `epic EPIC_PROPOSED -> EPIC_READY` | `.agent/planning/epics.md` | `none` |
+| `S-20261024-165137-2` | `2026-10-24` | `2026-10-24` | `trong-hung` | `E-002` | `completed` | `epic EPIC_PROPOSED -> EPIC_READY` | `.agent/planning/epics.md` | `none` |
+| `S-20261024-165137-3` | `2026-10-24` | `2026-10-24` | `trong-hung` | `E-003` | `completed` | `epic EPIC_PROPOSED -> EPIC_READY` | `.agent/planning/epics.md` | `none` |
+| `S-20261024-165137-4` | `2026-10-24` | `2026-10-24` | `trong-hung` | `E-004` | `completed` | `epic EPIC_PROPOSED -> EPIC_READY` | `.agent/planning/epics.md` | `none` |
+| `S-20261024-165137-5` | `2026-10-24` | `2026-10-24` | `trong-hung` | `E-005` | `completed` | `epic EPIC_PROPOSED -> EPIC_READY` | `.agent/planning/epics.md` | `none` |
+| `S-20261024-165137-6` | `2026-10-24` | `2026-10-24` | `trong-hung` | `E-006` | `completed` | `epic EPIC_PROPOSED -> EPIC_READY` | `.agent/planning/epics.md` | `none` |
+| `S-20261024-165137-7` | `2026-10-24` | `2026-10-24` | `trong-hung` | `E-007` | `completed` | `epic EPIC_PROPOSED -> EPIC_READY` | `.agent/planning/epics.md` | `none` |
+| `S-20261024-165137-8` | `2026-10-24` | `2026-10-24` | `trong-hung` | `E-008` | `completed` | `epic EPIC_PROPOSED -> EPIC_READY` | `.agent/planning/epics.md` | `none` |
+| `S-20261024-165137-9` | `2026-10-24` | `2026-10-24` | `trong-hung` | `E-009` | `completed` | `epic EPIC_PROPOSED -> EPIC_READY` | `.agent/planning/epics.md` | `none` |
+| `S-20261024-165137-10` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-001` | `completed` | `task added to E-001` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165137-11` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-002` | `completed` | `task added to E-001` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165137-12` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-003` | `completed` | `task added to E-002` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165137-13` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-004` | `completed` | `task added to E-002` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165137-14` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-005` | `completed` | `task added to E-003` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165137-15` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-006` | `completed` | `task added to E-003` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165137-16` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-007` | `completed` | `task added to E-003` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165137-17` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-008` | `completed` | `task added to E-003` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-009` | `completed` | `task added to E-003` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138-2` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-010` | `completed` | `task added to E-003` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138-3` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-011` | `completed` | `task added to E-005` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138-4` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-012` | `completed` | `task added to E-005` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138-5` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-013` | `completed` | `task added to E-005` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138-6` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-014` | `completed` | `task added to E-006` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138-7` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-015` | `completed` | `task added to E-006` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138-8` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-016` | `completed` | `task added to E-004` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138-9` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-017` | `completed` | `task added to E-004` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138-10` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-018` | `completed` | `task added to E-004` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138-11` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-019` | `completed` | `task added to E-004` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138-12` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-020` | `completed` | `task added to E-007` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138-13` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-021` | `completed` | `task added to E-007` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138-14` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-022` | `completed` | `task added to E-008` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138-15` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-023` | `completed` | `task added to E-008` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138-16` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-024` | `completed` | `task added to E-009` | `.agent/execution/task-board.md` | `none` |
+| `S-20261024-165138-17` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-025` | `completed` | `task added to E-009` | `.agent/execution/task-board.md` | `none` |
