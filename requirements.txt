@@ -1,0 +1,4 @@
+# Runtime deps. Each epic adds what it needs (docling, FlagEmbedding, qdrant-client, litellm, presidio, rq, langgraph, langfuse<5, ...).
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.7

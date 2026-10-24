@@ -1,0 +1,15 @@
+# A = @caitoithap (AI/data). B = replace @TEAMMATE_B with the teammate's GitHub username.
+*                         @caitoithap @TEAMMATE_B
+/src/app/rag/             @caitoithap
+/src/app/prompts.py       @caitoithap
+/src/app/routing.py       @caitoithap
+/src/app/agent/graph.py   @caitoithap
+/eval/                    @caitoithap
+/ui/                      @caitoithap
+/src/app/main.py          @TEAMMATE_B
+/src/app/security/        @TEAMMATE_B
+/src/app/queue/           @TEAMMATE_B
+/infrastructure/          @TEAMMATE_B
+/.github/                 @TEAMMATE_B
+/src/app/contracts.py     @caitoithap @TEAMMATE_B
+/docs/04-api/             @caitoithap @TEAMMATE_B
