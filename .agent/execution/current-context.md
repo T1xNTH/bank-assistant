@@ -22,18 +22,18 @@ Expose the minimal synchronized state for currently authorized execution without
 
 ## Current State
 
-- **Context Revision**: `2`
+- **Context Revision**: `3`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-24`
 - **Updated By**: `trong-hung`
-- **Update Trigger**: `project-onboarding`
+- **Update Trigger**: `baseline-approval-and-m001-expansion`
 - **Planning Roadmap ID**: `R-001`
-- **Planning Roadmap Status**: `ROADMAP_DRAFT`
-- **Onboarding State**: `completed — awaiting DEC-001 approval`
-- **Active Epic IDs**: `none`
+- **Planning Roadmap Status**: `ROADMAP_APPROVED`
+- **Onboarding State**: `completed`
+- **Active Epic IDs**: `E-001..E-009 (EPIC_READY; coordinator moves each to EPIC_IN_PROGRESS on 2026-10-26 before its first task starts)`
 - **Active Task IDs**: `none`
 - **Active Blocker IDs**: `none`
-- **Active Decision IDs**: `DEC-001`
+- **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `none`
 - **Current Session ID**: `S-20261024-onboarding`
