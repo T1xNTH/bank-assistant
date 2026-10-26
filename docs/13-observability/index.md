@@ -9,4 +9,7 @@ priority: 3
 ---
 # Observability
 
-Document logs, metrics, traces, service-level objectives, dashboards, alerts, retention, and incident signals in this section.
+Phần này ghi lại log, metric, trace, mục tiêu mức dịch vụ (SLO), dashboard, cảnh báo, thời gian lưu giữ và các tín hiệu sự cố.
+
+## Nội dung
+- `observability.md` – Thiết kế observability (FR-10)

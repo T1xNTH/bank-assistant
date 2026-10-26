@@ -9,4 +9,4 @@ priority: 3
 ---
 # Regression Log
 
-Record regressions, suspected commits, fixes, and verification evidence. No regressions are registered yet.
+Ghi lại regression, commit bị nghi ngờ, bản sửa và bằng chứng kiểm chứng. Chưa có regression nào được ghi.

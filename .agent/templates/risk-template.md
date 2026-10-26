@@ -7,11 +7,11 @@ module: templates
 tags: [risk, template]
 priority: 2
 ---
-# Risk Template
+# Template Risk
 
 ## Usage Purpose
 
-Use this template to track an uncertain event or condition that could affect delivery, quality, security, compliance, cost, or operations.
+Dùng template này để theo dõi một sự kiện hoặc tình huống không chắc chắn có thể ảnh hưởng tới tiến độ, chất lượng, bảo mật, tuân thủ, chi phí hoặc vận hành.
 
 ## Record Metadata
 
@@ -28,7 +28,7 @@ Use this template to track an uncertain event or condition that could affect del
 
 ## Risk Statement
 
-Use the form: `If <cause>, then <event> may occur, resulting in <measurable impact>.`
+Viết theo mẫu: `If <cause>, then <event> may occur, resulting in <measurable impact>.` (Nếu <nguyên nhân> thì <sự kiện> có thể xảy ra, dẫn tới <ảnh hưởng đo được>.)
 
 ## Exposure Assessment
 
@@ -63,19 +63,19 @@ Use the form: `If <cause>, then <event> may occur, resulting in <measurable impa
 
 ## Completion Criteria
 
-- [ ] The risk is eliminated, accepted by an authorized owner, transferred, or converted to an issue after realization.
-- [ ] Final status and supporting evidence are recorded.
-- [ ] Related tasks, blockers, issues, and decisions are updated.
+- [ ] Rủi ro đã được loại bỏ, được owner có thẩm quyền chấp nhận, được chuyển giao, hoặc được chuyển thành issue sau khi xảy ra.
+- [ ] Trạng thái cuối và bằng chứng hỗ trợ đã được ghi lại.
+- [ ] Các task, blocker, issue và decision liên quan đã được cập nhật.
 
 ## Forbidden Actions
 
-- Do not close a risk solely because its review date passed.
-- Do not accept a high or critical risk without an identified authorized owner.
-- Do not use vague triggers or unowned mitigation actions.
-- Do not delete prior assessments when exposure changes.
+- Không đóng một rủi ro chỉ vì đã qua ngày review.
+- Không chấp nhận rủi ro high hoặc critical khi chưa xác định owner có thẩm quyền.
+- Không dùng điều kiện kích hoạt mơ hồ hay hành động giảm thiểu không có owner.
+- Không xoá các đánh giá trước đó khi mức độ phơi nhiễm thay đổi.
 
 ## Output Requirements
 
-- Save as `.agent/governance/risks/RISK-<number>.md`.
-- Preserve every heading in this template.
-- Use repository-relative links and exact enum values.
+- Lưu thành `.agent/governance/risks/RISK-<number>.md`.
+- Giữ nguyên mọi heading trong template này.
+- Dùng link tương đối theo repo và đúng giá trị enum.

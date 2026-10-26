@@ -7,48 +7,48 @@ module: release
 tags: [release-notes, v1.0.0, framework]
 priority: 1
 ---
-# Agentic SDLC Kit v1.0.0 Release Notes
+# Release Notes Agentic SDLC Kit v1.0.0
 
-## Release Summary
+## Tóm tắt release
 
-Version `v1.0.0` packages the repository-native Agentic SDLC Kit as a reusable framework for governed, agent-assisted software delivery.
+Phiên bản `v1.0.0` đóng gói Agentic SDLC Kit (nằm ngay trong repo) thành một framework dùng lại được cho việc phát triển phần mềm có quản trị và có agent hỗ trợ.
 
-## Architecture
+## Kiến trúc
 
-The kit separates durable operating policy, planning truth, execution state, runtime governance, evidence reports, reusable templates, project documentation, and derived intelligence. Application source, tests, scripts, and infrastructure remain explicit project-owned areas.
+Kit tách riêng: chính sách vận hành lâu dài, planning truth, trạng thái thực thi, runtime governance, report làm bằng chứng, template dùng lại, tài liệu dự án và intelligence suy ra. Mã nguồn ứng dụng, test, script và hạ tầng vẫn là những vùng rõ ràng thuộc về dự án.
 
 ## Governance
 
-Issues, blockers, change requests, decisions, and risks use dedicated runtime directories and metadata-complete templates. Approved change requests protect baselined requirements, contracts, architecture, roadmap commitments, policy, and approved scope.
+Issue, blocker, change request, decision và risk có thư mục runtime riêng và template đầy đủ metadata. Change request đã duyệt bảo vệ các thứ đã chốt baseline: yêu cầu, contract, kiến trúc, cam kết roadmap, chính sách và phạm vi đã duyệt.
 
 ## Planning
 
-Planning follows `Roadmap -> Milestone -> Epic -> Task`. Roadmaps begin in `ROADMAP_DRAFT`; tasks are expanded only from `EPIC_READY` epics and execute only under `EPIC_IN_PROGRESS`.
+Planning theo thứ tự `Roadmap -> Milestone -> Epic -> Task`. Roadmap bắt đầu ở `ROADMAP_DRAFT`; task chỉ được tách từ epic `EPIC_READY` và chỉ được thực thi khi epic ở `EPIC_IN_PROGRESS`.
 
-## Execution
+## Thực thi
 
-Current context, the task board, and append-only session history provide synchronized state and audit evidence. Explicit owners, status transitions, blockers, acceptance criteria, review, and QA control task completion.
+Current context, task board và session history (chỉ append) cung cấp trạng thái đồng bộ và bằng chứng kiểm toán. Owner rõ ràng, chuyển trạng thái, blocker, acceptance criteria, review và QA kiểm soát việc hoàn thành task.
 
 ## Intelligence
 
-Code Graph tracks modules, dependencies, API routes, database usage, and functions. Git Nexus maps commits to tasks and decisions and records regressions.
+Code Graph theo dõi module, dependency, API route, cách dùng database và function. Git Nexus ánh xạ commit với task và decision, đồng thời ghi lại các regression.
 
-## Retrieval
+## Truy xuất ngữ cảnh
 
-Context retrieval is task-driven with no fixed required reading order. Metadata and context packages bound retrieval to the active domain, module, dependencies, governance constraints, and expected outputs.
+Truy xuất ngữ cảnh theo task, không có thứ tự đọc bắt buộc cố định. Metadata và context package giới hạn phạm vi truy xuất vào domain, module, dependency, ràng buộc governance và output mong đợi của task đang làm.
 
 ## Onboarding
 
-The onboarding workflow ingests authoritative SRS, contract, and architecture inputs, validates metadata and completeness, creates blockers instead of guessing, and builds only the initial Roadmap -> Milestone -> Epic hierarchy.
+Quy trình onboarding nạp các input chính thức (SRS, contract, kiến trúc), kiểm tra metadata và độ đầy đủ, tạo blocker thay vì đoán, và chỉ dựng cây ban đầu Roadmap -> Milestone -> Epic.
 
-## Installation
+## Cài đặt
 
-Bash and PowerShell overlay installers copy only framework-owned assets into an existing project. Existing destinations are backed up with the `.backup-agentic-sdlc-kit` suffix, while project README, license, package files, source, tests, and infrastructure remain untouched.
+Installer overlay cho Bash và PowerShell chỉ copy tài sản thuộc framework vào dự án có sẵn. Đích đã tồn tại được backup với hậu tố `.backup-agentic-sdlc-kit`, còn README, license, file package, mã nguồn, test và hạ tầng của dự án được giữ nguyên.
 
-## Validation
+## Kiểm tra
 
-Run `python scripts/validate-framework.py`. A releasable framework emits `FRAMEWORK_VALIDATION_PASS`.
+Chạy `python scripts/validate-framework.py`. Framework đủ điều kiện release sẽ in `FRAMEWORK_VALIDATION_PASS`.
 
-## Compatibility
+## Tương thích
 
-This release requires Python 3.10 or later only for the validation script. The framework documentation and record model remain language- and platform-neutral.
+Release này chỉ cần Python 3.10 trở lên cho script kiểm tra. Tài liệu framework và mô hình record không phụ thuộc ngôn ngữ hay nền tảng.

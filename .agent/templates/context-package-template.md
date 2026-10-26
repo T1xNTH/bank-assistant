@@ -7,11 +7,11 @@ module: templates
 tags: [context, retrieval, template]
 priority: 1
 ---
-# Context Package Template
+# Template Context Package
 
 ## Usage Purpose
 
-Use this template to provide the minimum authoritative context required to execute one epic or task without repository-wide retrieval.
+Dùng template này để cung cấp lượng ngữ cảnh chính thức tối thiểu cần để thực thi một epic hoặc task mà không phải truy xuất toàn bộ repo.
 
 ## Record Metadata
 
@@ -28,7 +28,7 @@ Use this template to provide the minimum authoritative context required to execu
 
 ## Required Context
 
-| Path | Purpose | Authority | Required |
+| Đường dẫn | Mục đích | Thẩm quyền | Bắt buộc |
 |---|---|---|---|
 | `<repository-relative-path>` | `<specific-use>` | `source | contract | governance | report | reference` | `yes | no` |
 
@@ -57,26 +57,26 @@ Use this template to provide the minimum authoritative context required to execu
 
 ## Expected Outputs
 
-| Output | Required Path | Verification |
+| Output | Đường dẫn bắt buộc | Cách kiểm chứng |
 |---|---|---|
 | `<artifact-name>` | `<repository-relative-path>` | `<check-or-evidence>` |
 
 ## Completion Criteria
 
-- [ ] Every required path exists and is readable.
-- [ ] Content authority and purpose are recorded for every path.
-- [ ] Constraints and current state were validated on the recorded date.
-- [ ] Expected outputs map to explicit verification evidence.
+- [ ] Mọi đường dẫn bắt buộc đều tồn tại và đọc được.
+- [ ] Thẩm quyền và mục đích nội dung được ghi cho từng đường dẫn.
+- [ ] Ràng buộc và trạng thái hiện tại đã được kiểm tra vào ngày đã ghi.
+- [ ] Output mong đợi ánh xạ tới bằng chứng kiểm chứng rõ ràng.
 
 ## Forbidden Actions
 
-- Do not include secrets, credentials, personal data, or unrelated repository content.
-- Do not mark status `ready` with missing required context.
-- Do not use a `stale` or `archived` package for execution.
-- Do not substitute summaries for mandatory contracts or governance records.
+- Không đưa vào secret, credential, dữ liệu cá nhân hay nội dung repo không liên quan.
+- Không đánh dấu `ready` khi còn thiếu ngữ cảnh bắt buộc.
+- Không dùng package `stale` hoặc `archived` để thực thi.
+- Không dùng bản tóm tắt thay cho contract hay governance record bắt buộc.
 
 ## Output Requirements
 
-- Store the completed package at the task- or epic-approved path under `.agent/execution/`.
-- Use repository-relative paths only.
-- Preserve every heading and table column in this template.
+- Lưu package hoàn chỉnh tại đường dẫn đã được task hoặc epic duyệt trong `.agent/execution/`.
+- Chỉ dùng đường dẫn tương đối theo repo.
+- Giữ nguyên mọi heading và cột bảng trong template này.

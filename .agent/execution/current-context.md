@@ -7,11 +7,11 @@ module: execution
 tags: [context, execution, state]
 priority: 1
 ---
-# Current Context
+# Ngữ cảnh hiện tại (Current Context)
 
 ## Purpose
 
-Expose the minimal synchronized state for currently authorized execution without becoming a fixed or mandatory reading list.
+Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang được phép, không trở thành danh sách bắt buộc phải đọc cố định.
 
 ## Status Model
 
@@ -30,7 +30,7 @@ Expose the minimal synchronized state for currently authorized execution without
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001..E-009 (EPIC_READY; coordinator moves each to EPIC_IN_PROGRESS on 2026-10-26 before its first task starts)`
+- **Active Epic IDs**: `E-001..E-009 (EPIC_READY; coordinator chuyển từng epic sang EPIC_IN_PROGRESS vào 2026-10-26 trước khi task đầu tiên của epic bắt đầu)`
 - **Active Task IDs**: `none`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`

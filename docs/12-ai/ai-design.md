@@ -7,22 +7,22 @@ module: rag
 tags: [ai, rag, llm, prompt]
 priority: 1
 ---
-# AI Design (owner A)
+# Thiết kế AI (owner A)
 
-## Models
-| Purpose | Model | Via |
+## Model
+| Mục đích | Model | Qua |
 |---|---|---|
 | Embedding | `BAAI/bge-m3` dense + sparse (CPU) | local |
-| Rerank | `BAAI/bge-reranker-v2-m3` (CrossEncoder; scores already sigmoid) | local |
+| Rerank | `BAAI/bge-reranker-v2-m3` (CrossEncoder; điểm đã qua sigmoid) | local |
 | Chat (cloud) | alias `cloud-chat` → `gemini/<GEMINI_MODEL>` | LiteLLM |
-| Chat (local) | alias `local-chat` → `ollama_chat/qwen2.5:3b` (`local-chat-7b` optional) | LiteLLM |
-| Judge | `JUDGE_MODEL` (default = `GEMINI_MODEL`) | RAGAS |
+| Chat (local) | alias `local-chat` → `ollama_chat/qwen2.5:3b` (`local-chat-7b` tuỳ chọn) | LiteLLM |
+| Judge | `JUDGE_MODEL` (mặc định = `GEMINI_MODEL`) | RAGAS |
 
-## Retrieval modes
-`dense`, `hybrid` (RRF of dense + sparse), `hybrid_rerank` (default). `REFUSAL_THRESHOLD` on rerank score; below → refusal.
+## Các mode retrieval
+`dense`, `hybrid` (RRF của dense + sparse), `hybrid_rerank` (mặc định). `REFUSAL_THRESHOLD` áp lên điểm rerank; dưới ngưỡng → từ chối.
 
 ## Prompt
-`src/app/prompts.py`: `SYSTEM`, `build_context()`, `CANARY`, `PROMPT_VERSION`. Answer only from numbered context, cite `[n]`, otherwise return `REFUSAL`.
+`src/app/prompts.py`: `SYSTEM`, `build_context()`, `CANARY`, `PROMPT_VERSION`. Chỉ trả lời dựa trên ngữ cảnh đã đánh số, trích `[n]`, nếu không thì trả `REFUSAL`.
 
-## Evaluation
-`eval/golden.jsonl` fields: `user_input, reference, sources[{file,page}], category, difficulty, in_scope`. Report: `docs/12-ai/rag-eval-report.md`.
+## Đánh giá
+Các trường của `eval/golden.jsonl`: `user_input, reference, sources[{file,page}], category, difficulty, in_scope`. Báo cáo: `docs/12-ai/rag-eval-report.md`.

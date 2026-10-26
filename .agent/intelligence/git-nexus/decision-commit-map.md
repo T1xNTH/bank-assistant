@@ -9,4 +9,4 @@ priority: 3
 ---
 # Decision Commit Map
 
-Map decisions and change requests to commits that implement or depend on them. No decision commit mappings are registered yet.
+Ánh xạ decision và change request tới các commit hiện thực hoặc phụ thuộc vào chúng. Chưa có ánh xạ decision–commit nào được đăng ký.

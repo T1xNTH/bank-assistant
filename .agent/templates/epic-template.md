@@ -7,11 +7,11 @@ module: templates
 tags: [epic, planning, template]
 priority: 2
 ---
-# Epic Template
+# Template Epic
 
 ## Usage Purpose
 
-Use this template to define one outcome-oriented epic before task expansion begins.
+Dùng template này để định nghĩa một epic hướng tới kết quả, trước khi bắt đầu tách task.
 
 ## Record Metadata
 
@@ -26,15 +26,15 @@ Use this template to define one outcome-oriented epic before task expansion begi
 
 ## Objective
 
-State one measurable outcome and the reason it is required.
+Nêu một kết quả đo lường được và lý do cần đạt kết quả đó.
 
 ## Scope
 
-### Included
+### Bao gồm
 
 - `<required-scope-item>`
 
-### Excluded
+### Không bao gồm
 
 - `<required-exclusion-or-none>`
 
@@ -54,33 +54,33 @@ State one measurable outcome and the reason it is required.
 
 ## Acceptance Criteria
 
-- [ ] Each criterion is observable and testable.
-- [ ] Scope boundaries are explicit.
-- [ ] Dependencies and governance links are current.
-- [ ] Required reports and verification evidence are defined.
+- [ ] Mỗi tiêu chí đều quan sát được và kiểm thử được.
+- [ ] Ranh giới phạm vi được nêu rõ.
+- [ ] Dependency và governance link đang cập nhật.
+- [ ] Report bắt buộc và bằng chứng kiểm chứng đã được xác định.
 
 ## Task Expansion Rules
 
-- Create tasks only when status is `EPIC_READY`.
-- Start task execution only when status is `EPIC_IN_PROGRESS`.
-- Every task must reference this epic ID.
+- Chỉ tạo task khi trạng thái là `EPIC_READY`.
+- Chỉ bắt đầu thực thi task khi trạng thái là `EPIC_IN_PROGRESS`.
+- Mọi task phải tham chiếu tới ID của epic này.
 
 ## Completion Criteria
 
-- [ ] All linked tasks are `done` or formally cancelled.
-- [ ] Acceptance criteria are verified with linked evidence.
-- [ ] Required implementation, review, and QA reports exist.
-- [ ] Open blockers and risks have an explicit disposition.
+- [ ] Mọi task liên kết đều `done` hoặc đã được huỷ chính thức.
+- [ ] Acceptance criteria đã được kiểm chứng với bằng chứng liên kết.
+- [ ] Có đủ implementation, review và QA report bắt buộc.
+- [ ] Blocker và risk còn mở đều có hướng xử lý rõ ràng.
 
 ## Forbidden Actions
 
-- Do not expand tasks while status is `EPIC_PROPOSED`.
-- Do not mark the epic `EPIC_DONE` with unmet acceptance criteria.
-- Do not change baselined scope without an approved change request.
-- Do not record fabricated links, evidence, or completion state.
+- Không tách task khi trạng thái là `EPIC_PROPOSED`.
+- Không đánh dấu epic `EPIC_DONE` khi acceptance criteria chưa đạt.
+- Không đổi phạm vi đã chốt baseline khi chưa có change request đã duyệt.
+- Không ghi liên kết, bằng chứng hay trạng thái hoàn thành bịa đặt.
 
 ## Output Requirements
 
-- Save the completed record in `.agent/planning/epics.md` or the project-approved epic registry.
-- Preserve every heading in this template.
-- Replace every `<required...>` placeholder; use `none` only where explicitly allowed.
+- Lưu record hoàn chỉnh trong `.agent/planning/epics.md` hoặc registry epic được dự án duyệt.
+- Giữ nguyên mọi heading trong template này.
+- Thay mọi placeholder `<required...>`; chỉ dùng `none` ở chỗ được cho phép rõ ràng.

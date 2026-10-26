@@ -9,7 +9,7 @@ priority: 1
 ---
 # Plan sản phẩm `bank-assistant` theo Agentic SDLC Kit: MVP 2 tuần, team 2 người
 
-## Context
+## Bối cảnh
 Lịch học đã xong và nằm trong app (`~/study-app`). Plan này **độc lập**, chỉ để build sản phẩm.
 - **Team:** A (bạn) làm AI/dữ liệu; B (bạn kia, giỏi hơn) làm nền tảng/hạ tầng/bảo mật. Mỗi người ~8h/ngày, dùng Claude Code.
 - **Mục tiêu:** MVP đủ chức năng sau 10 ngày làm việc, không cắt bớt.
@@ -112,7 +112,7 @@ Theo `project-onboarding-prompt.md`: điền nội dung thật, có frontmatter 
 ## Bước 6: Bàn giao GitHub (cần bạn xác nhận lúc làm)
 `gh repo create` (private), push, mời collaborator, bật branch protection (1 review + CI xanh).
 
-## Verification
+## Kiểm chứng
 - `python3 scripts/validate-framework.py` → `FRAMEWORK_VALIDATION_PASS` (chạy cả trong CI).
 - `pytest` + `ruff` xanh trên khung: `/health`, contracts, `/ask` với `RAG_BACKEND=fake`.
 - Roadmap/milestones/epics/dependency-graph tham chiếu được lẫn nhau. Chưa có task nào trước khi epic ở `EPIC_READY`.

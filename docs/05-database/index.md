@@ -7,11 +7,11 @@ module: repository
 tags: [database, schema, migrations]
 priority: 3
 ---
-# Database
+# Cơ sở dữ liệu
 
-This section covers database schema, migrations, and data access patterns.
+Phần này mô tả database schema, migration và các mẫu truy cập dữ liệu.
 
-## Contents
+## Nội dung
 - `schema.md` – Database schema
-- `migrations.md` – Migration strategy
-- `queries.md` – Common queries
+- `migrations.md` – Chiến lược migration
+- `queries.md` – Các truy vấn thường dùng

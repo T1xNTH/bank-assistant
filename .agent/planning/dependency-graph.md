@@ -7,11 +7,11 @@ module: planning
 tags: [dependencies, epics, milestones]
 priority: 2
 ---
-# Dependency Graph
+# Đồ thị phụ thuộc
 
 ## Purpose
 
-Maintain the authoritative directed relationships that constrain roadmap items, milestones, epics, and tasks.
+Lưu các quan hệ phụ thuộc có hướng chính thức, ràng buộc thứ tự giữa roadmap item, milestone, epic và task.
 
 ## Status Model
 
@@ -19,7 +19,7 @@ Maintain the authoritative directed relationships that constrain roadmap items, 
 
 ## Dependency Records
 
-| Edge ID | Dependent ID | Prerequisite ID | Type | Owner | Status | Evidence | Governance Link |
+| Edge ID | ID phụ thuộc | ID tiên quyết | Loại | Owner | Trạng thái | Bằng chứng | Governance link |
 |---|---|---|---|---|---|---|---|
 
 | `EDGE-001` | `M-002` | `M-001` | `milestone` | `trong-hung` | `active` | `.agent/planning/epics.md` | `none` |

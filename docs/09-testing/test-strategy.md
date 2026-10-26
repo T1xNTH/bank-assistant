@@ -7,15 +7,15 @@ module: tests
 tags: [testing, pytest, eval]
 priority: 2
 ---
-# Test Strategy
+# Chiến lược kiểm thử
 
-| Layer | Tool | Where | Runs in |
+| Tầng | Công cụ | Vị trí | Chạy ở đâu |
 |---|---|---|---|
-| Unit | pytest | `tests/unit/` | CI on every PR |
-| API | pytest + FastAPI TestClient, fake backends | `tests/api/` | CI on every PR |
-| Security | pytest (RBAC leakage, PII scan, injection, HITL) | `tests/security/` | CI on every PR |
-| Framework | `scripts/validate-framework.py`, `tests/framework/` | | CI on every PR |
-| Integration | pytest marker `integration` (needs compose) | `tests/integration/` | locally / release QA |
-| Quality | RAGAS + custom metrics on `eval/golden.jsonl` | `eval/` | CI `eval` job (subset) + release QA (full) |
+| Unit | pytest | `tests/unit/` | CI ở mọi PR |
+| API | pytest + FastAPI TestClient, backend fake | `tests/api/` | CI ở mọi PR |
+| Bảo mật | pytest (rò RBAC, quét PII, injection, HITL) | `tests/security/` | CI ở mọi PR |
+| Framework | `scripts/validate-framework.py`, `tests/framework/` | | CI ở mọi PR |
+| Tích hợp | pytest marker `integration` (cần compose) | `tests/integration/` | local / release QA |
+| Chất lượng | RAGAS + chỉ số tự định nghĩa trên `eval/golden.jsonl` | `eval/` | job `eval` trong CI (tập con) + release QA (đầy đủ) |
 
-Rules: TDD for logic; fakes from `tests/fakes.py` instead of mocks of internals; test output must be clean; NFR thresholds live in `eval/thresholds.json`.
+Quy tắc: TDD cho phần logic; dùng fake trong `tests/fakes.py` thay vì mock phần nội bộ; output của test phải sạch; ngưỡng NFR nằm trong `eval/thresholds.json`.

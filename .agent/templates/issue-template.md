@@ -7,11 +7,11 @@ module: templates
 tags: [issue, template]
 priority: 3
 ---
-# Issue Template
+# Template Issue
 
 ## Usage Purpose
 
-Use this template to record a defect, gap, inconsistency, or actionable concern requiring tracked resolution.
+Dùng template này để ghi lại một lỗi, khoảng trống, điểm không nhất quán hoặc mối lo cần xử lý và được theo dõi.
 
 ## Record Metadata
 
@@ -27,7 +27,7 @@ Use this template to record a defect, gap, inconsistency, or actionable concern 
 
 ## Description
 
-State the observed condition in factual, reproducible terms.
+Mô tả tình trạng quan sát được một cách khách quan và tái hiện được.
 
 ## Impact
 
@@ -53,9 +53,9 @@ State the observed condition in factual, reproducible terms.
 
 ## Acceptance Criteria
 
-- [ ] Root cause or disposition is documented.
-- [ ] Corrective outcome is defined in observable terms.
-- [ ] Regression verification is defined when applicable.
+- [ ] Nguyên nhân gốc hoặc hướng xử lý đã được ghi lại.
+- [ ] Kết quả khắc phục được định nghĩa bằng điều kiện quan sát được.
+- [ ] Cách kiểm tra regression được định nghĩa khi cần.
 
 ## Resolution
 
@@ -67,19 +67,19 @@ State the observed condition in factual, reproducible terms.
 
 ## Completion Criteria
 
-- [ ] Acceptance criteria pass or an approved disposition exists.
-- [ ] Resolution evidence is linked.
-- [ ] Related task, risk, blocker, and regression records are updated.
+- [ ] Acceptance criteria đạt hoặc đã có hướng xử lý được duyệt.
+- [ ] Bằng chứng giải quyết đã được liên kết.
+- [ ] Các record task, risk, blocker và regression liên quan đã được cập nhật.
 
 ## Forbidden Actions
 
-- Do not close an issue without resolution evidence or an approved disposition.
-- Do not delete history when status or ownership changes.
-- Do not combine unrelated concerns in one issue record.
-- Do not fabricate reproduction or verification evidence.
+- Không đóng issue khi chưa có bằng chứng giải quyết hoặc hướng xử lý được duyệt.
+- Không xoá lịch sử khi trạng thái hay owner thay đổi.
+- Không gộp các vấn đề không liên quan vào một issue.
+- Không bịa bằng chứng tái hiện hay kiểm chứng.
 
 ## Output Requirements
 
-- Save as `.agent/governance/issues/ISSUE-<number>.md`.
-- Preserve every heading in this template.
-- Use repository-relative links and exact enum values.
+- Lưu thành `.agent/governance/issues/ISSUE-<number>.md`.
+- Giữ nguyên mọi heading trong template này.
+- Dùng link tương đối theo repo và đúng giá trị enum.

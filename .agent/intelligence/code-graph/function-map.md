@@ -9,4 +9,4 @@ priority: 3
 ---
 # Function Map
 
-Catalog important functions, entry points, call relationships, and ownership. No functions are registered yet.
+Danh mục các function quan trọng, entry point, quan hệ gọi hàm và owner. Chưa có function nào được đăng ký.

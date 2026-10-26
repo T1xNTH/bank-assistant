@@ -9,4 +9,4 @@ priority: 3
 ---
 # Database Usage
 
-Catalog database entities, access paths, migrations, and ownership. No database usage is registered yet.
+Danh mục entity database, đường truy cập, migration và owner. Chưa có mục sử dụng database nào được đăng ký.

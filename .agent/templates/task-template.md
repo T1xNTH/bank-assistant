@@ -7,11 +7,11 @@ module: templates
 tags: [task, execution, template]
 priority: 2
 ---
-# Task Template
+# Template Task
 
 ## Usage Purpose
 
-Use this template to define one bounded, independently verifiable unit of authorized epic work.
+Dùng template này để định nghĩa một đơn vị công việc có giới hạn rõ, kiểm chứng độc lập được, thuộc một epic đã được phép.
 
 ## Record Metadata
 
@@ -26,23 +26,23 @@ Use this template to define one bounded, independently verifiable unit of author
 
 ## Objective
 
-State the single deliverable or state change this task must produce.
+Nêu một sản phẩm duy nhất hoặc một thay đổi trạng thái mà task này phải tạo ra.
 
 ## Scope
 
-### Included
+### Bao gồm
 
 - `<required-work-item>`
 
-### Excluded
+### Không bao gồm
 
 - `<required-exclusion-or-none>`
 
 ## Preconditions
 
-- [ ] Parent epic status is `EPIC_IN_PROGRESS`.
-- [ ] Required context package is available.
-- [ ] Dependencies, approvals, and access are available.
+- [ ] Epic cha đang ở trạng thái `EPIC_IN_PROGRESS`.
+- [ ] Đã có context package cần thiết.
+- [ ] Đã có đủ dependency, phê duyệt và quyền truy cập.
 
 ## Related Files
 
@@ -56,7 +56,7 @@ State the single deliverable or state change this task must produce.
 ## Acceptance Criteria
 
 - [ ] `<required-observable-condition>`
-- [ ] Verification method is specified for each condition.
+- [ ] Mỗi điều kiện đều có cách kiểm chứng được nêu rõ.
 
 ## Verification Requirements
 
@@ -66,20 +66,20 @@ State the single deliverable or state change this task must produce.
 
 ## Completion Criteria
 
-- [ ] Every acceptance criterion passes.
-- [ ] Required reports are stored in `.agent/reports/`.
-- [ ] Implementing commits are recorded in `.agent/intelligence/git-nexus/task-commit-map.md`.
-- [ ] Current context and task board reflect the final status.
+- [ ] Mọi acceptance criterion đều đạt.
+- [ ] Các report bắt buộc được lưu trong `.agent/reports/`.
+- [ ] Các commit hiện thực được ghi trong `.agent/intelligence/git-nexus/task-commit-map.md`.
+- [ ] Current context và task board phản ánh trạng thái cuối cùng.
 
 ## Forbidden Actions
 
-- Do not perform work outside the stated scope.
-- Do not execute without an authorized parent epic.
-- Do not mark status `done` before verification completes.
-- Do not fabricate test, review, report, or commit evidence.
+- Không làm việc ngoài phạm vi đã nêu.
+- Không thực thi khi không có epic cha đã được phép.
+- Không đánh dấu `done` trước khi kiểm chứng xong.
+- Không bịa bằng chứng test, review, report hay commit.
 
 ## Output Requirements
 
-- Register the task in `.agent/execution/task-board.md`.
-- Preserve every heading in this template.
-- Replace every `<required...>` placeholder; use `none` only where explicitly allowed.
+- Đăng ký task trong `.agent/execution/task-board.md`.
+- Giữ nguyên mọi heading trong template này.
+- Thay mọi placeholder `<required...>`; chỉ dùng `none` ở chỗ được cho phép rõ ràng.

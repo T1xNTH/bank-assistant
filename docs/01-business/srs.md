@@ -7,85 +7,85 @@ module: repository
 tags: [srs, requirements, mvp]
 priority: 1
 ---
-# Software Requirements Specification — bank-assistant MVP
+# Đặc tả yêu cầu phần mềm (SRS) — bank-assistant MVP
 
-## Input Status
+## Trạng thái input
 
 - **Status**: `ingested`
 - **Authority**: `draft — pending approval in DEC-001`
-- **Source Artifact**: `docs/00-project/product-plan.md` (approved by product owner 2026-10-24)
+- **Source Artifact**: `docs/00-project/product-plan.md` (product owner duyệt ngày 2026-10-24)
 - **Ingested Date**: `2026-10-24`
-- **Validated By**: `trong-hung` (A), `teammate-b` (B) — cross-review required before DEC-001
+- **Validated By**: `trong-hung` (A), `teammate-b` (B) — cần review chéo trước DEC-001
 
-## Objectives
+## Mục tiêu
 
-An internal assistant for bank staff that answers questions **only from internal documents**, always cites file and page, refuses when the answer is not in the documents, respects department permissions, never leaks personal data, and can perform a small set of actions (loan calculation, transaction lookup, ticket creation) with a human approval step. It is API-first and integrates with workflow automation (n8n).
+Trợ lý nội bộ cho nhân viên ngân hàng, trả lời câu hỏi **chỉ dựa trên tài liệu nội bộ**, luôn trích file và số trang, từ chối khi tài liệu không có câu trả lời, tôn trọng phân quyền theo phòng ban, không bao giờ làm lộ dữ liệu cá nhân, và có thể thực hiện một số thao tác nhỏ (tính lãi vay, tra cứu giao dịch, tạo ticket) với một bước duyệt bởi con người. Hệ thống theo hướng API-first và tích hợp với công cụ tự động hoá workflow (n8n).
 
-## Scope
+## Phạm vi
 
-### Included (MVP)
-FR-01 … FR-12 below. All must be delivered — no scope cut (product owner decision, 2026-10-24).
+### Bao gồm (MVP)
+FR-01 … FR-12 bên dưới. Phải giao đủ tất cả — không cắt phạm vi (quyết định của product owner, 2026-10-24).
 
-### Excluded (MVP)
-- SSO/OIDC, secret manager (Vault), TLS termination, multi-replica HA, alerting/on-call, load testing, penetration testing, data-retention automation, prompt/model A/B. Out of MVP by product-owner decision (2026-10-24).
-- Real customer data. Only public documents and synthetic data are used.
+### Không bao gồm (MVP)
+- SSO/OIDC, secret manager (Vault), TLS termination, HA nhiều replica, cảnh báo/trực on-call, load test, penetration test, tự động hoá lưu giữ dữ liệu, A/B prompt/model. Nằm ngoài MVP theo quyết định của product owner (2026-10-24).
+- Dữ liệu khách hàng thật. Chỉ dùng tài liệu công khai và dữ liệu tổng hợp (synthetic).
 
-## Stakeholders and User Classes
+## Stakeholder và nhóm người dùng
 
-| Class | Description | Department values |
+| Nhóm | Mô tả | Giá trị department |
 |---|---|---|
-| Staff user | Asks questions, uses the agent | `public`, `credit`, `hr` |
-| Approver | Approves sensitive agent actions (`tao_ticket`) and n8n replies | role `approver` |
-| Operator | Runs the stack, reads traces and cost | team members |
-| Integrator | n8n workflows calling the API | service API key |
+| Nhân viên | Đặt câu hỏi, dùng agent | `public`, `credit`, `hr` |
+| Người duyệt | Duyệt các hành động nhạy cảm của agent (`tao_ticket`) và phản hồi từ n8n | role `approver` |
+| Vận hành | Chạy hệ thống, xem trace và chi phí | thành viên team |
+| Tích hợp | Workflow n8n gọi API | API key dịch vụ |
 
-## Functional Requirements
+## Yêu cầu chức năng
 
-| ID | Requirement | Acceptance (summary) |
+| ID | Yêu cầu | Tiêu chí chấp nhận (tóm tắt) |
 |---|---|---|
-| FR-01 | Ingest PDFs (docling, tables + OCR) → chunk → bge-m3 dense + sparse → Qdrant, with payload `source, page, department, classification, effective_date, superseded_by` | `scripts/ingest.py` indexes ≥ 30 public PDFs; every point has all payload fields |
-| FR-02 | `POST /ask`: hybrid retrieval (dense + sparse, RRF) + bge-reranker-v2-m3, answer with citations (file, page), refuse below threshold, never cite superseded documents | Answer JSON matches contract; out-of-scope → refusal text; superseded doc never cited |
-| FR-03 | Evaluation harness: 50-question golden set, RAGAS metrics, compare modes `dense`, `hybrid`, `hybrid_rerank`, written report | `eval/` runner produces `docs/12-ai/rag-eval-report.md` |
-| FR-04 | LLM gateway via LiteLLM (Gemini + Ollama Qwen2.5 Q4); sensitive input routed to local model | `route` field shows `local` when PII/confidential detected |
-| FR-05 | API-key auth (hashed keys) → `User(user_id, department, role)`; RBAC filter on retrieval; audit log of who asked what, when | User of `credit` never receives `hr` chunks (tests) |
-| FR-06 | PII masking (Presidio + VN regex: CCCD, account number, phone) on input, output, logs, traces, queue payloads | No raw PII in logs/traces/queue (tests) |
-| FR-07 | LangGraph agent with tools `tinh_lai_vay`, `tra_cuu_giao_dich` (SQLite read-only), `tao_ticket` (human approval via interrupt) | `tao_ticket` never executes without approver decision |
-| FR-08 | n8n workflows: intake → classify → `/ask` → approval → reply; error workflow | Workflow JSON exported in `infrastructure/n8n/workflows/` |
-| FR-09 | Job queue (Redis + RQ): `POST /ask/jobs` → 202, `GET /ask/jobs/{id}`; worker rate limit, retry/backoff on 429, priority, max queue length → 503, per-key rate limit, owner-only results | Burst over Gemini RPM completes without user-visible errors |
-| FR-10 | Observability with Langfuse: traces, tokens, cost, latency p95, queue wait vs processing; `POST /feedback` | Dashboard shows the listed metrics |
-| FR-11 | Delivery: CI (ruff, pytest, framework validation, eval gate, trivy), compose profiles, Qdrant backup/restore | Fresh clone → `make up` works; CI fails when eval drops below threshold |
-| FR-12 | Demo chat UI (Streamlit, role selector) and documentation (README, architecture, ADRs) | Demo script runs end to end |
+| FR-01 | Nạp PDF (docling, bảng + OCR) → chunk → bge-m3 dense + sparse → Qdrant, payload gồm `source, page, department, classification, effective_date, superseded_by` | `scripts/ingest.py` index ≥ 30 PDF công khai; mọi point có đủ các trường payload |
+| FR-02 | `POST /ask`: retrieval lai (dense + sparse, RRF) + bge-reranker-v2-m3, trả lời kèm trích dẫn (file, trang), từ chối khi dưới ngưỡng, không bao giờ trích tài liệu đã bị thay thế | JSON trả lời khớp contract; câu ngoài phạm vi → câu từ chối; tài liệu bị thay thế không bao giờ được trích |
+| FR-03 | Bộ đánh giá: golden set 50 câu, chỉ số RAGAS, so sánh các mode `dense`, `hybrid`, `hybrid_rerank`, có báo cáo viết | Runner trong `eval/` tạo ra `docs/12-ai/rag-eval-report.md` |
+| FR-04 | LLM gateway qua LiteLLM (Gemini + Ollama Qwen2.5 Q4); input nhạy cảm được route sang model local | Trường `route` là `local` khi phát hiện PII/tài liệu mật |
+| FR-05 | Xác thực bằng API key (key được hash) → `User(user_id, department, role)`; RBAC filter khi retrieval; audit log ai hỏi gì, lúc nào | User phòng `credit` không bao giờ nhận chunk của `hr` (có test) |
+| FR-06 | Che PII (Presidio + regex VN: CCCD, số tài khoản, số điện thoại) ở input, output, log, trace, payload hàng chờ | Không có PII gốc trong log/trace/hàng chờ (có test) |
+| FR-07 | Agent LangGraph với các tool `tinh_lai_vay`, `tra_cuu_giao_dich` (SQLite chỉ đọc), `tao_ticket` (người duyệt qua interrupt) | `tao_ticket` không bao giờ chạy khi chưa có quyết định của người duyệt |
+| FR-08 | Workflow n8n: tiếp nhận → phân loại → `/ask` → duyệt → phản hồi; workflow xử lý lỗi | JSON workflow được export vào `infrastructure/n8n/workflows/` |
+| FR-09 | Hàng chờ (Redis + RQ): `POST /ask/jobs` → 202, `GET /ask/jobs/{id}`; giới hạn tốc độ worker, retry/backoff khi 429, priority, vượt độ dài hàng chờ tối đa → 503, rate limit theo key, chỉ owner được xem kết quả | Burst vượt RPM của Gemini vẫn hoàn tất mà người dùng không thấy lỗi |
+| FR-10 | Observability bằng Langfuse: trace, token, chi phí, latency p95, thời gian chờ trong hàng vs thời gian xử lý; `POST /feedback` | Dashboard hiển thị các chỉ số đã liệt kê |
+| FR-11 | Bàn giao: CI (ruff, pytest, framework validation, eval gate, trivy), compose profiles, backup/restore Qdrant | Clone mới → `make up` chạy được; CI fail khi eval tụt dưới ngưỡng |
+| FR-12 | UI chat demo (Streamlit, chọn role) và tài liệu (README, kiến trúc, ADR) | Kịch bản demo chạy trọn từ đầu đến cuối |
 
-## Non-Functional Requirements
+## Yêu cầu phi chức năng
 
-| ID | Requirement | Threshold | Verified by |
+| ID | Yêu cầu | Ngưỡng | Kiểm chứng bằng |
 |---|---|---|---|
-| NFR-01 | Faithfulness | ≥ 0.80 | RAGAS on golden set |
+| NFR-01 | Faithfulness | ≥ 0.80 | RAGAS trên golden set |
 | NFR-02 | Retrieval hit@5 | ≥ 0.75 | eval runner |
-| NFR-03 | Correct refusal on out-of-scope questions | ≥ 90 % | eval runner |
-| NFR-04 | Answers with at least one citation (in-scope) | 100 % | eval runner |
-| NFR-05 | Raw PII in logs, traces, queue | 0 occurrences | tests + log scan |
-| NFR-06 | RBAC leakage across departments | 0 cases | tests |
-| NFR-07 | `tao_ticket` executed with approval | 100 % | tests |
-| NFR-08 | `/ask` latency p95 with Gemini | < 10 s | Langfuse |
-| NFR-09 | Provider 429 under burst | 0 user-visible failures (jobs queued and retried) | queue test |
-| NFR-10 | Reproducible run | fresh clone → `make up` healthy | release QA |
+| NFR-03 | Từ chối đúng với câu hỏi ngoài phạm vi | ≥ 90 % | eval runner |
+| NFR-04 | Câu trả lời (trong phạm vi) có ít nhất một trích dẫn | 100 % | eval runner |
+| NFR-05 | PII gốc trong log, trace, hàng chờ | 0 lần | test + quét log |
+| NFR-06 | Rò RBAC giữa các phòng ban | 0 trường hợp | test |
+| NFR-07 | `tao_ticket` chạy có duyệt | 100 % | test |
+| NFR-08 | Latency p95 của `/ask` với Gemini | < 10 s | Langfuse |
+| NFR-09 | Provider trả 429 khi burst | 0 lỗi người dùng thấy (job được xếp hàng và retry) | test hàng chờ |
+| NFR-10 | Chạy tái lập được | clone mới → `make up` healthy | release QA |
 
-## Assumptions and Constraints
+## Giả định và ràng buộc
 
-- Team of two, ~8 h/day each, 10 working days; Claude Code as executor agent.
-- Machines: CPU only (no GPU), 15 GB RAM; Docker must be installed on day 1.
-- Gemini free tier (rate-limited); local model via Ollama on CPU (slow, demo-grade).
+- Team 2 người, mỗi người ~8 h/ngày, 10 ngày làm việc; Claude Code là executor agent.
+- Máy: chỉ CPU (không GPU), RAM 15 GB; Docker phải được cài trong ngày 1.
+- Gemini bản free (bị giới hạn tốc độ); model local qua Ollama trên CPU (chậm, đủ để demo).
 - Python 3.10+.
 
 ## Related Files
 
 - Contract: `docs/04-api/contract.md`
-- Architecture: `docs/02-architecture/architecture.md`
+- Kiến trúc: `docs/02-architecture/architecture.md`
 - Roadmap: `.agent/planning/roadmap.md`
-- Epic registry: `.agent/planning/epics.md`
+- Danh sách epic: `.agent/planning/epics.md`
 
 ## Forbidden Actions
 
-- Do not change FR/NFR after DEC-001 is accepted without an approved change request.
-- Do not use real customer data.
+- Không đổi FR/NFR sau khi DEC-001 được chấp nhận nếu chưa có change request đã duyệt.
+- Không dùng dữ liệu khách hàng thật.

@@ -7,7 +7,7 @@ module: risks
 tags: [risk, external]
 priority: 2
 ---
-# RISK-003: Gemini free-tier rate limits
+# RISK-003: Giới hạn tốc độ của Gemini bản free
 
 ## Record Metadata
 
@@ -24,13 +24,13 @@ priority: 2
 
 ## Risk Statement
 
-If Gemini returns 429 under eval or demo load, then runs fail, resulting in missing eval numbers and failed demos.
+Nếu Gemini trả 429 khi chạy eval hoặc demo thì các lượt chạy fail, dẫn tới thiếu số liệu eval và demo hỏng.
 
 ## Exposure Assessment
 
 - **Affected Scope**: `E-008, E-009, E-014`
-- **Impact Description**: schedule slip against the 10-day MVP window.
-- **Detection Signals**: 429 errors in logs
+- **Impact Description**: trễ tiến độ so với khung 10 ngày của MVP.
+- **Detection Signals**: lỗi 429 trong log
 - **Assumptions**: `none`
 
 ## Related Files
@@ -44,9 +44,9 @@ If Gemini returns 429 under eval or demo load, then runs fail, resulting in miss
 ## Response Plan
 
 - **Strategy**: `mitigate`
-- **Mitigation Actions**: Queue with token-bucket worker and backoff (E-009); judge with low concurrency; cache eval answers.
-- **Contingency Actions**: Fall back to local model for non-judge calls.
-- **Trigger Threshold**: > 5 % calls with 429
+- **Mitigation Actions**: Dùng hàng chờ với worker token-bucket và backoff (E-009); chạy judge với độ song song thấp; cache câu trả lời eval.
+- **Contingency Actions**: Chuyển sang model local cho các lời gọi không phải judge.
+- **Trigger Threshold**: > 5 % lời gọi bị 429
 - **Responsible Owner**: `teammate-b`
 
 ## Review Record
@@ -59,19 +59,19 @@ If Gemini returns 429 under eval or demo load, then runs fail, resulting in miss
 
 ## Completion Criteria
 
-- [ ] The risk is eliminated, accepted by an authorized owner, transferred, or converted to an issue after realization.
-- [ ] Final status and supporting evidence are recorded.
-- [ ] Related tasks, blockers, issues, and decisions are updated.
+- [ ] Rủi ro đã được loại bỏ, được owner có thẩm quyền chấp nhận, được chuyển giao, hoặc được chuyển thành issue sau khi xảy ra.
+- [ ] Trạng thái cuối và bằng chứng hỗ trợ đã được ghi lại.
+- [ ] Các task, blocker, issue và decision liên quan đã được cập nhật.
 
 ## Forbidden Actions
 
-- Do not close a risk solely because its review date passed.
-- Do not accept a high or critical risk without an identified authorized owner.
-- Do not use vague triggers or unowned mitigation actions.
-- Do not delete prior assessments when exposure changes.
+- Không đóng một rủi ro chỉ vì đã qua ngày review.
+- Không chấp nhận rủi ro high hoặc critical khi chưa xác định owner có thẩm quyền.
+- Không dùng điều kiện kích hoạt mơ hồ hay hành động giảm thiểu không có owner.
+- Không xoá các đánh giá trước đó khi mức độ phơi nhiễm thay đổi.
 
 ## Output Requirements
 
-- Save as `.agent/governance/risks/RISK-003.md`.
-- Preserve every heading in this template.
-- Use repository-relative links and exact enum values.
+- Lưu thành `.agent/governance/risks/RISK-003.md`.
+- Giữ nguyên mọi heading trong template này.
+- Dùng link tương đối theo repo và đúng giá trị enum.

@@ -9,4 +9,4 @@ priority: 3
 ---
 # Dependencies
 
-Map internal and external module dependencies, direction, purpose, and constraints. No application dependencies are registered yet.
+Ánh xạ dependency nội bộ và bên ngoài giữa các module: chiều phụ thuộc, mục đích và ràng buộc. Chưa có dependency ứng dụng nào được đăng ký.

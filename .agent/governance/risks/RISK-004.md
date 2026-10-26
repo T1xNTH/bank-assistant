@@ -7,7 +7,7 @@ module: risks
 tags: [risk, delivery]
 priority: 2
 ---
-# RISK-004: Agent token limits interrupt execution
+# RISK-004: Giới hạn token của agent làm gián đoạn thực thi
 
 ## Record Metadata
 
@@ -24,13 +24,13 @@ priority: 2
 
 ## Risk Statement
 
-If Claude Code usage limits are hit mid-task, then work stops, resulting in idle hours and half-finished branches.
+Nếu chạm giới hạn sử dụng Claude Code giữa chừng task thì công việc dừng lại, dẫn tới mất giờ làm và nhánh dở dang.
 
 ## Exposure Assessment
 
 - **Affected Scope**: `all epics`
-- **Impact Description**: schedule slip against the 10-day MVP window.
-- **Detection Signals**: usage warnings at 80 %
+- **Impact Description**: trễ tiến độ so với khung 10 ngày của MVP.
+- **Detection Signals**: cảnh báo sử dụng ở mức 80 %
 - **Assumptions**: `none`
 
 ## Related Files
@@ -44,9 +44,9 @@ If Claude Code usage limits are hit mid-task, then work stops, resulting in idle
 ## Response Plan
 
 - **Strategy**: `mitigate`
-- **Mitigation Actions**: Tasks ≤ half a day; commit WIP and update implementation report before limits; partner can continue.
-- **Contingency Actions**: Swap tasks between A and B.
-- **Trigger Threshold**: usage > 80 % of window
+- **Mitigation Actions**: Task ≤ nửa ngày; commit WIP và cập nhật implementation report trước khi chạm giới hạn; người kia có thể làm tiếp.
+- **Contingency Actions**: Đổi task giữa A và B.
+- **Trigger Threshold**: mức dùng > 80 % của khung giới hạn
 - **Responsible Owner**: `trong-hung`
 
 ## Review Record
@@ -59,19 +59,19 @@ If Claude Code usage limits are hit mid-task, then work stops, resulting in idle
 
 ## Completion Criteria
 
-- [ ] The risk is eliminated, accepted by an authorized owner, transferred, or converted to an issue after realization.
-- [ ] Final status and supporting evidence are recorded.
-- [ ] Related tasks, blockers, issues, and decisions are updated.
+- [ ] Rủi ro đã được loại bỏ, được owner có thẩm quyền chấp nhận, được chuyển giao, hoặc được chuyển thành issue sau khi xảy ra.
+- [ ] Trạng thái cuối và bằng chứng hỗ trợ đã được ghi lại.
+- [ ] Các task, blocker, issue và decision liên quan đã được cập nhật.
 
 ## Forbidden Actions
 
-- Do not close a risk solely because its review date passed.
-- Do not accept a high or critical risk without an identified authorized owner.
-- Do not use vague triggers or unowned mitigation actions.
-- Do not delete prior assessments when exposure changes.
+- Không đóng một rủi ro chỉ vì đã qua ngày review.
+- Không chấp nhận rủi ro high hoặc critical khi chưa xác định owner có thẩm quyền.
+- Không dùng điều kiện kích hoạt mơ hồ hay hành động giảm thiểu không có owner.
+- Không xoá các đánh giá trước đó khi mức độ phơi nhiễm thay đổi.
 
 ## Output Requirements
 
-- Save as `.agent/governance/risks/RISK-004.md`.
-- Preserve every heading in this template.
-- Use repository-relative links and exact enum values.
+- Lưu thành `.agent/governance/risks/RISK-004.md`.
+- Giữ nguyên mọi heading trong template này.
+- Dùng link tương đối theo repo và đúng giá trị enum.

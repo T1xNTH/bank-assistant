@@ -7,50 +7,50 @@ module: prompts
 tags: [prompt, roadmap, governance]
 priority: 1
 ---
-# Roadmap Lock Prompt
+# Prompt chốt roadmap
 
 ## Role
 
-Act as the `governance` role responsible for deciding whether a draft roadmap may become an approved baseline.
+Đóng vai `governance`, chịu trách nhiệm quyết định một roadmap nháp có được trở thành baseline đã duyệt hay không.
 
 ## Responsibilities
 
-- Verify authoritative SRS, contract, and architecture approval state.
-- Verify roadmap, milestone, epic, and dependency consistency.
-- Confirm ownership, scope boundaries, acceptance criteria, and blocker disposition.
-- Record the approval or rejection with evidence and synchronize planning state.
+- Kiểm tra trạng thái phê duyệt của SRS, contract và kiến trúc chính thức.
+- Kiểm tra tính nhất quán giữa roadmap, milestone, epic và dependency.
+- Xác nhận quyền sở hữu, ranh giới phạm vi, acceptance criteria và cách xử lý blocker.
+- Ghi lại việc duyệt hoặc từ chối kèm bằng chứng và đồng bộ trạng thái planning.
 
 ## Required Inputs
 
-- Roadmap in `ROADMAP_DRAFT`
-- Linked milestones, epics, dependency graph, input documents, blockers, risks, decisions, and change requests
-- Independent validation output
+- Roadmap ở `ROADMAP_DRAFT`
+- Milestone, epic, dependency graph, tài liệu input, blocker, risk, decision và change request liên quan
+- Output kiểm tra độc lập
 
 ## Allowed Actions
 
-- Create a decision record from `.agent/templates/decision-template.md`.
-- Transition `ROADMAP_DRAFT -> ROADMAP_APPROVED` when every approval condition passes.
-- Keep the roadmap in `ROADMAP_DRAFT` or set `ROADMAP_BLOCKED` when evidence is insufficient.
-- Update current context and append a governance session record.
+- Tạo decision record từ `.agent/templates/decision-template.md`.
+- Chuyển `ROADMAP_DRAFT -> ROADMAP_APPROVED` khi mọi điều kiện duyệt đều đạt.
+- Giữ roadmap ở `ROADMAP_DRAFT` hoặc đặt `ROADMAP_BLOCKED` khi bằng chứng chưa đủ.
+- Cập nhật current context và append một governance session record.
 
 ## Forbidden Actions
 
-- Do not approve a roadmap with unresolved input blockers or unapproved authoritative documents.
-- Do not alter requirements, contracts, architecture, lifecycle definitions, or roadmap scope during approval.
-- Do not generate or start tasks.
-- Do not self-approve when separation of duties requires an independent approver.
+- Không duyệt roadmap khi còn input blocker chưa giải quyết hoặc tài liệu chính thức chưa được duyệt.
+- Không sửa yêu cầu, contract, kiến trúc, định nghĩa lifecycle hay phạm vi roadmap trong lúc duyệt.
+- Không sinh hay bắt đầu task.
+- Không tự duyệt khi nguyên tắc phân tách nhiệm vụ yêu cầu người duyệt độc lập.
 
 ## Required Outputs
 
-- Approval decision record with approver, date, evidence, and rationale
-- Roadmap status update when authorized
-- Synchronized current context and session history
-- Validation result and unresolved conditions list
+- Decision record phê duyệt gồm người duyệt, ngày, bằng chứng và lý do
+- Cập nhật trạng thái roadmap khi được phép
+- Current context và session history đã đồng bộ
+- Kết quả kiểm tra và danh sách điều kiện chưa giải quyết
 
 ## Validation Rules
 
-- Only exact roadmap enum values are used.
-- Every roadmap milestone and epic reference resolves.
-- Dependency graph contains no undefined IDs, self-dependencies, or cycles.
-- Approval evidence is explicit; absence of evidence is not approval.
-- Validation must print `FRAMEWORK_VALIDATION_PASS` before roadmap approval.
+- Chỉ dùng đúng các giá trị enum của roadmap.
+- Mọi tham chiếu milestone và epic trong roadmap đều trỏ tới record có thật.
+- Dependency graph không chứa ID chưa định nghĩa, tự phụ thuộc hay vòng lặp.
+- Bằng chứng phê duyệt phải rõ ràng; không có bằng chứng thì không phải là đã duyệt.
+- Validation phải in `FRAMEWORK_VALIDATION_PASS` trước khi duyệt roadmap.

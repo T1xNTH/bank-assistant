@@ -7,11 +7,11 @@ module: templates
 tags: [release, report, template]
 priority: 2
 ---
-# Release Report Template
+# Template Release Report
 
 ## Usage Purpose
 
-Use this template to authorize, trace, and record one release and its deployment outcome.
+Dùng template này để cho phép, truy vết và ghi lại một lần release cùng kết quả triển khai.
 
 ## Record Metadata
 
@@ -43,11 +43,11 @@ Use this template to authorize, trace, and record one release and its deployment
 
 ## Readiness Checks
 
-- [ ] Required implementation reports are complete.
-- [ ] Required reviews are approved.
-- [ ] QA recommendation is `go` or authorized `conditional-go`.
-- [ ] Deployment and rollback procedures are verified.
-- [ ] Required approvals are recorded.
+- [ ] Các implementation report bắt buộc đã hoàn thành.
+- [ ] Các review bắt buộc đã được duyệt.
+- [ ] Khuyến nghị QA là `go` hoặc `conditional-go` đã được cho phép.
+- [ ] Quy trình triển khai và rollback đã được kiểm chứng.
+- [ ] Các phê duyệt bắt buộc đã được ghi lại.
 
 ## Deployment Plan
 
@@ -73,20 +73,20 @@ Use this template to authorize, trace, and record one release and its deployment
 
 ## Completion Criteria
 
-- [ ] Deployment outcome and evidence are recorded.
-- [ ] Post-release verification meets success criteria or rollback completed successfully.
-- [ ] Regressions are recorded in `.agent/intelligence/git-nexus/regression-log.md`.
-- [ ] Release status matches the deployment outcome.
+- [ ] Kết quả triển khai và bằng chứng đã được ghi lại.
+- [ ] Kiểm tra sau release đạt tiêu chí thành công, hoặc rollback đã hoàn tất thành công.
+- [ ] Regression được ghi trong `.agent/intelligence/git-nexus/regression-log.md`.
+- [ ] Trạng thái release khớp với kết quả triển khai.
 
 ## Forbidden Actions
 
-- Do not deploy without required approvals and readiness evidence.
-- Do not alter release scope after approval without governed authorization.
-- Do not mark status `deployed` before post-release verification.
-- Do not suppress failed deployment, rollback, incident, or regression evidence.
+- Không triển khai khi thiếu phê duyệt bắt buộc và bằng chứng sẵn sàng.
+- Không đổi phạm vi release sau khi duyệt mà không có phê duyệt theo quy trình governance.
+- Không đánh dấu `deployed` trước khi kiểm tra sau release.
+- Không che giấu bằng chứng triển khai lỗi, rollback, sự cố hay regression.
 
 ## Output Requirements
 
-- Save as `.agent/reports/releases/REL-<number>.md`.
-- Preserve every heading in this template.
-- Use repository-relative links and exact enum values.
+- Lưu thành `.agent/reports/releases/REL-<number>.md`.
+- Giữ nguyên mọi heading trong template này.
+- Dùng link tương đối theo repo và đúng giá trị enum.

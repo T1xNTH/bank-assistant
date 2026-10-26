@@ -7,12 +7,12 @@ module: repository
 tags: [testing, quality, strategy]
 priority: 2
 ---
-# Testing
+# Kiểm thử
 
-This section documents testing strategies, test plans, and quality assurance.
+Phần này mô tả chiến lược kiểm thử, kế hoạch test và đảm bảo chất lượng.
 
-## Contents
-- `test-strategy.md` – Overall testing approach
-- `unit-testing.md` – Unit test guidelines
-- `integration-testing.md` – Integration test guidelines
-- `e2e-testing.md` – End-to-end testing
+## Nội dung
+- `test-strategy.md` – Cách tiếp cận kiểm thử tổng thể
+- `unit-testing.md` – Hướng dẫn unit test
+- `integration-testing.md` – Hướng dẫn integration test
+- `e2e-testing.md` – Kiểm thử end-to-end
