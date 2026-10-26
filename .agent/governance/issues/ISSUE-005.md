@@ -46,7 +46,7 @@ Contract chỉ nêu role `approver` và SQLite mở `mode=ro`, nhưng không đ�
 ## Related Files
 
 - **Affected Files**: `docs/04-api/contract.md, docs/06-security/security-design.md, docs/05-database/schema.md`
-- **Tasks or Epics**: `0050`
+- **Tasks or Epics**: `E-011`
 - **Decisions**: `.agent/governance/decisions/DEC-001.md`
 - **Risks**: `none`
 - **Blockers**: `none`

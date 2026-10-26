@@ -46,7 +46,7 @@ Payload job chỉ gồm câu hỏi đã che + `user_id` (`docs/05-database/schem
 ## Related Files
 
 - **Affected Files**: `docs/05-database/schema.md, docs/02-architecture/architecture.md`
-- **Tasks or Epics**: `0030`
+- **Tasks or Epics**: `E-009 (T-024, T-025), E-010`
 - **Decisions**: `.agent/governance/decisions/DEC-001.md`
 - **Risks**: `none`
 - **Blockers**: `none`

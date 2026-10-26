@@ -19,7 +19,7 @@ Theo dõi finding F-03 trong review baseline của B (`.agent/reports/review/REV
 - **Title**: `RBAC, lọc tài liệu bị thay thế và routing nhạy cảm nằm sau /ask thật`
 - **Owner**: `trong-hung`
 - **Reporter**: `claude-code-a`
-- **Status**: `open`
+- **Status**: `triaged`
 - **Issue Type**: `gap`
 - **Priority**: `2`
 - **Created Date**: `2026-10-26`
@@ -46,8 +46,8 @@ Theo dõi finding F-03 trong review baseline của B (`.agent/reports/review/REV
 ## Related Files
 
 - **Affected Files**: `.agent/planning/epics.md, docs/01-business/srs.md`
-- **Tasks or Epics**: `0040`
-- **Decisions**: `.agent/governance/decisions/DEC-001.md`
+- **Tasks or Epics**: `E-004, E-010, T-016, T-019`
+- **Decisions**: `.agent/governance/decisions/DEC-001.md, .agent/governance/decisions/DEC-006.md`
 - **Risks**: `none`
 - **Blockers**: `none`
 
@@ -61,7 +61,7 @@ Theo dõi finding F-03 trong review baseline của B (`.agent/reports/review/REV
 ## Resolution
 
 - **Resolution Type**: `not-applicable`
-- **Resolution Summary**: `chưa giải quyết`
+- **Resolution Summary**: `Hướng xử lý: DEC-006 — giữ nguyên roadmap, M-001 chỉ dùng tài liệu classification public (filter trong T-016, kiểm ở T-019). Issue đóng khi T-016 và T-019 done kèm test.`
 - **Verification Evidence**: `none`
 - **Resolved By**: `none`
 - **Resolved Date**: `none`

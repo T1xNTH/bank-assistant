@@ -46,7 +46,7 @@ HTTP `POST /ask` nhận `top_k` và `force_local` (`src/app/schemas.py:12-14`, `
 ## Related Files
 
 - **Affected Files**: `docs/04-api/openapi.yaml, src/app/contracts.py, src/app/main.py`
-- **Tasks or Epics**: `0020`
+- **Tasks or Epics**: `E-004, E-009, E-010; trước T-019`
 - **Decisions**: `.agent/governance/decisions/DEC-001.md`
 - **Risks**: `none`
 - **Blockers**: `none`
