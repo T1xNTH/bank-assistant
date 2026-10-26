@@ -9,7 +9,7 @@ priority: 2
 ---
 # Agent Lifecycle CLI
 
-## Purpose
+## Mục đích
 
 `scripts/agent` hiện thực bộ lệnh `agent task|review|qa|epic` mà prompt pack ở `docs/10-agents/` nhắc tới. Lệnh chỉ dùng Python stdlib. Mọi trạng thái tuân theo enum trong `AGENT.md` (decision DEC-002):
 - task: `pending | in-progress | blocked | review | done | cancelled`
@@ -20,7 +20,7 @@ priority: 2
 - `CHANGES_REQUESTED` → quay lại `in-progress`
 - `APPROVED/DONE` → `done`
 
-## Commands
+## Các lệnh
 
 | Lệnh | Điều kiện kiểm tra | Kết quả |
 |---|---|---|
@@ -46,7 +46,7 @@ priority: 2
 
 Tuỳ chọn chung: `agent --actor <id> …` ghi danh tính vào session history. Mặc định dùng owner của bản ghi.
 
-## Behavior
+## Hành vi
 
 - **Lỗi quy tắc:** in `agent: error: …` và thoát với mã `2`. Khi đó **không file nào bị ghi**: mọi thay đổi được gom lại rồi ghi bằng temp file + `os.replace`.
 - **Bảng:** mỗi lệnh chỉ sửa đúng dòng của bản ghi đích, phần còn lại của file giữ nguyên. Mọi ô được bọc trong backtick. Giá trị không được chứa `|`, backtick hay xuống dòng.
@@ -54,7 +54,7 @@ Tuỳ chọn chung: `agent --actor <id> …` ghi danh tính vào session history
 - **Report:** sinh từ `.agent/templates/`. Placeholder `<…>` được thay bằng `TBD`, vì validator không chấp nhận `<required…>` trong runtime record. Executor/reviewer/QA tự điền phần nội dung `TBD` trước khi đánh dấu complete hay approved.
 - **Thư mục gốc repo:** lấy theo `git rev-parse --show-toplevel`, hoặc biến `AGENT_ROOT` (test dùng cách này).
 
-## Typical Flow
+## Luồng điển hình
 
 ```bash
 scripts/agent epic status E-003 EPIC_READY
@@ -72,6 +72,6 @@ scripts/agent qa start E-003 --qa qa-a && scripts/agent qa pass E-003 --qa qa-a
 scripts/agent epic status E-003 EPIC_DONE
 ```
 
-## Tests
+## Test
 
 `python3 -m unittest discover -s tests/framework`, hoặc `pytest tests/framework`. Test chạy trên một bản copy tạm của repo, có test cho từng quy tắc chuyển trạng thái. Có một luồng đầy đủ đi hết lifecycle rồi kiểm tra `scripts/validate-framework.py` không phát sinh lỗi mới.

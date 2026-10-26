@@ -9,4 +9,4 @@ priority: 3
 ---
 # API Routes
 
-Catalog API routes, methods, handlers, contracts, and ownership. No API routes are registered yet.
+Danh mục API route, method, handler, contract và owner. Chưa có API route nào được đăng ký.

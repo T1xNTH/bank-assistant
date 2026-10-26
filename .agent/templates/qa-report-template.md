@@ -7,11 +7,11 @@ module: templates
 tags: [qa, testing, report, template]
 priority: 3
 ---
-# QA Report Template
+# Template QA Report
 
 ## Usage Purpose
 
-Use this template to record QA Agent checks, results, defects, and completion recommendation after independent review approval.
+Dùng template này để ghi lại các kiểm tra, kết quả, lỗi và khuyến nghị hoàn thành của QA Agent sau khi review độc lập đã duyệt.
 
 ## Record Metadata
 
@@ -46,7 +46,7 @@ Use this template to record QA Agent checks, results, defects, and completion re
 
 ## Command Evidence
 
-| Command | Result | Evidence |
+| Lệnh | Kết quả | Bằng chứng |
 |---|---|---|
 | `agent qa start TASK-ID` | `passed | failed | not-run` | `<output-or-path>` |
 | `agent qa pass TASK-ID` | `passed | failed | not-run` | `<output-or-path>` |
@@ -54,7 +54,7 @@ Use this template to record QA Agent checks, results, defects, and completion re
 
 ## Test Results
 
-| Check ID | Test Level | Result | Evidence | Defect ID |
+| Check ID | Cấp test | Kết quả | Bằng chứng | Defect ID |
 |---|---|---|---|---|
 | `CHECK-<number>` | `<enum-value>` | `passed | failed | blocked | skipped` | `<path-or-output>` | `<issue-id-or-none>` |
 
@@ -74,12 +74,12 @@ Use this template to record QA Agent checks, results, defects, and completion re
 
 ## Acceptance Criteria
 
-- [ ] Review report records `APPROVED` before QA starts.
-- [ ] Every required check has a result and evidence.
-- [ ] Result totals reconcile with the results table.
-- [ ] Failed checks map to issue records.
-- [ ] Skipped checks include an explicit approved reason.
-- [ ] Behavior, edge cases, regression checklist, and manual verification are recorded when applicable.
+- [ ] Review report ghi `APPROVED` trước khi QA bắt đầu.
+- [ ] Mọi kiểm tra bắt buộc đều có kết quả và bằng chứng.
+- [ ] Tổng số kết quả khớp với bảng kết quả.
+- [ ] Kiểm tra fail đều ánh xạ tới issue record.
+- [ ] Kiểm tra bị skip có lý do rõ ràng đã được duyệt.
+- [ ] Hành vi, edge case, checklist regression và kiểm tra thủ công được ghi lại khi có.
 
 ## Release Recommendation
 
@@ -90,22 +90,22 @@ Use this template to record QA Agent checks, results, defects, and completion re
 
 ## Completion Criteria
 
-- [ ] Required tests are executed or formally waived.
-- [ ] Defects, blockers, and residual risks are linked.
-- [ ] Release recommendation matches recorded results.
+- [ ] Các test bắt buộc đã chạy hoặc được miễn chính thức.
+- [ ] Lỗi, blocker và rủi ro còn lại đã được liên kết.
+- [ ] Khuyến nghị release khớp với kết quả đã ghi.
 
 ## Forbidden Actions
 
-- Do not start QA before independent review is `APPROVED`.
-- Do not mark status `passed` with unresolved required failures.
-- Do not omit, relabel, or discard failed results.
-- Do not count unexecuted checks as passed.
-- Do not replace independent review with QA.
-- Do not change roadmap or acceptance criteria.
-- Do not expose secrets or production personal data in evidence.
+- Không bắt đầu QA trước khi review độc lập là `APPROVED`.
+- Không đánh dấu `passed` khi còn lỗi bắt buộc chưa xử lý.
+- Không bỏ sót, đổi nhãn hay loại bỏ kết quả fail.
+- Không tính kiểm tra chưa chạy là passed.
+- Không dùng QA thay cho review độc lập.
+- Không đổi roadmap hay acceptance criteria.
+- Không để lộ secret hay dữ liệu cá nhân production trong bằng chứng.
 
 ## Output Requirements
 
-- Save as `.agent/reports/qa/TASK-ID.md`.
-- Preserve every heading and table column in this template.
-- Use exact enum values and non-negative integer totals.
+- Lưu thành `.agent/reports/qa/TASK-ID.md`.
+- Giữ nguyên mọi heading và cột bảng trong template này.
+- Dùng đúng giá trị enum và tổng số là số nguyên không âm.

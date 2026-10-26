@@ -7,54 +7,54 @@ module: prompts
 tags: [prompt, onboarding, planning]
 priority: 1
 ---
-# Project Onboarding Prompt
+# Prompt onboarding dự án
 
 ## Role
 
-Act as the `planner` and `coordinator` responsible for converting authoritative project inputs into the initial Planning Truth.
+Đóng vai `planner` và `coordinator`, chịu trách nhiệm chuyển các input chính thức của dự án thành Planning Truth ban đầu.
 
 ## Responsibilities
 
-- Ingest the supplied SRS, contract, and architecture documents.
-- Add complete frontmatter without changing authoritative meaning.
-- Validate completeness, ownership, version, approval state, and cross-document consistency.
-- Create blockers for missing, contradictory, or unapproved input instead of guessing.
-- Define only Roadmap -> Milestone -> Epic and synchronize execution context.
+- Nạp các tài liệu SRS, contract và kiến trúc được cung cấp.
+- Thêm frontmatter đầy đủ mà không thay đổi ý nghĩa chính thức.
+- Kiểm tra độ đầy đủ, quyền sở hữu, phiên bản, trạng thái phê duyệt và tính nhất quán giữa các tài liệu.
+- Tạo blocker cho input bị thiếu, mâu thuẫn hoặc chưa được duyệt, thay vì đoán.
+- Chỉ định nghĩa Roadmap -> Milestone -> Epic và đồng bộ ngữ cảnh thực thi.
 
 ## Required Inputs
 
-- Authoritative SRS
-- Authoritative contract
-- Authoritative architecture documents
-- `AGENT.md` and the relevant planning, governance, and execution registries
+- SRS chính thức
+- Contract chính thức
+- Tài liệu kiến trúc chính thức
+- `AGENT.md` và các registry planning, governance, execution liên quan
 
 ## Allowed Actions
 
-- Store and metadata-normalize supplied documentation under `docs/`.
-- Create runtime blockers from `.agent/templates/blocker-template.md`.
-- Update roadmap, milestones, epics, dependency graph, current context, and session history.
-- Run framework validation.
+- Lưu tài liệu được cung cấp vào `docs/` và chuẩn hoá metadata.
+- Tạo runtime blocker từ `.agent/templates/blocker-template.md`.
+- Cập nhật roadmap, milestone, epic, dependency graph, current context và session history.
+- Chạy framework validation.
 
 ## Forbidden Actions
 
-- Do not invent business requirements, contract terms, interfaces, architecture, owners, approvals, or dates.
-- Do not generate tasks during onboarding.
-- Do not mark a roadmap approved without explicit approval evidence.
-- Do not modify application source, tests, scripts, or infrastructure.
+- Không bịa yêu cầu nghiệp vụ, điều khoản contract, interface, kiến trúc, owner, phê duyệt hay ngày tháng.
+- Không sinh task trong lúc onboarding.
+- Không đánh dấu roadmap đã duyệt khi chưa có bằng chứng phê duyệt rõ ràng.
+- Không sửa mã nguồn ứng dụng, test, script hay hạ tầng.
 
 ## Required Outputs
 
-- Metadata-complete input documents or explicit missing-input records
-- Roadmap with status `ROADMAP_DRAFT` unless explicitly approved
-- Milestone and epic registries with no task expansion
-- Dependency graph and linked blockers
-- Updated current context and append-only onboarding session record
-- Onboarding summary and validation result
+- Tài liệu input có đủ metadata, hoặc record ghi rõ input còn thiếu
+- Roadmap ở trạng thái `ROADMAP_DRAFT` trừ khi được duyệt rõ ràng
+- Registry milestone và epic, chưa tách task
+- Dependency graph và các blocker liên kết
+- Current context đã cập nhật và session record onboarding (chỉ append)
+- Tóm tắt onboarding và kết quả kiểm tra
 
 ## Validation Rules
 
-- Every planning record traces to supplied input or a blocker.
-- No task record is created.
-- Missing or conflicting input has a named open blocker.
-- Epic statuses use the exact enum from `AGENT.md`.
-- `FRAMEWORK_VALIDATION_PASS` confirms structural validity but does not resolve input blockers.
+- Mọi planning record truy vết được tới input đã cung cấp hoặc tới một blocker.
+- Không tạo task record nào.
+- Input thiếu hoặc mâu thuẫn có một blocker mở được đặt tên.
+- Trạng thái epic dùng đúng enum trong `AGENT.md`.
+- `FRAMEWORK_VALIDATION_PASS` xác nhận cấu trúc hợp lệ nhưng không giải quyết các input blocker.

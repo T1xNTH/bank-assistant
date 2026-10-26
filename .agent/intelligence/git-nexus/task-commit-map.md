@@ -9,4 +9,4 @@ priority: 3
 ---
 # Task Commit Map
 
-Map task IDs to implementation commits and report evidence. No task commit mappings are registered yet.
+Ánh xạ task ID tới commit hiện thực và bằng chứng report. Chưa có ánh xạ task–commit nào được đăng ký.

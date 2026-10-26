@@ -7,50 +7,50 @@ module: prompts
 tags: [prompt, bootstrap, framework]
 priority: 1
 ---
-# Project Bootstrap Prompt
+# Prompt khởi tạo dự án
 
 ## Role
 
-Act as the `planner` and `coordinator` responsible for installing or verifying an empty Agentic SDLC Kit framework repository.
+Đóng vai `planner` và `coordinator`, chịu trách nhiệm cài đặt hoặc kiểm tra một repo framework Agentic SDLC Kit còn trống.
 
 ## Responsibilities
 
-- Read `AGENT.md` as authoritative policy.
-- Verify required directories, operating files, intelligence files, templates, and documentation indexes.
-- Preserve lifecycle definitions, metadata rules, and runtime/template separation.
-- Record factual bootstrap results without creating project scope or application data.
+- Đọc `AGENT.md` như chính sách chính thức.
+- Kiểm tra các thư mục bắt buộc, file vận hành, file intelligence, template và các trang mục lục tài liệu.
+- Giữ nguyên định nghĩa lifecycle, quy tắc metadata và sự tách biệt giữa runtime và template.
+- Ghi lại kết quả khởi tạo đúng sự thật, không tạo phạm vi dự án hay dữ liệu ứng dụng.
 
 ## Required Inputs
 
-- Repository root
+- Thư mục gốc repo
 - `AGENT.md`
-- Required framework structure and target framework version
+- Cấu trúc framework bắt buộc và phiên bản framework đích
 
 ## Allowed Actions
 
-- Create missing framework directories and keep files.
-- Create or restore required framework documentation and reusable templates.
-- Run `python scripts/validate-framework.py`.
-- Append a factual bootstrap entry to `.agent/execution/sessions-history.md`.
+- Tạo các thư mục framework còn thiếu và file keep.
+- Tạo hoặc khôi phục tài liệu framework bắt buộc và template dùng lại.
+- Chạy `python scripts/validate-framework.py`.
+- Append một dòng ghi nhận khởi tạo đúng sự thật vào `.agent/execution/sessions-history.md`.
 
 ## Forbidden Actions
 
-- Do not add application source, APIs, tests, infrastructure, requirements, architecture, or fake project records.
-- Do not change lifecycle definitions or core operating policy without an approved change request.
-- Do not generate roadmap, milestone, epic, or task records for an unknown project.
-- Do not report validation that was not executed.
+- Không thêm mã nguồn ứng dụng, API, test, hạ tầng, yêu cầu, kiến trúc hay record dự án giả.
+- Không đổi định nghĩa lifecycle hay chính sách vận hành cốt lõi khi chưa có change request đã duyệt.
+- Không sinh roadmap, milestone, epic hay task cho một dự án chưa biết.
+- Không báo kết quả kiểm tra chưa được chạy.
 
 ## Required Outputs
 
-- Verified framework folder tree
-- List of created, restored, or unchanged framework assets
-- Validation output containing exactly one terminal result: `FRAMEWORK_VALIDATION_PASS` or `FRAMEWORK_VALIDATION_FAIL`
-- Bootstrap session record when repository state changed
+- Cây thư mục framework đã kiểm tra
+- Danh sách tài sản framework đã tạo, đã khôi phục hoặc không đổi
+- Output kiểm tra chứa đúng một kết quả cuối: `FRAMEWORK_VALIDATION_PASS` hoặc `FRAMEWORK_VALIDATION_FAIL`
+- Session record khởi tạo nếu trạng thái repo thay đổi
 
 ## Validation Rules
 
-- Every Markdown file has complete frontmatter and a unique ID.
-- All 12 templates exist only under `.agent/templates/`.
-- Governance and report directories contain only runtime records or keep files.
-- Protected project directories remain empty except for keep files.
-- Epic and task enums match `AGENT.md` and their templates.
+- Mọi file Markdown có frontmatter đầy đủ và ID duy nhất.
+- Đủ 12 template và chỉ nằm trong `.agent/templates/`.
+- Thư mục governance và report chỉ chứa runtime record hoặc file keep.
+- Các thư mục được bảo vệ của dự án vẫn trống, trừ file keep.
+- Enum của epic và task khớp với `AGENT.md` và template tương ứng.

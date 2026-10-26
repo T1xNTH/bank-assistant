@@ -7,11 +7,11 @@ module: templates
 tags: [decision, adr, template]
 priority: 2
 ---
-# Decision Template
+# Template Decision
 
 ## Usage Purpose
 
-Use this template to record a consequential technical, product, process, or governance decision and its traceable rationale.
+Dùng template này để ghi lại một quyết định quan trọng về kỹ thuật, sản phẩm, quy trình hoặc governance, cùng lý do có thể truy vết.
 
 ## Record Metadata
 
@@ -26,7 +26,7 @@ Use this template to record a consequential technical, product, process, or gove
 
 ## Context
 
-State the verified conditions, constraints, and problem requiring a decision.
+Nêu các điều kiện đã kiểm chứng, ràng buộc và vấn đề cần ra quyết định.
 
 ## Decision Drivers
 
@@ -34,7 +34,7 @@ State the verified conditions, constraints, and problem requiring a decision.
 
 ## Options Considered
 
-| Option | Benefits | Costs and Risks | Constraint Fit |
+| Phương án | Lợi ích | Chi phí và rủi ro | Mức đáp ứng ràng buộc |
 |---|---|---|---|
 | `<option-name>` | `<specific-benefits>` | `<specific-costs-and-risks>` | `meets | partially-meets | does-not-meet` |
 
@@ -61,20 +61,20 @@ State the verified conditions, constraints, and problem requiring a decision.
 
 ## Completion Criteria
 
-- [ ] Context, drivers, and viable options are documented.
-- [ ] Decision makers and rationale are recorded.
-- [ ] Follow-up work and affected documents are linked.
-- [ ] Accepted decisions are mapped in `.agent/intelligence/git-nexus/decision-commit-map.md` when implemented.
+- [ ] Bối cảnh, yếu tố quyết định và các phương án khả thi đã được ghi lại.
+- [ ] Người ra quyết định và lý do đã được ghi lại.
+- [ ] Công việc tiếp theo và tài liệu bị ảnh hưởng đã được liên kết.
+- [ ] Quyết định đã chấp nhận được ánh xạ trong `.agent/intelligence/git-nexus/decision-commit-map.md` khi đã hiện thực.
 
 ## Forbidden Actions
 
-- Do not record a decision as `accepted` without identified decision makers.
-- Do not erase rejected options or consequences after acceptance.
-- Do not silently modify an accepted decision; supersede it with a new record.
-- Do not claim implementation without commit or report evidence.
+- Không ghi một quyết định là `accepted` khi chưa xác định người ra quyết định.
+- Không xoá các phương án bị loại hay hệ quả sau khi đã chấp nhận.
+- Không âm thầm sửa một quyết định đã chấp nhận; hãy thay thế nó bằng một record mới.
+- Không tuyên bố đã hiện thực khi chưa có bằng chứng commit hoặc report.
 
 ## Output Requirements
 
-- Save as `.agent/governance/decisions/DEC-<number>.md`.
-- Preserve every heading and table column in this template.
-- Use repository-relative links and exact enum values.
+- Lưu thành `.agent/governance/decisions/DEC-<number>.md`.
+- Giữ nguyên mọi heading và cột bảng trong template này.
+- Dùng link tương đối theo repo và đúng giá trị enum.

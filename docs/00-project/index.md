@@ -7,20 +7,21 @@ module: repository
 tags: [project, overview, documentation]
 priority: 1
 ---
-# Project Overview
+# Tổng quan dự án
 
-## Purpose
+## Mục đích
 
-Index framework identity, release, charter, stakeholder, and terminology documentation.
+Mục lục cho tài liệu về định danh framework, release, điều lệ dự án (charter), các bên liên quan (stakeholder) và thuật ngữ.
 
-## Contents
+## Nội dung
 
-- `installation.md` - Clone and existing-project overlay installation guidance
-- `release-notes-v1.0.0.md` - Agentic SDLC Kit v1.0.0 release notes
-- `charter.md` - Project charter when supplied by an onboarded project
-- `stakeholders.md` - Stakeholder registry when supplied by an onboarded project
-- `glossary.md` - Shared terminology when supplied by an onboarded project
+- `installation.md` - Hướng dẫn clone kit và cài overlay vào dự án có sẵn
+- `release-notes-v1.0.0.md` - Release notes của Agentic SDLC Kit v1.0.0
+- `product-plan.md` - Plan sản phẩm bank-assistant (MVP 2 tuần, team 2 người)
+- `charter.md` - Điều lệ dự án, khi dự án được onboard cung cấp
+- `stakeholders.md` - Danh sách stakeholder, khi dự án được onboard cung cấp
+- `glossary.md` - Bảng thuật ngữ chung, khi dự án được onboard cung cấp
 
 ## Metadata
 
-Every Markdown file in this directory follows the metadata standard in `AGENT.md`.
+Mọi file Markdown trong thư mục này tuân theo chuẩn metadata trong `AGENT.md`.

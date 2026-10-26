@@ -7,11 +7,13 @@ module: execution
 tags: [sessions, history, audit]
 priority: 3
 ---
-# Sessions History
+# Lịch sử phiên (Sessions History)
 
 ## Purpose
 
-Maintain an append-only audit of agent execution sessions, their ownership, scope, outcome, and produced evidence.
+Lưu nhật ký kiểm toán chỉ-append của các phiên thực thi agent: người phụ trách, phạm vi, kết quả và bằng chứng tạo ra.
+
+Các dòng record bên dưới là nhật ký kiểm toán nên được giữ nguyên văn như lúc ghi (do `scripts/agent` tự append), không dịch.
 
 ## Status Model
 
@@ -19,7 +21,7 @@ Maintain an append-only audit of agent execution sessions, their ownership, scop
 
 ## Session Records
 
-| Session ID | Start Date | End Date | Owner | Task or Scope IDs | Outcome | Summary | Output and Evidence Links | Supersedes |
+| Session ID | Ngày bắt đầu | Ngày kết thúc | Owner | Task hoặc phạm vi | Kết quả | Tóm tắt | Link output và bằng chứng | Thay thế cho |
 |---|---|---|---|---|---|---|---|---|
 
 | `S-20261024-onboarding` | `2026-10-24` | `2026-10-24` | `trong-hung` | `R-001, M-001, M-002, E-001..E-016` | `completed` | `Kit installed; SRS, contract, architecture ingested; roadmap drafted; DEC-001..005 and RISK-001..004 recorded` | `docs/01-business/srs.md, .agent/planning/roadmap.md` | `none` |

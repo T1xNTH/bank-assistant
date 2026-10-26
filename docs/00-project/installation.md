@@ -7,22 +7,22 @@ module: installation
 tags: [installation, overlay, upgrade]
 priority: 1
 ---
-# Installing Agentic SDLC Kit
+# Cài đặt Agentic SDLC Kit
 
-## Purpose
+## Mục đích
 
-Install the kit as a framework overlay without replacing the target project's identity, application code, tests, package configuration, or infrastructure.
+Cài kit dưới dạng framework overlay mà không thay thế định danh, mã ứng dụng, test, cấu hình package hay hạ tầng của dự án đích.
 
-## Prerequisites
+## Yêu cầu trước
 
-- A cloned Agentic SDLC Kit repository
-- An existing target project directory
-- Bash for `install-kit.sh` or PowerShell 7/Windows PowerShell for `install-kit.ps1`
-- Python 3.10 or later for post-install validation
+- Một bản clone của repo Agentic SDLC Kit
+- Một thư mục dự án đích đã tồn tại
+- Bash để chạy `install-kit.sh`, hoặc PowerShell 7/Windows PowerShell để chạy `install-kit.ps1`
+- Python 3.10 trở lên để kiểm tra sau khi cài
 
-## Install from a Cloned Kit
+## Cài từ bản clone của kit
 
-Clone or download the kit, then run an installer from the kit root.
+Clone hoặc tải kit về, rồi chạy installer từ thư mục gốc của kit.
 
 ### Bash
 
@@ -37,9 +37,9 @@ chmod +x scripts/install-kit.sh
 .\scripts\install-kit.ps1 -TargetProjectPath C:\absolute\path\to\target-project
 ```
 
-The target must already exist and must not be the cloned kit directory.
+Thư mục đích phải tồn tại sẵn và không được là chính thư mục kit đã clone.
 
-To intentionally replace existing target runtime state, pass the explicit runtime reset flag:
+Nếu thật sự muốn thay thế runtime state hiện có của dự án đích, truyền rõ cờ reset runtime:
 
 ```bash
 ./scripts/install-kit.sh /absolute/path/to/target-project --reset-runtime
@@ -49,38 +49,38 @@ To intentionally replace existing target runtime state, pass the explicit runtim
 .\scripts\install-kit.ps1 -TargetProjectPath C:\absolute\path\to\target-project -ResetRuntime
 ```
 
-## Install into an Existing Project
+## Cài vào dự án có sẵn
 
-The installer performs a clean overlay operation:
+Installer thực hiện một thao tác overlay sạch:
 
-1. Validate the source and target paths.
-2. Back up every existing overlay destination before copying.
-3. Copy reusable framework assets only: `AGENT.md`, `docs/`, `.agent/templates/`, `scripts/validate-framework.py`, the renamed distribution guide, and the kit license.
-4. Initialize clean runtime state for the target project under `.agent/execution/`, `.agent/planning/`, and `.agent/intelligence/`.
-5. Create `.keep` files for runtime report and governance directories without copying any runtime records from the kit repository.
-6. Leave project-owned files and directories outside the overlay untouched.
-7. Run `python scripts/validate-framework.py` when a Python command is available.
-8. Print copied, backed-up, skipped, and validation results.
+1. Kiểm tra đường dẫn nguồn và đích.
+2. Backup mọi đích overlay đã tồn tại trước khi copy.
+3. Chỉ copy các tài sản framework dùng lại được: `AGENT.md`, `docs/`, `.agent/templates/`, `scripts/validate-framework.py`, hướng dẫn phân phối đã đổi tên và license của kit.
+4. Khởi tạo runtime state sạch cho dự án đích trong `.agent/execution/`, `.agent/planning/` và `.agent/intelligence/`.
+5. Tạo file `.keep` cho các thư mục runtime report và governance, không copy bất kỳ runtime record nào từ repo kit.
+6. Không đụng tới các file và thư mục của dự án nằm ngoài overlay.
+7. Chạy `python scripts/validate-framework.py` nếu có lệnh Python.
+8. In ra kết quả: đã copy, đã backup, bỏ qua và kết quả kiểm tra.
 
-The validator automatically detects overlay mode through `AGENTIC-SDLC-KIT.md`. In overlay mode, it validates kit-owned Markdown only; unrelated project Markdown is not required to adopt kit frontmatter.
+Validator tự nhận biết chế độ overlay qua file `AGENTIC-SDLC-KIT.md`. Ở chế độ overlay, nó chỉ kiểm tra Markdown do kit sở hữu; Markdown khác của dự án không bắt buộc phải theo frontmatter của kit.
 
-The installer does not copy runtime reports, runtime governance records, task-board state, current-context state, planning state, or intelligence state from the cloned kit repository. Those files are initialized fresh for the target project. If matching runtime files already exist in the target, the installer preserves them by default and records them as skipped. Use `--reset-runtime` for Bash or `-ResetRuntime` for PowerShell only when replacing target runtime state is intentional.
+Installer không copy runtime report, runtime governance record, trạng thái task board, current context, planning hay intelligence từ repo kit. Các file đó được khởi tạo mới cho dự án đích. Nếu dự án đích đã có runtime file trùng tên, mặc định installer giữ nguyên và ghi là skipped. Chỉ dùng `--reset-runtime` (Bash) hoặc `-ResetRuntime` (PowerShell) khi thật sự muốn thay runtime state của dự án đích.
 
-## Backup Behavior
+## Cơ chế backup
 
-Before replacing an existing destination, the installer creates a sibling backup using:
+Trước khi thay một đích đã tồn tại, installer tạo bản backup nằm cạnh nó với tên:
 
 ```text
 <original-path>.backup-agentic-sdlc-kit
 ```
 
-If that backup already exists, the installer appends `.1`, `.2`, and so on. Backups are copied snapshots; the target remains available while the overlay is applied.
+Nếu tên backup đó đã có, installer thêm hậu tố `.1`, `.2`, v.v. Backup là bản chụp được copy; đích vẫn dùng được trong lúc áp overlay.
 
-Directory backups cover copied reusable directories such as `.agent/templates/` and `docs/`. File backups cover `AGENT.md`, `scripts/validate-framework.py`, `AGENTIC-SDLC-KIT.md`, `LICENSE.agentic-sdlc-kit`, and runtime files only when `--reset-runtime` or `-ResetRuntime` is used.
+Backup thư mục áp dụng cho các thư mục dùng lại được được copy như `.agent/templates/` và `docs/`. Backup file áp dụng cho `AGENT.md`, `scripts/validate-framework.py`, `AGENTIC-SDLC-KIT.md`, `LICENSE.agentic-sdlc-kit`, và runtime file chỉ khi dùng `--reset-runtime` hoặc `-ResetRuntime`.
 
-## Files Copied
+## Các file được copy
 
-| Kit source | Target destination |
+| Nguồn trong kit | Đích trong dự án |
 |---|---|
 | `AGENT.md` | `AGENT.md` |
 | `.agent/templates/` | `.agent/templates/` |
@@ -89,9 +89,9 @@ Directory backups cover copied reusable directories such as `.agent/templates/` 
 | `LICENSE` | `LICENSE.agentic-sdlc-kit` |
 | `README.md` | `AGENTIC-SDLC-KIT.md` |
 
-## Runtime Initialized
+## Runtime được khởi tạo
 
-The installer creates clean target-project runtime files when they do not already exist:
+Installer tạo các runtime file sạch cho dự án đích nếu chúng chưa tồn tại:
 
 - `.agent/execution/current-context.md`
 - `.agent/execution/sessions-history.md`
@@ -110,7 +110,7 @@ The installer creates clean target-project runtime files when they do not alread
 - `.agent/intelligence/git-nexus/decision-commit-map.md`
 - `.agent/intelligence/git-nexus/regression-log.md`
 
-The installer creates only `.keep` files in these runtime directories:
+Trong các thư mục runtime sau, installer chỉ tạo file `.keep`:
 
 - `.agent/reports/implementation/.keep`
 - `.agent/reports/review/.keep`
@@ -122,61 +122,61 @@ The installer creates only `.keep` files in these runtime directories:
 - `.agent/governance/decisions/.keep`
 - `.agent/governance/risks/.keep`
 
-## Files Never Copied
+## Các file không bao giờ được copy
 
 - `src/`
 - `tests/`
 - `infrastructure/`
 - `CHANGELOG.md`
 - `CONTRIBUTING.md`
-- Root `README.md` as `README.md`
-- Root `LICENSE` as `LICENSE`
-- Package manifests, lock files, build configuration, and application-specific scripts
+- `README.md` ở gốc (dưới tên `README.md`)
+- `LICENSE` ở gốc (dưới tên `LICENSE`)
+- Package manifest, lock file, cấu hình build và script riêng của ứng dụng
 - `.agent/reports/**/*.md`
 - `.agent/governance/**/*.md`
-- `.agent/execution/current-context.md` from the kit repository
-- `.agent/execution/task-board.md` from the kit repository
-- `.agent/planning/*.md` from the kit repository
+- `.agent/execution/current-context.md` của repo kit
+- `.agent/execution/task-board.md` của repo kit
+- `.agent/planning/*.md` của repo kit
 
-## Validation
+## Kiểm tra
 
-When Python is available, the installer runs:
+Nếu có Python, installer chạy:
 
 ```bash
 python scripts/validate-framework.py
 ```
 
-Expected success output:
+Output khi thành công:
 
 ```text
 FRAMEWORK_VALIDATION_PASS
 ```
 
-If no Python command is available, installation completes with `VALIDATION_SKIPPED_PYTHON_NOT_AVAILABLE`. Run the validator manually after installing Python 3.10 or later.
+Nếu không có lệnh Python, quá trình cài vẫn hoàn tất với `VALIDATION_SKIPPED_PYTHON_NOT_AVAILABLE`. Hãy chạy validator thủ công sau khi cài Python 3.10 trở lên.
 
-## Uninstall Notes
+## Ghi chú gỡ cài đặt
 
-There is intentionally no destructive automatic uninstaller.
+Kit cố ý không có trình gỡ cài đặt tự động mang tính phá huỷ.
 
-1. Preserve any runtime records created after installation.
-2. Compare active overlay files with the installer's copied-file output.
-3. For destinations that had backups, move the active destination aside and restore the corresponding `.backup-agentic-sdlc-kit` snapshot.
-4. For destinations without backups, remove only files listed as copied by the installer.
-5. Remove `AGENTIC-SDLC-KIT.md` and `LICENSE.agentic-sdlc-kit` only if the target project did not adopt them.
-6. Re-run project-native checks after restoration.
+1. Giữ lại mọi runtime record được tạo sau khi cài.
+2. So sánh các file overlay đang dùng với danh sách file đã copy mà installer in ra.
+3. Với đích có backup, dời đích hiện tại sang chỗ khác rồi khôi phục bản `.backup-agentic-sdlc-kit` tương ứng.
+4. Với đích không có backup, chỉ xoá những file mà installer ghi là đã copy.
+5. Chỉ xoá `AGENTIC-SDLC-KIT.md` và `LICENSE.agentic-sdlc-kit` nếu dự án đích không dùng chúng.
+6. Chạy lại các kiểm tra gốc của dự án sau khi khôi phục.
 
-Do not recursively delete `.agent/`, `docs/`, or `scripts/` without reviewing project-owned and post-install content.
+Không xoá đệ quy `.agent/`, `docs/` hay `scripts/` khi chưa xem xét nội dung thuộc dự án và nội dung tạo ra sau khi cài.
 
-## Upgrade Notes
+## Ghi chú nâng cấp
 
-Run the newer kit's installer against the same target project. The installer creates a new backup before applying the upgraded overlay; existing backup names are never overwritten.
+Chạy installer của bản kit mới hơn vào cùng dự án đích. Installer tạo backup mới trước khi áp overlay nâng cấp; tên backup đã có không bao giờ bị ghi đè.
 
-Before accepting an upgrade:
+Trước khi chấp nhận một bản nâng cấp:
 
-- review changes to `AGENT.md`, templates, prompts, and validator behavior;
-- preserve runtime governance and report records created by the target project;
-- use a governed change request for operating-policy or lifecycle changes;
-- run framework validation after installation;
-- run the target project's native build, test, and security checks.
+- review các thay đổi của `AGENT.md`, template, prompt và hành vi của validator;
+- giữ lại các governance record và report do dự án đích tạo ra;
+- dùng change request có quản trị cho các thay đổi về chính sách vận hành hoặc lifecycle;
+- chạy framework validation sau khi cài;
+- chạy các kiểm tra build, test và bảo mật gốc của dự án đích.
 
-An upgrade must not silently resolve governance records, rewrite final reports, or change project source and identity files.
+Một bản nâng cấp không được âm thầm đóng governance record, viết lại report đã chốt, hay sửa mã nguồn và các file định danh của dự án.

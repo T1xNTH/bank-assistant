@@ -9,9 +9,10 @@ priority: 3
 ---
 # DevOps
 
-This section covers CI/CD pipelines, deployment strategies, and monitoring.
+Phần này mô tả pipeline CI/CD, chiến lược triển khai và giám sát.
 
-## Contents
-- `ci-cd.md` – CI/CD pipelines
-- `deployment.md` – Deployment strategies
-- `monitoring.md` – Monitoring and alerting
+## Nội dung
+- `runtime.md` – Lệnh chạy, CI và môi trường của bank-assistant
+- `ci-cd.md` – Pipeline CI/CD
+- `deployment.md` – Chiến lược triển khai
+- `monitoring.md` – Giám sát và cảnh báo

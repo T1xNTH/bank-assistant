@@ -7,9 +7,9 @@ module: repository
 tags: [architecture, design, components]
 priority: 1
 ---
-# Architecture — bank-assistant MVP
+# Kiến trúc — bank-assistant MVP
 
-## Input Status
+## Trạng thái input
 
 - **Status**: `ingested`
 - **Authority**: `draft — pending approval in DEC-001`
@@ -17,9 +17,9 @@ priority: 1
 - **Ingested Date**: `2026-10-24`
 - **Validated By**: `trong-hung`, `teammate-b`
 
-## System Context
+## Bối cảnh hệ thống
 
-Staff (via demo UI or internal portal) and n8n workflows call the API with an API key. The API answers from an internal document index, calls LLMs only through a gateway, and records traces. Nothing leaves the network except calls to the cloud LLM, which only ever receive masked text; sensitive requests are routed to the local model.
+Nhân viên (qua UI demo hoặc cổng nội bộ) và các workflow n8n gọi API bằng API key. API trả lời dựa trên index tài liệu nội bộ, chỉ gọi LLM qua gateway, và ghi trace. Không có gì ra khỏi mạng ngoại trừ lời gọi tới LLM cloud, và LLM cloud chỉ nhận văn bản đã che; request nhạy cảm được route sang model local.
 
 ```mermaid
 flowchart LR
@@ -41,53 +41,53 @@ flowchart LR
   INGEST[scripts/ingest.py: docling → chunk → bge-m3] --> QDRANT
 ```
 
-## Components and Responsibilities
+## Thành phần và trách nhiệm
 
-| Component | Code | Owner | Runtime | Notes |
+| Thành phần | Code | Owner | Runtime | Ghi chú |
 |---|---|---|---|---|
-| API | `src/app/main.py`, `schemas.py` | B | compose `api` :8000 | FastAPI, auth dependency, error envelope |
-| Auth / RBAC / audit | `src/app/security/{auth,audit}.py` | B | in api | Hashed keys → `User`; audit in `data/audit.db` |
-| PII | `src/app/security/pii.py` | B | in api + worker | Presidio (regex recognizers, no spaCy model) + VN regex |
-| RAG | `src/app/rag/*` | A | in api + worker | parse_docling, chunk, embed (bge-m3 dense+sparse), store, retrieve (RRF), rerank, answer |
-| Routing | `src/app/routing.py` | A | in api | PII/confidential → `local-chat`, else `cloud-chat` |
-| LLM gateway client | `src/app/llm.py` | B | in api | Single place that calls LLMs (LiteLLM OpenAI-compatible endpoint) |
-| Agent | `src/app/agent/*` | A (graph, tools) / B (SQLite, endpoints) | in api | LangGraph, ToolNode, `interrupt` for `tao_ticket` |
-| Queue | `src/app/queue/*` | B | compose `redis`, `worker` | RQ, priority queues, token-bucket worker limit |
-| Observability | `src/app/tracing.py`, `llm_cost.py` | B | compose profile `obs` | Langfuse self-host |
-| Automation | `infrastructure/n8n/` | B | compose profile `automation` | n8n + Mailpit |
-| UI | `ui/app.py` | A | local | Streamlit, role selector → API key |
-| Eval | `eval/` | A | CLI / CI | RAGAS judge = Gemini |
+| API | `src/app/main.py`, `schemas.py` | B | compose `api` :8000 | FastAPI, dependency xác thực, định dạng lỗi chung |
+| Auth / RBAC / audit | `src/app/security/{auth,audit}.py` | B | trong api | Key đã hash → `User`; audit trong `data/audit.db` |
+| PII | `src/app/security/pii.py` | B | trong api + worker | Presidio (regex recognizer, không dùng model spaCy) + regex VN |
+| RAG | `src/app/rag/*` | A | trong api + worker | parse_docling, chunk, embed (bge-m3 dense+sparse), store, retrieve (RRF), rerank, answer |
+| Routing | `src/app/routing.py` | A | trong api | PII/mật → `local-chat`, còn lại → `cloud-chat` |
+| Client LLM gateway | `src/app/llm.py` | B | trong api | Nơi duy nhất gọi LLM (endpoint tương thích OpenAI của LiteLLM) |
+| Agent | `src/app/agent/*` | A (graph, tools) / B (SQLite, endpoints) | trong api | LangGraph, ToolNode, `interrupt` cho `tao_ticket` |
+| Hàng chờ | `src/app/queue/*` | B | compose `redis`, `worker` | RQ, hàng chờ theo priority, giới hạn worker bằng token bucket |
+| Observability | `src/app/tracing.py`, `llm_cost.py` | B | compose profile `obs` | Langfuse tự host |
+| Tự động hoá | `infrastructure/n8n/` | B | compose profile `automation` | n8n + Mailpit |
+| UI | `ui/app.py` | A | local | Streamlit, chọn role → API key |
+| Eval | `eval/` | A | CLI / CI | Judge RAGAS = Gemini |
 
-## Deployment Topology
+## Topology triển khai
 
-Docker Compose (`infrastructure/compose.yaml`), host-bound to `127.0.0.1`. Core: `api`, `worker`, `redis`, `qdrant`, `litellm`. Profiles: `local-llm` (`ollama`), `automation` (`n8n`, `mailpit`), `obs` (Langfuse stack). Ports: 8000 api, 6333 qdrant, 6379 redis, 4000 litellm, 11434 ollama, 5678 n8n, 8025 mailpit, 3000 langfuse.
+Docker Compose (`infrastructure/compose.yaml`), chỉ bind vào `127.0.0.1`. Lõi: `api`, `worker`, `redis`, `qdrant`, `litellm`. Profile: `local-llm` (`ollama`), `automation` (`n8n`, `mailpit`), `obs` (bộ Langfuse). Cổng: 8000 api, 6333 qdrant, 6379 redis, 4000 litellm, 11434 ollama, 5678 n8n, 8025 mailpit, 3000 langfuse.
 
-## Data Flows and Trust Boundaries
+## Luồng dữ liệu và ranh giới tin cậy
 
-1. Request → auth (key → `User`) → **mask PII** → (sync) RAG / (async) enqueue masked payload.
-2. Retrieval filter: `department ∈ {user.department, "public"}` AND `superseded_by IS NULL`, applied inside Qdrant query (never post-filter only).
-3. Routing decision uses mask result types + max `classification` of retrieved chunks.
-4. LLM call through gateway only; cloud receives masked text only.
-5. Output masked again before response, log, trace.
-6. Audit row per request: user, endpoint, masked question, route, refused, latency, cost, trace_id.
+1. Request → xác thực (key → `User`) → **che PII** → (đồng bộ) RAG / (bất đồng bộ) đưa payload đã che vào hàng chờ.
+2. Filter khi retrieval: `department ∈ {user.department, "public"}` AND `superseded_by IS NULL`, áp ngay trong truy vấn Qdrant (không bao giờ chỉ lọc sau).
+3. Quyết định routing dựa trên loại PII trong kết quả che + `classification` cao nhất của các chunk lấy được.
+4. Chỉ gọi LLM qua gateway; cloud chỉ nhận văn bản đã che.
+5. Output được che thêm lần nữa trước khi trả về, ghi log, ghi trace.
+6. Mỗi request một dòng audit: user, endpoint, câu hỏi đã che, route, có từ chối không, latency, chi phí, trace_id.
 
-## Internal Contracts
+## Hợp đồng nội bộ
 
-Defined in `src/app/contracts.py` and documented in `docs/04-api/contract.md`. Each contract has a fake in `tests/fakes.py`; `RAG_BACKEND` / `LLM_BACKEND` switch fake vs real so A and B never block each other.
+Định nghĩa trong `src/app/contracts.py` và mô tả trong `docs/04-api/contract.md`. Mỗi hợp đồng có một fake trong `tests/fakes.py`; `RAG_BACKEND` / `LLM_BACKEND` chuyển giữa fake và thật để A và B không bao giờ chặn nhau.
 
-## Key Decisions
+## Các quyết định chính
 
-Recorded as governance decisions (ADRs) in `.agent/governance/decisions/` — Qdrant hybrid (A), hybrid model routing (A), RBAC as payload filter (B), queue via RQ (B).
+Ghi thành governance decision (ADR) trong `.agent/governance/decisions/` — Qdrant hybrid (A), routing model lai (A), RBAC dạng payload filter (B), hàng chờ bằng RQ (B).
 
 ## Related Files
 
 - SRS: `docs/01-business/srs.md`
 - Contract: `docs/04-api/contract.md`
-- Data: `docs/05-database/schema.md`
-- Security: `docs/06-security/security-design.md`
+- Dữ liệu: `docs/05-database/schema.md`
+- Bảo mật: `docs/06-security/security-design.md`
 
 ## Forbidden Actions
 
-- Do not call an LLM outside `app/llm.py`.
-- Do not apply RBAC only after retrieval.
-- Do not log or enqueue unmasked text.
+- Không gọi LLM ở ngoài `app/llm.py`.
+- Không chỉ áp RBAC sau khi retrieval.
+- Không ghi log hay đưa vào hàng chờ văn bản chưa che.

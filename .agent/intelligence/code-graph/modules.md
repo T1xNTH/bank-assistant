@@ -9,4 +9,4 @@ priority: 3
 ---
 # Modules
 
-Catalog repository modules, their responsibilities, boundaries, owners, and source locations. No application modules are registered yet.
+Danh mục các module trong repo: trách nhiệm, ranh giới, owner và vị trí mã nguồn. Chưa có module ứng dụng nào được đăng ký.

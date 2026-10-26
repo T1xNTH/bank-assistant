@@ -7,11 +7,11 @@ module: templates
 tags: [implementation, report, template]
 priority: 3
 ---
-# Implementation Report Template
+# Template Implementation Report
 
 ## Usage Purpose
 
-Use this template to provide auditable evidence of work performed by an Executor Agent for one authorized task.
+Dùng template này để cung cấp bằng chứng có thể kiểm toán về công việc Executor Agent đã làm cho một task đã được phép.
 
 ## Record Metadata
 
@@ -31,7 +31,7 @@ Use this template to provide auditable evidence of work performed by an Executor
 
 ## Changes Made
 
-| File or Artifact | Change Summary | Task ID |
+| File hoặc sản phẩm | Tóm tắt thay đổi | Task ID |
 |---|---|---|
 | `<repository-relative-path>` | `<specific-change>` | `T-<number>` |
 
@@ -49,7 +49,7 @@ Use this template to provide auditable evidence of work performed by an Executor
 
 ## Command Evidence
 
-| Command | Result | Evidence |
+| Lệnh | Kết quả | Bằng chứng |
 |---|---|---|
 | `agent task start TASK-ID` | `passed | failed | not-run` | `<output-or-path>` |
 | `agent task verify TASK-ID` | `passed | failed | not-run` | `<output-or-path>` |
@@ -58,7 +58,7 @@ Use this template to provide auditable evidence of work performed by an Executor
 
 ## Verification Evidence
 
-| Check | Result | Evidence |
+| Kiểm tra | Kết quả | Bằng chứng |
 |---|---|---|
 | `<command-or-review>` | `passed | failed | not-run` | `<output-or-path>` |
 
@@ -70,25 +70,25 @@ Use this template to provide auditable evidence of work performed by an Executor
 
 ## Completion Criteria
 
-- [ ] Every reported change maps to an authorized task.
-- [ ] Acceptance criteria results and evidence are linked.
-- [ ] Deviations and limitations are explicit.
-- [ ] Build, lint, and test checks are recorded or explicitly marked not-run with rationale.
-- [ ] Reviewer handoff identifies an independent Reviewer Agent.
-- [ ] Git Nexus mappings are updated when commits exist.
+- [ ] Mọi thay đổi được báo cáo đều ánh xạ tới một task đã được phép.
+- [ ] Kết quả và bằng chứng của acceptance criteria đã được liên kết.
+- [ ] Sai lệch và giới hạn được nêu rõ.
+- [ ] Kiểm tra build, lint, test đã được ghi lại hoặc đánh dấu rõ not-run kèm lý do.
+- [ ] Phần bàn giao cho reviewer nêu rõ một Reviewer Agent độc lập.
+- [ ] Ánh xạ Git Nexus được cập nhật khi đã có commit.
 
 ## Forbidden Actions
 
-- Do not report unperformed work as implemented.
-- Do not omit failed or unexecuted required checks.
-- Do not claim completion with unmet task acceptance criteria.
-- Do not claim review approval or move the task to `DONE`.
-- Do not change roadmap or acceptance criteria.
-- Do not use this report as a substitute for independent review.
-- Do not include secrets or sensitive command output.
+- Không báo cáo việc chưa làm là đã hiện thực.
+- Không bỏ sót kiểm tra bắt buộc bị fail hoặc chưa chạy.
+- Không tuyên bố hoàn thành khi acceptance criteria của task chưa đạt.
+- Không tuyên bố review đã duyệt hay chuyển task sang `DONE`.
+- Không đổi roadmap hay acceptance criteria.
+- Không dùng report này thay cho review độc lập.
+- Không đưa secret hay output lệnh nhạy cảm vào.
 
 ## Output Requirements
 
-- Save as `.agent/reports/implementation/TASK-ID.md`.
-- Preserve every heading and table column in this template.
-- Set status `complete` only after completion criteria pass.
+- Lưu thành `.agent/reports/implementation/TASK-ID.md`.
+- Giữ nguyên mọi heading và cột bảng trong template này.
+- Chỉ đặt trạng thái `complete` sau khi các completion criteria đều đạt.

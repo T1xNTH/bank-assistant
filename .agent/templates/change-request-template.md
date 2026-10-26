@@ -7,11 +7,11 @@ module: templates
 tags: [change-request, template]
 priority: 2
 ---
-# Change Request Template
+# Template Change Request
 
 ## Usage Purpose
 
-Use this template to propose, assess, approve, and trace a change to a baselined requirement, contract, architecture, roadmap, or governed scope.
+Dùng template này để đề xuất, đánh giá, phê duyệt và truy vết một thay đổi đối với yêu cầu, contract, kiến trúc, roadmap hoặc phạm vi đã được chốt baseline.
 
 ## Record Metadata
 
@@ -27,11 +27,11 @@ Use this template to propose, assess, approve, and trace a change to a baselined
 
 ## Proposed Change
 
-Describe the exact before-state and requested after-state.
+Mô tả chính xác trạng thái hiện tại và trạng thái mong muốn sau thay đổi.
 
 ## Justification
 
-State the evidence-based reason the change is required.
+Nêu lý do cần thay đổi, dựa trên bằng chứng.
 
 ## Impact Assessment
 
@@ -66,20 +66,20 @@ State the evidence-based reason the change is required.
 
 ## Completion Criteria
 
-- [ ] Approval is recorded before baseline modification.
-- [ ] Approved changes are implemented and verified.
-- [ ] All affected baselines and traceability links are updated.
-- [ ] Status is `implemented`, `rejected`, `withdrawn`, or `superseded`.
+- [ ] Phê duyệt được ghi lại trước khi sửa baseline.
+- [ ] Các thay đổi đã duyệt được hiện thực và kiểm chứng.
+- [ ] Mọi baseline bị ảnh hưởng và liên kết truy vết đã được cập nhật.
+- [ ] Trạng thái là `implemented`, `rejected`, `withdrawn` hoặc `superseded`.
 
 ## Forbidden Actions
 
-- Do not modify a baseline while decision is `pending` or `rejected`.
-- Do not self-approve unless the governance model explicitly authorizes it.
-- Do not alter the approved scope without a new or superseding change request.
-- Do not omit impact assessment or approval rationale.
+- Không sửa baseline khi quyết định còn là `pending` hoặc `rejected`.
+- Không tự duyệt trừ khi mô hình governance cho phép rõ ràng.
+- Không thay đổi phạm vi đã duyệt khi chưa có change request mới hoặc change request thay thế.
+- Không bỏ qua phần đánh giá ảnh hưởng hay lý do phê duyệt.
 
 ## Output Requirements
 
-- Save as `.agent/governance/change-requests/CR-<number>.md`.
-- Preserve every heading in this template.
-- Use repository-relative links and exact enum values.
+- Lưu thành `.agent/governance/change-requests/CR-<number>.md`.
+- Giữ nguyên mọi heading trong template này.
+- Dùng link tương đối theo repo và đúng giá trị enum.

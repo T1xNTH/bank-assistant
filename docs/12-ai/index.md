@@ -7,6 +7,9 @@ module: repository
 tags: [ai, models, agents]
 priority: 3
 ---
-# Artificial Intelligence
+# Trí tuệ nhân tạo
 
-Document AI use cases, model choices, prompts, evaluation, safety controls, data handling, and operational constraints in this section.
+Phần này ghi lại các use case AI, lựa chọn model, prompt, cách đánh giá, biện pháp an toàn, xử lý dữ liệu và ràng buộc vận hành.
+
+## Nội dung
+- `ai-design.md` – Thiết kế AI (model, retrieval, prompt, eval)

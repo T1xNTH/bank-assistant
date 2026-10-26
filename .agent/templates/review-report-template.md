@@ -7,11 +7,11 @@ module: templates
 tags: [review, report, template]
 priority: 3
 ---
-# Review Report Template
+# Template Review Report
 
 ## Usage Purpose
 
-Use this template to record an independent Reviewer Agent assessment of an Executor Agent implementation.
+Dùng template này để ghi lại đánh giá của một Reviewer Agent độc lập về phần hiện thực của Executor Agent.
 
 ## Record Metadata
 
@@ -45,7 +45,7 @@ Use this template to record an independent Reviewer Agent assessment of an Execu
 
 ## Command Evidence
 
-| Command | Result | Evidence |
+| Lệnh | Kết quả | Bằng chứng |
 |---|---|---|
 | `agent review start TASK-ID` | `passed | failed | not-run` | `<output-or-path>` |
 | `agent review approve TASK-ID` | `passed | failed | not-run` | `<output-or-path>` |
@@ -54,30 +54,30 @@ Use this template to record an independent Reviewer Agent assessment of an Execu
 
 ## Required Review Checks
 
-| Check | Result | Evidence |
+| Kiểm tra | Kết quả | Bằng chứng |
 |---|---|---|
 | Code diff | `passed | failed | blocked | not-run` | `<evidence>` |
 | Acceptance criteria | `passed | failed | blocked | not-run` | `<evidence>` |
-| Architecture compliance | `passed | failed | blocked | not-run` | `<evidence>` |
-| Security | `passed | failed | blocked | not-run` | `<evidence>` |
-| Performance | `passed | failed | blocked | not-run` | `<evidence>` |
-| Regression risk | `passed | failed | blocked | not-run` | `<evidence>` |
-| Test/lint/build evidence | `passed | failed | blocked | not-run` | `<evidence>` |
+| Tuân thủ kiến trúc | `passed | failed | blocked | not-run` | `<evidence>` |
+| Bảo mật | `passed | failed | blocked | not-run` | `<evidence>` |
+| Hiệu năng | `passed | failed | blocked | not-run` | `<evidence>` |
+| Rủi ro regression | `passed | failed | blocked | not-run` | `<evidence>` |
+| Bằng chứng test/lint/build | `passed | failed | blocked | not-run` | `<evidence>` |
 
 ## Findings
 
-| Finding ID | Severity | Artifact | Finding | Required Action | Owner |
+| Finding ID | Mức độ | Sản phẩm | Finding | Hành động cần làm | Owner |
 |---|---|---|---|---|---|
 | `F-<number>` | `critical | major | minor | observation` | `<path>` | `<specific-finding>` | `<action-or-none>` | `<person-or-agent-id>` |
 
 ## Acceptance Criteria
 
-- [ ] Review scope and standard are explicit.
-- [ ] Each finding identifies evidence, severity, action, and owner.
-- [ ] Critical and major findings are resolved or formally accepted.
-- [ ] Approval outcome matches unresolved findings.
-- [ ] Code diff, acceptance criteria, architecture, security, performance, regression risk, and test/lint/build evidence are checked.
-- [ ] Reviewer identity is independent from Executor identity.
+- [ ] Phạm vi và chuẩn review được nêu rõ.
+- [ ] Mỗi finding nêu bằng chứng, mức độ, hành động và owner.
+- [ ] Finding critical và major đã được giải quyết hoặc chấp nhận chính thức.
+- [ ] Kết quả duyệt khớp với các finding chưa giải quyết.
+- [ ] Đã kiểm tra code diff, acceptance criteria, kiến trúc, bảo mật, hiệu năng, rủi ro regression và bằng chứng test/lint/build.
+- [ ] Danh tính reviewer độc lập với danh tính executor.
 
 ## Approval Outcome
 
@@ -89,22 +89,22 @@ Use this template to record an independent Reviewer Agent assessment of an Execu
 
 ## Completion Criteria
 
-- [ ] All required actions are linked to tasks or verified as resolved.
-- [ ] Approval outcome and rationale are recorded.
-- [ ] Related issue, risk, and report records are updated.
+- [ ] Mọi hành động bắt buộc đã được liên kết với task hoặc đã kiểm chứng là đã giải quyết.
+- [ ] Kết quả duyệt và lý do đã được ghi lại.
+- [ ] Các record issue, risk và report liên quan đã được cập nhật.
 
 ## Forbidden Actions
 
-- Do not approve artifacts with unresolved critical findings.
-- Do not remove findings after remediation; record their resolution.
-- Do not assign ambiguous severity or ownership.
-- Do not claim review coverage outside the declared scope.
-- Do not act as the Executor Agent for the same task.
-- Do not move a task to `DONE`; QA must run after `APPROVED`.
-- Do not change roadmap or acceptance criteria.
+- Không duyệt sản phẩm khi còn finding critical chưa giải quyết.
+- Không xoá finding sau khi đã sửa; hãy ghi lại cách giải quyết.
+- Không gán mức độ hay owner mơ hồ.
+- Không tuyên bố đã review những phần nằm ngoài phạm vi đã khai báo.
+- Không đóng vai Executor Agent cho cùng task.
+- Không chuyển task sang `DONE`; QA phải chạy sau `APPROVED`.
+- Không đổi roadmap hay acceptance criteria.
 
 ## Output Requirements
 
-- Save as `.agent/reports/review/TASK-ID.md`.
-- Preserve every heading and table column in this template.
-- Use repository-relative links and exact enum values.
+- Lưu thành `.agent/reports/review/TASK-ID.md`.
+- Giữ nguyên mọi heading và cột bảng trong template này.
+- Dùng link tương đối theo repo và đúng giá trị enum.

@@ -41,7 +41,7 @@ Khi mọi task của epic xong: `scripts/agent qa start E-004 --qa <id>` → ch�
 - `current-context.md` chỉ coordinator (A) sửa, mỗi sáng.
 - Đổi `docs/04-api/openapi.yaml` hoặc `src/app/contracts.py` → PR riêng, label `contract`, cả hai duyệt + change request.
 
-## Definition of Done (task)
+## Định nghĩa hoàn thành (task)
 - [ ] Acceptance criteria của task đạt, có lệnh verify.
 - [ ] `make check` xanh (ruff, pytest, framework validation), output sạch.
 - [ ] Implementation report `complete` + review report `approved`.

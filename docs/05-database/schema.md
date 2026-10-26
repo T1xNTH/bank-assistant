@@ -7,34 +7,34 @@ module: storage
 tags: [database, qdrant, sqlite]
 priority: 2
 ---
-# Data Schema
+# Schema dữ liệu
 
 ## Qdrant collection `bank_docs` (owner A)
-Named vectors: `dense` (bge-m3, 1024, cosine), sparse `sparse` (bge-m3 lexical weights). One point per chunk.
+Named vector: `dense` (bge-m3, 1024, cosine), sparse `sparse` (trọng số lexical của bge-m3). Mỗi chunk là một point.
 
-| Payload field | Type | Required | Notes |
+| Trường payload | Kiểu | Bắt buộc | Ghi chú |
 |---|---|---|---|
-| `doc_id` | str | yes | stable id from `data/manifest.csv` |
-| `source` | str | yes | file name shown in citations |
-| `page` | int | yes | 1-based |
-| `chunk_index` | int | yes | |
-| `text` | str | yes | chunk text (tables as Markdown) |
-| `department` | keyword | yes | `public`, `credit`, `hr` — payload index |
-| `classification` | keyword | yes | `public`, `internal`, `confidential` — payload index |
-| `effective_date` | date str | yes | ISO date |
-| `superseded_by` | str \| null | yes | `doc_id` of the replacing document; non-null → excluded from retrieval |
+| `doc_id` | str | có | id ổn định lấy từ `data/manifest.csv` |
+| `source` | str | có | tên file hiển thị trong trích dẫn |
+| `page` | int | có | đánh số từ 1 |
+| `chunk_index` | int | có | |
+| `text` | str | có | nội dung chunk (bảng ở dạng Markdown) |
+| `department` | keyword | có | `public`, `credit`, `hr` — có payload index |
+| `classification` | keyword | có | `public`, `internal`, `confidential` — có payload index |
+| `effective_date` | date str | có | ngày ISO |
+| `superseded_by` | str \| null | có | `doc_id` của tài liệu thay thế; khác null → bị loại khỏi retrieval |
 
-`data/manifest.csv` columns: `doc_id,file,department,classification,effective_date,superseded_by,source_url`.
+Các cột của `data/manifest.csv`: `doc_id,file,department,classification,effective_date,superseded_by,source_url`.
 
 ## SQLite
-| File | Owner | Tables | Access |
+| File | Owner | Bảng | Truy cập |
 |---|---|---|---|
-| `data/audit.db` | B | `audit_log(ts, user_id, department, endpoint, question_masked, route, refused, latency_ms, cost_usd, trace_id)` | append only |
-| `data/core_banking.db` | B | `accounts`, `transactions` (synthetic) | opened `mode=ro` by the agent |
-| `data/tickets.db` | B | `tickets(id, created_by, summary, status, approved_by, ts)` | written only after approval |
+| `data/audit.db` | B | `audit_log(ts, user_id, department, endpoint, question_masked, route, refused, latency_ms, cost_usd, trace_id)` | chỉ append |
+| `data/core_banking.db` | B | `accounts`, `transactions` (dữ liệu tổng hợp) | agent mở với `mode=ro` |
+| `data/tickets.db` | B | `tickets(id, created_by, summary, status, approved_by, ts)` | chỉ ghi sau khi được duyệt |
 
 ## Redis (owner B)
-RQ queues `ask-high`, `ask-default`; job payload contains masked question + `user_id` only; results TTL 1 h.
+Hàng chờ RQ `ask-high`, `ask-default`; payload của job chỉ chứa câu hỏi đã che + `user_id`; kết quả có TTL 1 h.
 
 ## Backup
-Qdrant snapshots via `make backup` / `make restore` (FR-11).
+Snapshot Qdrant qua `make backup` / `make restore` (FR-11).

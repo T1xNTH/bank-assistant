@@ -9,23 +9,23 @@ priority: 2
 ---
 # Agents
 
-## Purpose
+## Mục đích
 
-Index reusable role prompts and agent coordination documentation for the framework lifecycle.
+Mục lục cho các prompt vai trò dùng lại được và tài liệu điều phối agent trong lifecycle của framework.
 
-## Standard Agent Workflow
+## Workflow agent chuẩn
 
-The standard task workflow is:
+Workflow task chuẩn là:
 
 `Orchestrator -> Executor Agent -> Implementation Report -> Reviewer Agent -> QA Agent -> DONE`
 
-The Executor Agent and Reviewer Agent are separate roles:
+Executor Agent và Reviewer Agent là hai vai trò tách biệt:
 
 - `Executor Agent != Reviewer Agent`
-- Codex Extension and Claude Code are executor adapters.
-- Codex CLI and Claude CLI are reviewer adapters.
+- Codex Extension và Claude Code là adapter cho executor.
+- Codex CLI và Claude CLI là adapter cho reviewer.
 
-The required handoff files are:
+Các file bàn giao bắt buộc:
 
 - Implementation report: `.agent/reports/implementation/TASK-ID.md`
 - Review report: `.agent/reports/review/TASK-ID.md`
@@ -33,15 +33,17 @@ The required handoff files are:
 - Task board: `.agent/execution/task-board.md`
 - Current context: `.agent/execution/current-context.md`
 
-The task lifecycle for this workflow is:
+Lifecycle của task trong workflow này:
 
 `BACKLOG -> READY -> IN_PROGRESS -> IMPLEMENTED -> REVIEWING -> APPROVED -> DONE`
 
-If the reviewer requires fixes, the task transitions `CHANGES_REQUESTED -> IN_PROGRESS`. If work cannot continue, the task transitions to `BLOCKED`.
+Nếu reviewer yêu cầu sửa, task chuyển `CHANGES_REQUESTED -> IN_PROGRESS`. Nếu không thể tiếp tục, task chuyển sang `BLOCKED`.
 
-## Command Contract
+Trong repo này, các trạng thái trên được ánh xạ sang enum của `AGENT.md` (DEC-002): `IMPLEMENTED/REVIEWING` → `review`, `CHANGES_REQUESTED` → `in-progress`, `APPROVED/DONE` → `done` (sau QA). Xem `docs/07-development/agent-cli.md`.
 
-Executor flow:
+## Command contract
+
+Luồng của executor:
 
 ```bash
 agent task start TASK-ID
@@ -50,7 +52,7 @@ agent task report TASK-ID --executor <executor-id>
 agent review request TASK-ID --reviewer <reviewer-id>
 ```
 
-Reviewer flow:
+Luồng của reviewer:
 
 ```bash
 agent review start TASK-ID
@@ -59,7 +61,7 @@ agent review request-changes TASK-ID
 agent review block TASK-ID
 ```
 
-QA flow:
+Luồng của QA:
 
 ```bash
 agent qa start TASK-ID
@@ -67,18 +69,18 @@ agent qa pass TASK-ID
 agent qa fail TASK-ID
 ```
 
-## Prompt Pack
+## Bộ prompt
 
-- `project-bootstrap-prompt.md` - Verify or restore the framework structure
-- `project-onboarding-prompt.md` - Ingest authoritative inputs and create initial Planning Truth
-- `roadmap-lock-prompt.md` - Govern draft-roadmap approval
-- `epic-expansion-prompt.md` - Expand one `EPIC_READY` epic into tasks
-- `executor-prompt.md` - Execute one authorized task
-- `reviewer-prompt.md` - Perform independent review
-- `qa-prompt.md` - Execute QA and issue a release recommendation
-- `release-manager-prompt.md` - Validate and record release execution
+- `project-bootstrap-prompt.md` - Kiểm tra hoặc khôi phục cấu trúc framework
+- `project-onboarding-prompt.md` - Nạp input chính thức và tạo Planning Truth ban đầu
+- `roadmap-lock-prompt.md` - Quản trị việc duyệt roadmap nháp
+- `epic-expansion-prompt.md` - Tách một epic `EPIC_READY` thành các task
+- `executor-prompt.md` - Thực thi một task đã được phép
+- `reviewer-prompt.md` - Thực hiện review độc lập
+- `qa-prompt.md` - Chạy QA và đưa ra khuyến nghị release
+- `release-manager-prompt.md` - Kiểm tra và ghi lại việc thực hiện release
 
-## Related Documentation
+## Tài liệu liên quan
 
-- `AGENT.md` - Authoritative agent roles, permissions, and lifecycle rules
-- `.agent/templates/` - Reusable governance, execution, and report templates
+- `AGENT.md` - Quy định chính thức về vai trò agent, quyền hạn và lifecycle
+- `.agent/templates/` - Template dùng lại cho governance, execution và report

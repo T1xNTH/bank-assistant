@@ -7,7 +7,7 @@ module: risks
 tags: [risk, delivery]
 priority: 2
 ---
-# RISK-001: Docker not installed on development machines
+# RISK-001: Máy phát triển chưa cài Docker
 
 ## Record Metadata
 
@@ -24,13 +24,13 @@ priority: 2
 
 ## Risk Statement
 
-If Docker is not installed on N1, then compose-based epics cannot start, resulting in a delay of E-002 and every dependent epic.
+Nếu Docker chưa được cài trong N1 thì các epic dựa trên compose không thể bắt đầu, dẫn tới E-002 và mọi epic phụ thuộc bị trễ.
 
 ## Exposure Assessment
 
 - **Affected Scope**: `E-002, E-005, E-009`
-- **Impact Description**: schedule slip against the 10-day MVP window.
-- **Detection Signals**: `docker version` fails on N1 afternoon
+- **Impact Description**: trễ tiến độ so với khung 10 ngày của MVP.
+- **Detection Signals**: `docker version` fail vào chiều N1
 - **Assumptions**: `none`
 
 ## Related Files
@@ -44,9 +44,9 @@ If Docker is not installed on N1, then compose-based epics cannot start, resulti
 ## Response Plan
 
 - **Strategy**: `mitigate`
-- **Mitigation Actions**: Install Docker Engine + compose plugin first thing N1 (both machines).
-- **Contingency Actions**: Run Qdrant/Redis binaries natively; keep fakes for API work.
-- **Trigger Threshold**: Docker not working by N1 end
+- **Mitigation Actions**: Cài Docker Engine + compose plugin ngay đầu N1 (cả hai máy).
+- **Contingency Actions**: Chạy Qdrant/Redis bằng binary trực tiếp; tiếp tục dùng fake cho phần API.
+- **Trigger Threshold**: Hết N1 mà Docker vẫn chưa chạy
 - **Responsible Owner**: `teammate-b`
 
 ## Review Record
@@ -59,19 +59,19 @@ If Docker is not installed on N1, then compose-based epics cannot start, resulti
 
 ## Completion Criteria
 
-- [ ] The risk is eliminated, accepted by an authorized owner, transferred, or converted to an issue after realization.
-- [ ] Final status and supporting evidence are recorded.
-- [ ] Related tasks, blockers, issues, and decisions are updated.
+- [ ] Rủi ro đã được loại bỏ, được owner có thẩm quyền chấp nhận, được chuyển giao, hoặc được chuyển thành issue sau khi xảy ra.
+- [ ] Trạng thái cuối và bằng chứng hỗ trợ đã được ghi lại.
+- [ ] Các task, blocker, issue và decision liên quan đã được cập nhật.
 
 ## Forbidden Actions
 
-- Do not close a risk solely because its review date passed.
-- Do not accept a high or critical risk without an identified authorized owner.
-- Do not use vague triggers or unowned mitigation actions.
-- Do not delete prior assessments when exposure changes.
+- Không đóng một rủi ro chỉ vì đã qua ngày review.
+- Không chấp nhận rủi ro high hoặc critical khi chưa xác định owner có thẩm quyền.
+- Không dùng điều kiện kích hoạt mơ hồ hay hành động giảm thiểu không có owner.
+- Không xoá các đánh giá trước đó khi mức độ phơi nhiễm thay đổi.
 
 ## Output Requirements
 
-- Save as `.agent/governance/risks/RISK-001.md`.
-- Preserve every heading in this template.
-- Use repository-relative links and exact enum values.
+- Lưu thành `.agent/governance/risks/RISK-001.md`.
+- Giữ nguyên mọi heading trong template này.
+- Dùng link tương đối theo repo và đúng giá trị enum.

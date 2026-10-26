@@ -7,17 +7,17 @@ module: repository
 tags: [architecture, design, decisions]
 priority: 2
 ---
-# Architecture
+# Kiến trúc
 
-## Purpose
+## Mục đích
 
-Index authoritative system architecture, decisions, diagrams, constraints, and technical boundaries.
+Mục lục cho kiến trúc hệ thống chính thức, các quyết định, sơ đồ, ràng buộc và ranh giới kỹ thuật.
 
-## Contents
+## Nội dung
 
-- `architecture.md` - Architecture intake and validation state
-- `system-design.md` - System design when provided
-- `decisions.md` - Architecture decisions when provided
-- `diagrams/` - Architecture diagrams when provided
+- `architecture.md` - Tài liệu kiến trúc và trạng thái nạp/kiểm tra
+- `system-design.md` - Thiết kế hệ thống, khi được cung cấp
+- `decisions.md` - Các quyết định kiến trúc, khi được cung cấp
+- `diagrams/` - Sơ đồ kiến trúc, khi được cung cấp
 
-Only `architecture.md` currently exists; authoritative architecture input remains blocked by `BLOCKER-003`.
+Hiện chỉ có `architecture.md`; input kiến trúc chính thức vẫn đang bị chặn bởi `BLOCKER-003`.

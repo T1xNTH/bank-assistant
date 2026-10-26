@@ -7,7 +7,7 @@ module: risks
 tags: [risk, technical]
 priority: 2
 ---
-# RISK-002: CPU-only inference too slow
+# RISK-002: Suy luận chỉ bằng CPU quá chậm
 
 ## Record Metadata
 
@@ -24,13 +24,13 @@ priority: 2
 
 ## Risk Statement
 
-If bge-m3, reranker and Qwen2.5 run on CPU only, then ingest and local answers may be too slow, resulting in long ingest runs and p95 above NFR-08 for local route.
+Nếu bge-m3, reranker và Qwen2.5 chỉ chạy trên CPU thì ingest và câu trả lời local có thể quá chậm, dẫn tới ingest chạy rất lâu và p95 của route local vượt NFR-08.
 
 ## Exposure Assessment
 
 - **Affected Scope**: `E-003, E-004, E-010`
-- **Impact Description**: schedule slip against the 10-day MVP window.
-- **Detection Signals**: ingest > 60 min for 30 PDFs; local answer > 60 s
+- **Impact Description**: trễ tiến độ so với khung 10 ngày của MVP.
+- **Detection Signals**: ingest > 60 phút cho 30 PDF; câu trả lời local > 60 s
 - **Assumptions**: `none`
 
 ## Related Files
@@ -44,9 +44,9 @@ If bge-m3, reranker and Qwen2.5 run on CPU only, then ingest and local answers m
 ## Response Plan
 
 - **Strategy**: `mitigate`
-- **Mitigation Actions**: Run ingest in background once and snapshot Qdrant; use qwen2.5:3b; cache models; NFR-08 measured on cloud route.
-- **Contingency Actions**: Reduce corpus for CI; document local-route latency.
-- **Trigger Threshold**: measured timings in eval report
+- **Mitigation Actions**: Chạy ingest nền một lần rồi snapshot Qdrant; dùng qwen2.5:3b; cache model; NFR-08 đo trên route cloud.
+- **Contingency Actions**: Giảm bộ tài liệu cho CI; ghi lại latency của route local.
+- **Trigger Threshold**: thời gian đo được trong báo cáo eval
 - **Responsible Owner**: `trong-hung`
 
 ## Review Record
@@ -59,19 +59,19 @@ If bge-m3, reranker and Qwen2.5 run on CPU only, then ingest and local answers m
 
 ## Completion Criteria
 
-- [ ] The risk is eliminated, accepted by an authorized owner, transferred, or converted to an issue after realization.
-- [ ] Final status and supporting evidence are recorded.
-- [ ] Related tasks, blockers, issues, and decisions are updated.
+- [ ] Rủi ro đã được loại bỏ, được owner có thẩm quyền chấp nhận, được chuyển giao, hoặc được chuyển thành issue sau khi xảy ra.
+- [ ] Trạng thái cuối và bằng chứng hỗ trợ đã được ghi lại.
+- [ ] Các task, blocker, issue và decision liên quan đã được cập nhật.
 
 ## Forbidden Actions
 
-- Do not close a risk solely because its review date passed.
-- Do not accept a high or critical risk without an identified authorized owner.
-- Do not use vague triggers or unowned mitigation actions.
-- Do not delete prior assessments when exposure changes.
+- Không đóng một rủi ro chỉ vì đã qua ngày review.
+- Không chấp nhận rủi ro high hoặc critical khi chưa xác định owner có thẩm quyền.
+- Không dùng điều kiện kích hoạt mơ hồ hay hành động giảm thiểu không có owner.
+- Không xoá các đánh giá trước đó khi mức độ phơi nhiễm thay đổi.
 
 ## Output Requirements
 
-- Save as `.agent/governance/risks/RISK-002.md`.
-- Preserve every heading in this template.
-- Use repository-relative links and exact enum values.
+- Lưu thành `.agent/governance/risks/RISK-002.md`.
+- Giữ nguyên mọi heading trong template này.
+- Dùng link tương đối theo repo và đúng giá trị enum.

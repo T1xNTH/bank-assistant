@@ -7,11 +7,12 @@ module: repository
 tags: [security, compliance, threat-model]
 priority: 2
 ---
-# Security
+# Bảo mật
 
-This section documents security policies, threat models, and compliance requirements.
+Phần này mô tả chính sách bảo mật, threat model và yêu cầu tuân thủ.
 
-## Contents
+## Nội dung
+- `security-design.md` – Thiết kế bảo mật của bank-assistant
 - `threat-model.md` – Threat model
-- `security-policies.md` – Security policies
-- `compliance.md` – Compliance requirements
+- `security-policies.md` – Chính sách bảo mật
+- `compliance.md` – Yêu cầu tuân thủ

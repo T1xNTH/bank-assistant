@@ -7,17 +7,17 @@ module: repository
 tags: [business, requirements, use-cases]
 priority: 2
 ---
-# Business Context
+# Bối cảnh nghiệp vụ
 
-## Purpose
+## Mục đích
 
-Index authoritative business requirements, scope, use cases, and domain context.
+Mục lục cho yêu cầu nghiệp vụ chính thức, phạm vi, use case và bối cảnh domain.
 
-## Contents
+## Nội dung
 
-- `srs.md` - SRS intake and validation state
-- `requirements.md` - Business requirements when provided
-- `use-cases.md` - Use-case specifications when provided
-- `domain-model.md` - Domain concepts when provided
+- `srs.md` - SRS và trạng thái nạp/kiểm tra
+- `requirements.md` - Yêu cầu nghiệp vụ, khi được cung cấp
+- `use-cases.md` - Đặc tả use case, khi được cung cấp
+- `domain-model.md` - Các khái niệm domain, khi được cung cấp
 
-Only `srs.md` currently exists; authoritative business input remains blocked by `BLOCKER-001`.
+Hiện chỉ có `srs.md`; input nghiệp vụ chính thức vẫn đang bị chặn bởi `BLOCKER-001`.

@@ -7,11 +7,11 @@ module: templates
 tags: [blocker, template]
 priority: 2
 ---
-# Blocker Template
+# Template Blocker
 
 ## Usage Purpose
 
-Use this template when an epic or task cannot proceed because a specific dependency, approval, access, decision, or defect is unresolved.
+Dùng template này khi một epic hoặc task không thể tiếp tục vì một dependency, phê duyệt, quyền truy cập, quyết định hoặc lỗi cụ thể chưa được giải quyết.
 
 ## Record Metadata
 
@@ -27,7 +27,7 @@ Use this template when an epic or task cannot proceed because a specific depende
 
 ## Blocking Condition
 
-State the exact condition preventing progress and the evidence confirming it.
+Nêu chính xác điều kiện đang cản trở tiến độ và bằng chứng xác nhận điều đó.
 
 ## Impact
 
@@ -53,20 +53,20 @@ State the exact condition preventing progress and the evidence confirming it.
 
 ## Completion Criteria
 
-- [ ] The blocking condition no longer prevents affected work.
-- [ ] Resolution evidence is linked.
-- [ ] Affected epic and task statuses are updated.
-- [ ] Workaround removal is tracked when applicable.
+- [ ] Điều kiện chặn không còn cản trở các công việc bị ảnh hưởng.
+- [ ] Bằng chứng giải quyết đã được liên kết.
+- [ ] Trạng thái các epic và task bị ảnh hưởng đã được cập nhật.
+- [ ] Việc gỡ bỏ workaround được theo dõi khi có.
 
 ## Forbidden Actions
 
-- Do not mark status `resolved` based only on a proposed action.
-- Do not continue blocked work through an unauthorized workaround.
-- Do not omit affected epic or task links.
-- Do not fabricate resolution evidence.
+- Không đánh dấu `resolved` chỉ dựa trên một hành động mới được đề xuất.
+- Không tiếp tục công việc bị chặn bằng một workaround chưa được phép.
+- Không bỏ sót liên kết tới epic hay task bị ảnh hưởng.
+- Không bịa bằng chứng giải quyết.
 
 ## Output Requirements
 
-- Save as `.agent/governance/blockers/BLOCKER-<number>.md`.
-- Preserve every heading in this template.
-- Use repository-relative links and exact enum values.
+- Lưu thành `.agent/governance/blockers/BLOCKER-<number>.md`.
+- Giữ nguyên mọi heading trong template này.
+- Dùng link tương đối theo repo và đúng giá trị enum.

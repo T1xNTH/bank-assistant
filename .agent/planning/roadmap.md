@@ -7,11 +7,11 @@ module: planning
 tags: [roadmap, milestones, planning]
 priority: 1
 ---
-# Project Roadmap
+# Roadmap dự án
 
 ## Purpose
 
-Maintain the approved sequence of outcome-level roadmap items and their target windows without defining task-level implementation.
+Lưu thứ tự đã duyệt của các roadmap item ở mức kết quả và khung thời gian mục tiêu, không định nghĩa chi tiết hiện thực ở mức task.
 
 ## Status Model
 
@@ -19,7 +19,7 @@ Maintain the approved sequence of outcome-level roadmap items and their target w
 
 ## Roadmap Records
 
-| Roadmap ID | Outcome | Owner | Target Window | Status | Milestone IDs | Change Request |
+| Roadmap ID | Kết quả | Owner | Khung thời gian | Trạng thái | Milestone IDs | Change Request |
 |---|---|---|---|---|---|---|
 
-| `R-001` | `Deliver bank-assistant MVP (FR-01..FR-12, NFR-01..NFR-10) in 10 working days` | `trong-hung` | `2026-10-26..2026-11-06` | `ROADMAP_APPROVED` | `M-001, M-002` | `none` |
+| `R-001` | `Giao MVP bank-assistant (FR-01..FR-12, NFR-01..NFR-10) trong 10 ngày làm việc` | `trong-hung` | `2026-10-26..2026-11-06` | `ROADMAP_APPROVED` | `M-001, M-002` | `none` |

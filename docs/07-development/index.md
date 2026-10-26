@@ -7,11 +7,13 @@ module: repository
 tags: [development, standards, workflow]
 priority: 3
 ---
-# Development
+# Phát triển
 
-This section provides development guidelines, coding standards, and tooling.
+Phần này cung cấp hướng dẫn phát triển, chuẩn viết code và công cụ.
 
-## Contents
-- `coding-standards.md` – Coding conventions
-- `tooling.md` – Development tools and setup
-- `workflow.md` – Git workflow and PR process
+## Nội dung
+- `agent-cli.md` – CLI `scripts/agent` quản lý lifecycle task/review/QA/epic
+- `team-workflow.md` – Quy trình làm việc của team 2 người
+- `coding-standards.md` – Quy ước viết code
+- `tooling.md` – Công cụ phát triển và cách cài đặt
+- `workflow.md` – Git workflow và quy trình PR
