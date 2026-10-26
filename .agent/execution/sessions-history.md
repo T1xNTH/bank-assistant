@@ -59,3 +59,11 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261024-165138-15` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-023` | `completed` | `task added to E-008` | `.agent/execution/task-board.md` | `none` |
 | `S-20261024-165138-16` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-024` | `completed` | `task added to E-009` | `.agent/execution/task-board.md` | `none` |
 | `S-20261024-165138-17` | `2026-10-24` | `2026-10-24` | `trong-hung` | `T-025` | `completed` | `task added to E-009` | `.agent/execution/task-board.md` | `none` |
+| `S-20261026-103919` | `2026-10-26` | `2026-10-26` | `trong-hung` | `E-001` | `completed` | `epic EPIC_READY -> EPIC_IN_PROGRESS` | `.agent/planning/epics.md` | `none` |
+| `S-20261026-103919-2` | `2026-10-26` | `2026-10-26` | `trong-hung` | `T-001` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
+| `S-20261026-103919-3` | `2026-10-26` | `2026-10-26` | `claude-code-a` | `T-001` | `completed` | `implementation report draft` | `.agent/reports/implementation/T-001.md` | `none` |
+| `S-20261026-103953` | `2026-10-26` | `2026-10-26` | `trong-hung` | `T-001` | `completed` | `verify 'gh pr view 1 --json state,reviews --jq '[.state, (.reviews[] select(.state=="APPROVED") .author.login)] join(" ")'' passed` | `.agent/reports/implementation/T-001.md` | `none` |
+| `S-20261026-103953-2` | `2026-10-26` | `2026-10-26` | `trong-hung` | `T-001` | `completed` | `verify 'make validate' passed` | `.agent/reports/implementation/T-001.md` | `none` |
+| `S-20261026-104000` | `2026-10-26` | `2026-10-26` | `trong-hung` | `T-001` | `completed` | `verify 'make check' passed` | `.agent/reports/implementation/T-001.md` | `none` |
+| `S-20261026-104022` | `2026-10-26` | `2026-10-26` | `claude-code-a` | `T-001` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-001.md` | `none` |
+| `S-20261026-104022-2` | `2026-10-26` | `2026-10-26` | `claude-code-a` | `T-001` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-001.md` | `none` |
