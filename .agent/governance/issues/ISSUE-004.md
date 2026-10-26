@@ -61,7 +61,7 @@ Theo dõi finding F-03 trong review baseline của B (`.agent/reports/review/REV
 ## Resolution
 
 - **Resolution Type**: `not-applicable`
-- **Resolution Summary**: `Hướng xử lý: DEC-006 — giữ nguyên roadmap, M-001 chỉ dùng tài liệu classification public (filter trong T-016, kiểm ở T-019). Issue đóng khi T-016 và T-019 done kèm test.`
+- **Resolution Summary**: `Hướng xử lý đề xuất: DEC-006 (proposed) + CR-001 (proposed) — giữ nguyên roadmap, M-001 chỉ dùng tài liệu classification public. Chờ A và B duyệt CR-001; issue đóng khi T-016 và T-019 hiện thực filter kèm test.`
 - **Verification Evidence**: `none`
 - **Resolved By**: `none`
 - **Resolved Date**: `none`
