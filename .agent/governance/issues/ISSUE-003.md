@@ -61,7 +61,7 @@ Payload job chỉ gồm câu hỏi đã che + `user_id` (`docs/05-database/schem
 ## Resolution
 
 - **Resolution Type**: `not-applicable`
-- **Resolution Summary**: `Phương án A chọn (2026-10-27, checklist A-1): payload job thêm pii_types (chỉ tên loại) và force_local; worker phân giải User lại từ user_id qua kho key. Làm trong T-024/T-025; owner B xác nhận.`
+- **Resolution Summary**: `Phương án A chọn (2026-10-27, checklist A-1): payload job thêm pii_types (chỉ tên loại) và force_local; worker phân giải User lại từ user_id qua kho key. Làm trong T-024/T-025; owner B xác nhận. Làm rõ của B (2026-10-27, https://github.com/caitoithap/bank-assistant/pull/29#issuecomment-6434139388), A đồng ý: baseline giữ nguyên "input có PII → local"; LLM cloud chỉ nhận văn bản đã che và không có PII trong input; cho văn bản đã che PII lên cloud là ngoại lệ routing, phải có change request được duyệt trước; force_local=true luôn được tôn trọng; giới hạn classification của CR-001 vẫn áp dụng.`
 - **Verification Evidence**: `none`
 - **Resolved By**: `none`
 - **Resolved Date**: `none`

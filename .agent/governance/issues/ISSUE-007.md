@@ -11,7 +11,7 @@ priority: 2
 
 ## Usage Purpose
 
-Theo dõi quan sát A-4 trong review baseline của A (`.agent/reports/review/T-001-A-baseline.md`). A đã đồng ý và chọn phương án ngày 2026-10-27. Review follow-up của B thay đề xuất chỉ ghi audit khi API trả kết quả bằng consumer độc lập qua Redis Stream; nguồn: [comment PR #29](https://github.com/caitoithap/bank-assistant/pull/29#issuecomment-6434139388). Lựa chọn ban đầu của A được giữ trong report lịch sử; thay đổi kiến trúc cần A và B duyệt CR-004 trước khi hiện thực.
+Theo dõi quan sát A-4 trong review baseline của A (`.agent/reports/review/T-001-A-baseline.md`). A đã đồng ý và chọn phương án ngày 2026-10-27. Review follow-up của B thay đề xuất chỉ ghi audit khi API trả kết quả bằng consumer độc lập qua Redis Stream; nguồn: [comment PR #29](https://github.com/caitoithap/bank-assistant/pull/29#issuecomment-6434139388). Lựa chọn ban đầu của A được giữ trong report lịch sử; thay đổi kiến trúc cần A và B duyệt CR-004 trước khi hiện thực. A (trong-hung) đồng ý phương án Redis Stream ngày 2026-10-27 (xác nhận trong chat với executor `claude-code-a`, phản hồi trên PR #29); duyệt chính thức CR-004 vẫn chờ B ước lượng ảnh hưởng lịch.
 
 ## Record Metadata
 
