@@ -87,3 +87,6 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261027-151549` | `2026-10-27` | `2026-10-27` | `codex` | `T-002` | `completed` | `verify 'gh run view 40471569329 --repo caitoithap/bank-assistant --exit-status' passed` | `.agent/reports/implementation/T-002.md` | `none` |
 | `S-20261027-151622` | `2026-10-27` | `2026-10-27` | `codex` | `T-002` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-002.md` | `none` |
 | `S-20261027-151653` | `2026-10-27` | `2026-10-27` | `codex` | `T-002` | `completed` | `review requested from independent-reviewer-t002` | `.agent/reports/implementation/T-002.md` | `none` |
+| `S-20261027-151812` | `2026-10-27` | `2026-10-27` | `independent-reviewer-t002` | `T-002` | `completed` | `review started` | `.agent/reports/review/T-002.md` | `none` |
+| `S-20261027-152034` | `2026-10-27` | `2026-10-27` | `independent-reviewer-t002` | `T-002` | `completed` | `review approved` | `.agent/reports/review/T-002.md` | `none` |
+| `S-20261027-152207-t002-handoff` | `2026-10-27` | `2026-10-27` | `codex` | `T-002` | `completed` | `đồng bộ bàn giao sau review độc lập APPROVED và QA passed bởi independent-reviewer-t002; giữ task review chờ A approve PR #31, CR-005 proposed` | `.agent/reports/review/T-002.md, .agent/reports/qa/T-002.md` | `none` |
