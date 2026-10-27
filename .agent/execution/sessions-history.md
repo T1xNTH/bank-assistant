@@ -106,3 +106,5 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261028-005707-2` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `verify 'python3 scripts/check_manifest.py' passed` | `.agent/reports/implementation/T-005.md` | `none` |
 | `S-20261028-005707-3` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `verify '.venv/bin/python -m pytest -q tests/unit/test_check_manifest.py' passed` | `.agent/reports/implementation/T-005.md` | `none` |
 | `S-20261028-005715` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `verify 'make check' passed` | `.agent/reports/implementation/T-005.md` | `none` |
+| `S-20261028-005809` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-005.md` | `none` |
+| `S-20261028-005809-2` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-005.md` | `none` |
