@@ -1,4 +1,9 @@
 # Runtime deps. Each epic adds what it needs (docling, FlagEmbedding, qdrant-client, litellm, presidio, rq, langgraph, langfuse<5, ...).
+# CPU-only torch wheels (no CUDA download; the dev machines have no usable GPU).
+--extra-index-url https://download.pytorch.org/whl/cpu
 fastapi>=0.115
 uvicorn[standard]>=0.30
 pydantic>=2.7
+# E-003 ingest
+docling==2.143.0
+easyocr==1.7.2
