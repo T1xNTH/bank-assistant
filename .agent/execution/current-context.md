@@ -22,11 +22,11 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `6`
+- **Context Revision**: `7`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-27`
 - **Updated By**: `codex`
-- **Update Trigger**: `T-002 review độc lập APPROVED, QA passed (conditional-go), CI Linux xanh trên f405739; PR #31 chờ A approve; CR-005 proposed`
+- **Update Trigger**: `A approve PR #31 tại 34e54e9; bổ sung danh tính reviewer, quyền sở hữu payload và retry một lớp theo review; follow-up review APPROVED, chờ CI commit mới trước khi đóng task; CR-005 proposed`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
@@ -36,4 +36,8 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261027-152207-t002-handoff`
+- **Current Session ID**: `S-20261027-154949-t002-followup`
+
+## Revision Provenance
+
+Revision 5 có trong commit `8aa3324` và `f405739`; revision 6 nằm ở `34e54e9`. Diff gộp với main hiển thị 4 → 6 vì các revision trung gian nằm trong cùng PR #31; không mất record thực thi. Revision 7 ghi phản hồi sau approval của A.
