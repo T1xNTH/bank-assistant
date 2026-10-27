@@ -8,6 +8,7 @@ services:
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
+      timeout: 5s
       retries: 5
   qdrant:
     image: qdrant/qdrant:v1.12.4
@@ -16,5 +17,10 @@ services:
   redis:
     image: redis:7.4-alpine
     ports: ["127.0.0.1:6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-e", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 volumes:
   qdrant_data:
