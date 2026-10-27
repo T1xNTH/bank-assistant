@@ -10,7 +10,7 @@ from docling_core.types.doc import (
     TableData,
 )
 
-from app.rag.parse_docling import _text_layer, doc_to_pages, needs_full_page_ocr
+from app.rag.parse_docling import _text_layer, common_word_ratio, doc_to_pages, looks_garbled, needs_full_page_ocr
 from tests.pdf_fixtures import FEE_ROWS, write_fee_table_pdf, write_scanned_pdf
 
 
@@ -89,3 +89,25 @@ def test_full_page_ocr_only_for_scans_and_garbage_text_layers():
 def test_text_layer_check_on_generated_pdfs(tmp_path):
     assert not needs_full_page_ocr(_text_layer(str(write_fee_table_pdf(tmp_path / "fee.pdf"))))
     assert needs_full_page_ocr(_text_layer(str(write_scanned_pdf(tmp_path / "scan.pdf"))))
+
+
+# OCR of a page scanned upside down (real output from a NHNN consolidated circular).
+UPSIDE_DOWN_OCR = (
+    "## I 3uonq2 ## ĐNñH2 HNỈG Af1Ò ## 8uủp dự 8uôn) top gA q13 nạtp A trẻqJ '¡ nạtq "
+    "- '8uyu (2p lọA tọp (8ưäp un 2nd2 ọì gị tỏổ Ấẹp nes) rẹoẩu 2onu 8ượu uy8u quyqu t2 "
+    "'8ưäp uI 2nd2 Ọi en2 ÁeA o2 8uộp yẻou ạA quịp Ánb Áẹu m 8uoq[ '| '8ưủp un anu2 1 9p2 pn[8 "
+    "ÁpA oqo 8uộp tẻo tọA iọp qurq2 nạtp 8uou Áeu nị 8uoq[ '£ ## 19} (31 IE12) '£ nạtq"
+)
+UPRIGHT_OCR = (
+    "## Chương I ## QUY ĐỊNH CHUNG ## Điều 1. Phạm vi điều chỉnh và đối tượng áp dụng "
+    "- Thông tư này quy định về hoạt động cho vay của tổ chức tín dụng, chi nhánh ngân hàng "
+    "nước ngoài đối với khách hàng là pháp nhân, cá nhân. Hoạt động cho vay theo quy định "
+    "của Thông tư này được thực hiện theo nguyên tắc thỏa thuận giữa các bên."
+)
+
+
+def test_rotated_ocr_is_flagged_but_real_text_is_not():
+    assert common_word_ratio(UPSIDE_DOWN_OCR) < common_word_ratio(UPRIGHT_OCR)
+    assert looks_garbled({"text": UPSIDE_DOWN_OCR * 2, "tables": []})  # a full page holds more of it
+    assert not looks_garbled({"text": UPRIGHT_OCR, "tables": []})
+    assert not looks_garbled({"text": "Ký tên, đóng dấu", "tables": []})  # too little text to judge

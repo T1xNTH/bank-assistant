@@ -30,3 +30,9 @@ def test_scanned_page_yields_vietnamese_text(tmp_path):
     text = pages[0]["text"]
     assert text.strip()
     assert "PHÍ" in text and "66.000" in text
+
+
+def test_upside_down_scan_is_rotated_back(tmp_path):
+    text = parse(str(write_scanned_pdf(tmp_path / "flipped.pdf", rotate=180)))[0]["text"]
+
+    assert "PHÍ" in text and "66.000" in text

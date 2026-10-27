@@ -28,6 +28,12 @@ SCAN_LINES = [
     "BIỂU PHÍ DỊCH VỤ THẺ",
     "Phí rút tiền mặt tại ATM: 1.100 đồng",
     "Phí thường niên thẻ ghi nợ: 66.000 đồng",
+    "Điều 2. Biểu phí này áp dụng cho khách hàng cá nhân",
+    "của ngân hàng theo quy định của Ngân hàng Nhà nước.",
+    "Phí được thu tại thời điểm thực hiện giao dịch và",
+    "không bao gồm thuế giá trị gia tăng theo quy định.",
+    "Trường hợp có thay đổi, ngân hàng thông báo cho",
+    "khách hàng trước khi áp dụng theo quy định này.",
 ]
 
 
@@ -68,8 +74,8 @@ def write_fee_table_pdf(path: Path) -> Path:
     return path
 
 
-def write_scanned_pdf(path: Path) -> Path:
-    """Image-only PDF (no text layer) with Vietnamese text, like a scanned page."""
+def write_scanned_pdf(path: Path, rotate: int = 0) -> Path:
+    """Image-only PDF (no text layer) with Vietnamese text, like a scanned page (optionally rotated)."""
     from PIL import Image, ImageDraw, ImageFont
 
     img = Image.new("RGB", (1240, 1754), "white")  # A4 at 150 dpi
@@ -77,5 +83,5 @@ def write_scanned_pdf(path: Path) -> Path:
     font = ImageFont.truetype(_vi_font_path(), 36)
     for i, line in enumerate(SCAN_LINES):
         draw.text((100, 150 + i * 80), line, fill="black", font=font)
-    img.save(path, "PDF", resolution=150)
+    img.rotate(rotate, expand=True).save(path, "PDF", resolution=150)
     return path
