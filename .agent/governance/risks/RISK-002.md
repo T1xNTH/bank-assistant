@@ -45,13 +45,13 @@ Nếu bge-m3, reranker và Qwen2.5 chỉ chạy trên CPU thì ingest và câu t
 
 - **Strategy**: `mitigate`
 - **Mitigation Actions**: Chạy ingest nền một lần rồi snapshot Qdrant; dùng qwen2.5:3b; cache model; NFR-08 đo trên route cloud.
-- **Contingency Actions**: Giảm bộ tài liệu cho CI; ghi lại latency của route local.
+- **Contingency Actions**: Giảm bộ tài liệu cho CI; ghi lại latency của route local. Không dùng GPU cloud (Kaggle/Colab): A quyết định chạy toàn bộ local ngày 2026-10-27 (checklist A-6); nếu ingest vượt ngưỡng thì chạy một lần rồi `make backup` để tái dùng snapshot.
 - **Trigger Threshold**: thời gian đo được trong báo cáo eval
 - **Responsible Owner**: `trong-hung`
 
 ## Review Record
 
-- **Last Reviewed Date**: `2026-10-24`
+- **Last Reviewed Date**: `2026-10-27`
 - **Reviewed By**: `trong-hung`
 - **Probability Change**: `unchanged`
 - **Impact Change**: `unchanged`

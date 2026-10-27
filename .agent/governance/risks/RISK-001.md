@@ -14,7 +14,7 @@ priority: 2
 - **Risk ID**: `RISK-001`
 - **Title**: `Docker not installed on development machines`
 - **Owner**: `teammate-b`
-- **Status**: `identified`
+- **Status**: `mitigating`
 - **Category**: `delivery`
 - **Probability**: `high`
 - **Impact**: `high`
@@ -51,11 +51,11 @@ Nếu Docker chưa được cài trong N1 thì các epic dựa trên compose kh�
 
 ## Review Record
 
-- **Last Reviewed Date**: `2026-10-24`
+- **Last Reviewed Date**: `2026-10-27`
 - **Reviewed By**: `trong-hung`
 - **Probability Change**: `unchanged`
 - **Impact Change**: `unchanged`
-- **Review Evidence**: `none`
+- **Review Evidence**: `2026-10-27: máy A đã cài Docker 29.9.2 + compose v5.6.1, make up chạy, curl /health trả ok, thêm swap 8 GB; chờ B xác nhận máy B`
 
 ## Completion Criteria
 

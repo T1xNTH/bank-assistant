@@ -22,18 +22,18 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `3`
+- **Context Revision**: `4`
 - **Context Status**: `current`
-- **Last Updated**: `2026-10-24`
-- **Updated By**: `trong-hung`
-- **Update Trigger**: `baseline-approval-and-m001-expansion`
+- **Last Updated**: `2026-10-27`
+- **Updated By**: `codex`
+- **Update Trigger**: `T-001 QA passed; task done; hồ sơ đóng task trong PR #29 (trạng thái merge theo GitHub)`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001..E-009 (EPIC_READY; coordinator chuyển từng epic sang EPIC_IN_PROGRESS vào 2026-10-26 trước khi task đầu tiên của epic bắt đầu)`
+- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 pending); E-002..E-009 (EPIC_READY)`
 - **Active Task IDs**: `none`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
-- **Active Change Request IDs**: `none`
-- **Current Session ID**: `S-20261024-onboarding`
+- **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004 (proposed; T-001 done không phê duyệt các CR)`
+- **Current Session ID**: `S-20261027-121118`
