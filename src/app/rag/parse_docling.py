@@ -5,7 +5,9 @@ Owner: A — Epic E-003. See docs/00-project/product-plan.md.
 Each page is ``{"source", "page", "text", "tables"}``: ``page`` counts from 1,
 ``text`` is the page's non-table text in reading order (headings as ``## ``,
 list items as ``- ``), ``tables`` holds one Markdown table per table on the page.
-Every page of the PDF is returned, including empty ones.
+Every page of the PDF is returned, including empty ones. An item that spans pages
+(e.g. a table continued on the next page) is placed on the page where it starts.
+Text docling nests inside pictures (e.g. OCR of an embedded scan) is included.
 """
 
 from __future__ import annotations
@@ -45,7 +47,7 @@ def doc_to_pages(doc: DoclingDocument, source: str) -> list[dict]:
     from docling_core.types.doc import ListItem, SectionHeaderItem, TableItem, TextItem, TitleItem
 
     pages = {no: {"source": source, "page": no, "text": [], "tables": []} for no in sorted(doc.pages)}
-    for item, _level in doc.iterate_items():
+    for item, _level in doc.iterate_items(traverse_pictures=True):
         if not getattr(item, "prov", None):
             continue
         page = pages.setdefault(

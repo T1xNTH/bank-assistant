@@ -5,12 +5,26 @@ from __future__ import annotations
 import io
 from pathlib import Path
 
+import pytest
+
 FEE_ROWS = [
     ("Dich vu", "Muc phi (VND)", "Ghi chu"),
     ("Rut tien ATM noi mang", "1.100", "Moi giao dich"),
     ("Rut tien ATM ngoai mang", "3.300", "Moi giao dich"),
     ("Phi thuong nien the ghi no", "66.000", "Moi nam"),
     ("Cap lai the", "55.000", "Moi lan"),
+]
+
+# Fonts with Vietnamese glyphs (Linux, Windows, macOS). Pillow's built-in font has none,
+# so falling back to it would render boxes and make the OCR test fail for the wrong reason.
+VI_FONTS = [
+    "DejaVuSans.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
+    "arial.ttf",
+    "C:/Windows/Fonts/arial.ttf",
+    "/Library/Fonts/Arial.ttf",
+    "/System/Library/Fonts/Supplemental/Arial.ttf",
 ]
 
 SCAN_LINES = [
@@ -67,16 +81,22 @@ def write_fee_table_pdf(path: Path) -> Path:
     return path
 
 
+def _vi_font(image_font, size: int):
+    for name in VI_FONTS:
+        try:
+            return image_font.truetype(name, size)
+        except OSError:
+            continue
+    pytest.skip(f"no font with Vietnamese glyphs found (tried {', '.join(VI_FONTS)})")
+
+
 def write_scanned_pdf(path: Path) -> Path:
     """Image-only PDF (no text layer) with Vietnamese text, like a scanned page."""
     from PIL import Image, ImageDraw, ImageFont
 
     img = Image.new("RGB", (1240, 1754), "white")  # A4 at 150 dpi
     draw = ImageDraw.Draw(img)
-    try:
-        font = ImageFont.truetype("DejaVuSans.ttf", 36)
-    except OSError:
-        font = ImageFont.load_default(size=36)
+    font = _vi_font(ImageFont, 36)
     for i, line in enumerate(SCAN_LINES):
         draw.text((100, 150 + i * 80), line, fill="black", font=font)
     img.save(path, "PDF", resolution=150)
