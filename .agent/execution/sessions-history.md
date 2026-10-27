@@ -97,3 +97,6 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261027-164926` | `2026-10-27` | `2026-10-27` | `codex` | `T-003` | `completed` | `verify 'make check && make smoke' passed` | `.agent/reports/implementation/T-003.md` | `none` |
 | `S-20261027-165209` | `2026-10-27` | `2026-10-27` | `codex` | `T-003` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-003.md` | `none` |
 | `S-20261027-165210` | `2026-10-27` | `2026-10-27` | `codex` | `T-003` | `completed` | `review requested from independent-reviewer-t003` | `.agent/reports/implementation/T-003.md` | `none` |
+| `S-20261027-165430` | `2026-10-27` | `2026-10-27` | `independent-reviewer-t003` | `T-003` | `completed` | `review started` | `.agent/reports/review/T-003.md` | `none` |
+| `S-20261027-165528` | `2026-10-27` | `2026-10-27` | `independent-reviewer-t003` | `T-003` | `completed` | `review approved` | `.agent/reports/review/T-003.md` | `none` |
+| `S-20261027-t003-independent-qa` | `2026-10-27` | `2026-10-27` | `independent-reviewer-t003` | `T-003` | `completed` | `post-approval task QA passed: WSL make check 27 tests/45.01s, smoke, Windows health; CLI QA epic-only so not-run for T-003; keep task review pending A approval` | `.agent/reports/review/T-003.md, .agent/reports/qa/T-003.md` | `none` |
