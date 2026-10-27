@@ -14,7 +14,7 @@ priority: 2
 - **Risk ID**: `RISK-001`
 - **Title**: `Docker not installed on development machines`
 - **Owner**: `teammate-b`
-- **Status**: `mitigating`
+- **Status**: `monitoring`
 - **Category**: `delivery`
 - **Probability**: `high`
 - **Impact**: `high`
@@ -39,7 +39,7 @@ Nếu Docker chưa được cài trong N1 thì các epic dựa trên compose kh�
 - **Decisions**: `none`
 - **Issues or Blockers**: `none`
 - **Change Requests**: `none`
-- **Evidence**: `none`
+- **Evidence**: `.agent/reports/implementation/T-003.md; máy A theo xác nhận RISK-001 tại PR #29/529e86e; máy B chạy trực tiếp Ubuntu WSL2`
 
 ## Response Plan
 
@@ -52,10 +52,12 @@ Nếu Docker chưa được cài trong N1 thì các epic dựa trên compose kh�
 ## Review Record
 
 - **Last Reviewed Date**: `2026-10-27`
-- **Reviewed By**: `trong-hung`
-- **Probability Change**: `unchanged`
+- **Reviewed By**: `codex`
+- **Probability Change**: `decreased — Docker/Compose hoạt động trên B, A đã có xác nhận trong repo`
 - **Impact Change**: `unchanged`
 - **Review Evidence**: `2026-10-27: máy A đã cài Docker 29.9.2 + compose v5.6.1, make up chạy, curl /health trả ok, thêm swap 8 GB; chờ B xác nhận máy B`
+
+Bổ sung T-003 ngày 2026-10-27: B/Ubuntu-24.04 WSL2 có Docker Engine Client/Server 29.8.2, Compose v5.6.0. Core API/Qdrant/Redis chạy thành công; API /health ok cả WSL lẫn Windows, Qdrant /readyz ok, Redis PONG; make check Linux 27 passed. Nguồn A ở dòng trước là attestation đã merge, không phải lệnh B chạy trên máy A. Chuyển monitoring, không tự đóng rủi ro trước owner review. Cần giữ phiên WSL hoạt động; distro dừng thì core dừng theo, chạy make up lại khi mở WSL.
 
 ## Completion Criteria
 

@@ -15,6 +15,7 @@ priority: 2
 | `make setup` | tạo `.venv`, cài `requirements-dev.txt` |
 | `make check` | ruff + pytest + framework validation (đây là lệnh `agent task verify` chạy) |
 | `make up` / `make down` | bật/tắt các service lõi bằng compose (`COMPOSE_PROFILES` thêm `local-llm,automation,obs`) |
+| `make smoke` | kiểm tra API `/health`, Qdrant `/readyz`, Redis `PING` sau khi `make up` chờ readiness |
 | `make validate` | `python3 scripts/validate-framework.py` |
 | `make backup` / `make restore` | snapshot Qdrant (FR-11) |
 
@@ -23,3 +24,5 @@ Job `check`: ruff, pytest (backend fake), framework validation. Thêm trong E-01
 
 ## Môi trường
 MVP chỉ có compose chạy local. Secret nằm trong `.env.local` (git ignore); `.env.example` liệt kê mọi biến.
+
+Máy Windows chạy Docker Engine trong Ubuntu WSL2: xem [hướng dẫn WSL và kiểm tra core stack](wsl-docker.md). Chạy `make setup`/`make check` bằng Python Linux, tách khỏi venv Windows.
