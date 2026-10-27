@@ -29,7 +29,7 @@ Lưu registry chính thức các task thực thi được và trạng thái life
 |---|---|---|---|---|---|---|---|---|
 | `T-001` | `E-001` | `Review chéo và duyệt SRS, contract, kiến trúc (DEC-001)` | `trong-hung` | `done` | `none` | `none` | `.agent/execution/tasks/T-001.md, .agent/reports/implementation/T-001.md, .agent/reports/review/T-001.md, .agent/reports/qa/T-001.md` | `2026-10-27` |
 | `T-002` | `E-001` | `Xác nhận contracts.py và fakes đáp ứng nhu cầu phía nền tảng` | `teammate-b` | `review` | `T-001` | `none` | `.agent/execution/tasks/T-002.md, .agent/reports/implementation/T-002.md, .agent/reports/review/T-002.md, .agent/reports/qa/T-002.md` | `2026-10-27` |
-| `T-003` | `E-002` | `Cài Docker trên cả hai máy; stack lõi healthy` | `teammate-b` | `pending` | `none` | `none` | `.agent/execution/tasks/T-003.md` | `2026-10-24` |
+| `T-003` | `E-002` | `Cài Docker trên cả hai máy; stack lõi healthy` | `teammate-b` | `in-progress` | `none` | `none` | `.agent/execution/tasks/T-003.md, .agent/reports/implementation/T-003.md` | `2026-10-27` |
 | `T-004` | `E-002` | `Nền tảng API: định dạng lỗi chung, request id, structured logging` | `teammate-b` | `pending` | `T-003` | `none` | `.agent/execution/tasks/T-004.md` | `2026-10-24` |
 | `T-005` | `E-003` | `Thu thập 30 PDF công khai và data/manifest.csv` | `trong-hung` | `pending` | `none` | `none` | `.agent/execution/tasks/T-005.md` | `2026-10-24` |
 | `T-006` | `E-003` | `parse_docling: bảng dạng Markdown, OCR (vi)` | `trong-hung` | `pending` | `none` | `none` | `.agent/execution/tasks/T-006.md` | `2026-10-24` |

@@ -22,21 +22,21 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `7`
+- **Context Revision**: `8`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-27`
 - **Updated By**: `codex`
-- **Update Trigger**: `A approve PR #31 tại 34e54e9; bổ sung danh tính reviewer, quyền sở hữu payload và retry một lớp theo review; follow-up review APPROVED, chờ CI commit mới trước khi đóng task; CR-005 proposed`
+- **Update Trigger**: `T-003 thực thi Docker WSL trên main 7779567; E-002 in-progress; make check và smoke thực tế passed; chuẩn bị review độc lập`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review); E-002..E-009 (EPIC_READY)`
-- **Active Task IDs**: `T-002`
+- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 in-progress); E-003..E-009 (EPIC_READY)`
+- **Active Task IDs**: `T-002, T-003`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261027-154949-t002-followup`
+- **Current Session ID**: `S-20261027-164926`
 
 ## Revision Provenance
 
