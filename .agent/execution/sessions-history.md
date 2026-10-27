@@ -77,3 +77,5 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261026-110456` | `2026-10-26` | `2026-10-26` | `claude-review-a` | `T-001` | `completed` | `review started` | `.agent/reports/review/T-001.md` | `none` |
 | `S-20261026-110552` | `2026-10-26` | `2026-10-26` | `claude-review-a` | `T-001` | `completed` | `review approved` | `.agent/reports/review/T-001.md` | `none` |
 | `S-20261027-111500` | `2026-10-27` | `2026-10-27` | `claude-code-a` | `T-001, CR-002, CR-003, ISSUE-006..008, RISK-001, RISK-002` | `completed` | `ghi kết luận review baseline của A (đã đọc, đồng ý, chọn phương án; A-6 chạy toàn bộ local); tạo CR-002, CR-003, ISSUE-006..008; RISK-001 -> mitigating` | `.agent/reports/review/T-001-A-baseline.md` | `none` |
+| `S-20261027-112002` | `2026-10-27` | `2026-10-27` | `claude-review-a` | `T-001` | `completed` | `review started` | `.agent/reports/review/T-001.md` | `none` |
+| `S-20261027-112101` | `2026-10-27` | `2026-10-27` | `claude-review-a` | `T-001` | `completed` | `review approved` | `.agent/reports/review/T-001.md` | `none` |
