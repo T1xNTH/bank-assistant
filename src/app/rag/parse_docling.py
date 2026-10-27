@@ -139,9 +139,16 @@ def parse(path: str) -> list[dict]:
         # The original keeps table structure best; the bi-level image copy has no
         # garbage text layer and OCRs some rotated pages better. Use the copy only
         # where the original page, or one of its tables, reads as garbage.
-        pairs = zip(original, images, strict=True)
-        best = [b if _garbage_in(a) and _score(b) > _score(a) else a for a, b in pairs]
-        return [_repair(path, p, Path(tmp)) for p in best]
+        return [_repair(path, p, Path(tmp)) for p in choose_pages(original, images)]
+
+
+def choose_pages(original: list[dict], images: list[dict]) -> list[dict]:
+    """Per page number, the image-copy result where the original reads as garbage and the copy reads better."""
+    copy = {p["page"]: p for p in images}
+    return [
+        copy[p["page"]] if p["page"] in copy and _garbage_in(p) and _score(copy[p["page"]]) > _score(p) else p
+        for p in original
+    ]
 
 
 def _score(page: dict) -> float:
@@ -168,7 +175,10 @@ def _ocr_pages(path: str, source: str, tmp: Path) -> list[dict]:
 def _tesseract(img, file: Path, psm: int | None = None) -> str:
     img.save(file)
     cmd = ["tesseract", str(file), "-", "-l", "+".join(OCR_LANGS)] + (["--psm", str(psm)] if psm else [])
-    return subprocess.run(cmd, capture_output=True, text=True, check=False).stdout.strip()
+    done = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if done.returncode != 0:
+        raise RuntimeError(f"tesseract failed ({done.returncode}): {done.stderr.strip()[-500:]}")
+    return done.stdout.strip()
 
 
 def _ocr_empty_tables(path: str, doc: DoclingDocument, page_no: int, tmp: Path) -> list[str]:
@@ -194,7 +204,7 @@ def _repair(path: str, page: dict, tmp: Path) -> dict:
     if _letters(page) < MIN_GARBLED_LETTERS:
         text = _tesseract(_render(path, page["page"]), tmp / f"plain{page['page']}.png")
         if sum(c.isalpha() for c in text) > _letters(page):
-            return {**page, "text": text}
+            return {**page, "text": text, "tables": []}  # the page OCR already includes any table text
     return page
 
 

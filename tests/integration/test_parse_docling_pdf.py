@@ -32,7 +32,9 @@ def test_scanned_page_yields_vietnamese_text(tmp_path):
     assert "PHÍ" in text and "66.000" in text
 
 
-def test_upside_down_scan_is_rotated_back(tmp_path):
+def test_upside_down_scan_smoke(tmp_path):
+    # Smoke test only: docling already handles this clean synthetic page; the
+    # rotation retry itself is tested in tests/unit/test_parse_docling_repair.py.
     text = parse(str(write_scanned_pdf(tmp_path / "flipped.pdf", rotate=180)))[0]["text"]
 
     assert "PHÍ" in text and "66.000" in text
