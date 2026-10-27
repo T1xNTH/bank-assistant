@@ -10,8 +10,8 @@ from docling_core.types.doc import (
     TableData,
 )
 
-from app.rag.parse_docling import doc_to_pages
-from tests.pdf_fixtures import FEE_ROWS
+from app.rag.parse_docling import _text_layer, doc_to_pages, needs_full_page_ocr
+from tests.pdf_fixtures import FEE_ROWS, write_fee_table_pdf, write_scanned_pdf
 
 
 def _prov(page: int, text: str = "") -> ProvenanceItem:
@@ -65,3 +65,27 @@ def test_pages_keep_source_page_and_reading_order():
     assert "Rut tien" not in pages[0]["text"]  # table content only in tables
     assert pages[1] == {"source": "bieu-phi.pdf", "page": 2, "text": "", "tables": []}
     assert pages[2]["text"] == "- Phí đã gồm VAT"
+
+
+# First lines of the text layer of a real scanned NHNN circular (scanner garbage).
+GARBAGE_LAYER = (
+    "NcANEANcNEA NrIOc ceNcHoAxAEOr cr0NctrAvr$r NAM vET NAM Dfc I{p - Ts do - Epnh phic "
+    "sdvl,f /2026ITT-NHNN HdNAi, ngayl?.Lthrng I *m zozo TE6NGTtI Sfra d6i, b5 sung nQt s6 "
+    "ili6u cte Th6ng tu s6 22/2019/IT-NHYN quy dinh crlc gi6i hp, ti l$ bto tttm an toln"
+)
+GOOD_LAYER = (
+    "Biểu phí áp dụng cho nghiệp vụ thanh toán thẻ quốc tế. Rút tiền mặt tại ATM của ngân hàng: "
+    "thẻ do ngân hàng khác phát hành chịu phí 4%, tối thiểu 80.000 đồng, thu tự động."
+)
+
+
+def test_full_page_ocr_only_for_scans_and_garbage_text_layers():
+    assert needs_full_page_ocr(GARBAGE_LAYER)
+    assert needs_full_page_ocr("")
+    assert needs_full_page_ocr("  12  ")
+    assert not needs_full_page_ocr(GOOD_LAYER)
+
+
+def test_text_layer_check_on_generated_pdfs(tmp_path):
+    assert not needs_full_page_ocr(_text_layer(str(write_fee_table_pdf(tmp_path / "fee.pdf"))))
+    assert needs_full_page_ocr(_text_layer(str(write_scanned_pdf(tmp_path / "scan.pdf"))))

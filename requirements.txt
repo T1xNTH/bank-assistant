@@ -4,9 +4,8 @@
 fastapi>=0.115
 uvicorn[standard]>=0.30
 pydantic>=2.7
-# E-003 ingest
+# E-003 ingest. OCR needs the Tesseract CLI with Vietnamese data (tesseract-ocr, tesseract-ocr-vie); see docs/07-development.
 docling==2.143.0
-easyocr==1.7.2
 # Pinned so the CPU index above resolves the same +cpu build everywhere.
 torch==2.14.1
 torchvision==0.29.1

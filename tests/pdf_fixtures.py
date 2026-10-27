@@ -2,26 +2,23 @@
 
 from __future__ import annotations
 
-import io
 from pathlib import Path
 
 import pytest
 
 FEE_ROWS = [
-    ("Dich vu", "Muc phi (VND)", "Ghi chu"),
-    ("Rut tien ATM noi mang", "1.100", "Moi giao dich"),
-    ("Rut tien ATM ngoai mang", "3.300", "Moi giao dich"),
-    ("Phi thuong nien the ghi no", "66.000", "Moi nam"),
-    ("Cap lai the", "55.000", "Moi lan"),
+    ("Dịch vụ", "Mức phí (VND)", "Ghi chú"),
+    ("Rút tiền ATM nội mạng", "1.100", "Mỗi giao dịch"),
+    ("Rút tiền ATM ngoại mạng", "3.300", "Mỗi giao dịch"),
+    ("Phí thường niên thẻ ghi nợ", "66.000", "Mỗi năm"),
+    ("Cấp lại thẻ", "55.000", "Mỗi lần"),
 ]
 
-# Fonts with Vietnamese glyphs (Linux, Windows, macOS). Pillow's built-in font has none,
-# so falling back to it would render boxes and make the OCR test fail for the wrong reason.
+# Fonts with Vietnamese glyphs (Linux, Windows, macOS). Fonts without them render
+# boxes, which would make the parser tests fail for the wrong reason.
 VI_FONTS = [
-    "DejaVuSans.ttf",
     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-    "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
-    "arial.ttf",
+    "/usr/share/fonts/TTF/DejaVuSans.ttf",
     "C:/Windows/Fonts/arial.ttf",
     "/Library/Fonts/Arial.ttf",
     "/System/Library/Fonts/Supplemental/Arial.ttf",
@@ -34,60 +31,41 @@ SCAN_LINES = [
 ]
 
 
-def _pdf(page_ops: bytes, width: int = 595, height: int = 842) -> bytes:
-    """One-page PDF with base-14 Helvetica; text must be ASCII."""
-    objs = [
-        b"<< /Type /Catalog /Pages 2 0 R >>",
-        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %d %d] /Contents 4 0 R "
-        b"/Resources << /Font << /F1 5 0 R >> >> >>" % (width, height),
-        b"<< /Length %d >>\nstream\n" % len(page_ops) + page_ops + b"\nendstream",
-        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    ]
-    out = io.BytesIO()
-    out.write(b"%PDF-1.4\n")
-    offsets = []
-    for i, body in enumerate(objs, start=1):
-        offsets.append(out.tell())
-        out.write(b"%d 0 obj\n" % i + body + b"\nendobj\n")
-    xref = out.tell()
-    out.write(b"xref\n0 %d\n0000000000 65535 f \n" % (len(objs) + 1))
-    for off in offsets:
-        out.write(b"%010d 00000 n \n" % off)
-    out.write(b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (len(objs) + 1, xref))
-    return out.getvalue()
+def _vi_font_path() -> str:
+    for path in VI_FONTS:
+        if Path(path).is_file():
+            return path
+    pytest.skip(f"no font with Vietnamese glyphs found (tried {', '.join(VI_FONTS)})")
 
 
 def write_fee_table_pdf(path: Path) -> Path:
-    """Digital PDF: a heading, a sentence and a ruled 3-column fee table."""
+    """Digital PDF with a Vietnamese text layer: a heading, a sentence and a ruled fee table."""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.pdfgen import canvas
+
+    pdfmetrics.registerFont(TTFont("Vi", _vi_font_path()))
+    c = canvas.Canvas(str(path), pagesize=A4)
+    c.setFont("Vi", 16)
+    c.drawString(60, 770, "BIỂU PHÍ DỊCH VỤ THẺ")
+    c.setFont("Vi", 10)
+    c.drawString(60, 740, "Biểu phí áp dụng từ ngày 01/01/2026 cho khách hàng cá nhân.")
     x0, widths, row_h, top = 60, (220, 130, 120), 26, 700
-    ops = [b"BT /F1 16 Tf 60 770 Td (BIEU PHI DICH VU THE) Tj ET"]
-    ops.append(b"BT /F1 10 Tf 60 740 Td (Bieu phi ap dung tu ngay 01/01/2026 cho khach hang ca nhan.) Tj ET")
-    right = x0 + sum(widths)
-    bottom = top - row_h * len(FEE_ROWS)
+    right, bottom = x0 + sum(widths), top - row_h * len(FEE_ROWS)
     for r in range(len(FEE_ROWS) + 1):
-        y = top - r * row_h
-        ops.append(b"%d %d m %d %d l S" % (x0, y, right, y))
+        c.line(x0, top - r * row_h, right, top - r * row_h)
     x = x0
     for w in (0, *widths):
         x += w
-        ops.append(b"%d %d m %d %d l S" % (x, top, x, bottom))
+        c.line(x, top, x, bottom)
     for r, row in enumerate(FEE_ROWS):
         x = x0
         for w, cell in zip(widths, row, strict=True):
-            ops.append(b"BT /F1 10 Tf %d %d Td (%s) Tj ET" % (x + 6, top - r * row_h - 17, cell.encode("ascii")))
+            c.drawString(x + 6, top - r * row_h - 17, cell)
             x += w
-    path.write_bytes(_pdf(b"\n".join(ops)))
+    c.save()
     return path
-
-
-def _vi_font(image_font, size: int):
-    for name in VI_FONTS:
-        try:
-            return image_font.truetype(name, size)
-        except OSError:
-            continue
-    pytest.skip(f"no font with Vietnamese glyphs found (tried {', '.join(VI_FONTS)})")
 
 
 def write_scanned_pdf(path: Path) -> Path:
@@ -96,7 +74,7 @@ def write_scanned_pdf(path: Path) -> Path:
 
     img = Image.new("RGB", (1240, 1754), "white")  # A4 at 150 dpi
     draw = ImageDraw.Draw(img)
-    font = _vi_font(ImageFont, 36)
+    font = ImageFont.truetype(_vi_font_path(), 36)
     for i, line in enumerate(SCAN_LINES):
         draw.text((100, 150 + i * 80), line, fill="black", font=font)
     img.save(path, "PDF", resolution=150)
