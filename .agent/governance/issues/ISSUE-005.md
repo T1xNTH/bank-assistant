@@ -19,7 +19,7 @@ Theo dõi finding F-04 trong review baseline của B (`.agent/reports/review/REV
 - **Title**: `Quyền truy cập thread, phạm vi người duyệt và giao dịch của agent chưa được định nghĩa`
 - **Owner**: `teammate-b`
 - **Reporter**: `claude-code-a`
-- **Status**: `open`
+- **Status**: `triaged`
 - **Issue Type**: `gap`
 - **Priority**: `2`
 - **Created Date**: `2026-10-26`
@@ -61,7 +61,7 @@ Contract chỉ nêu role `approver` và SQLite mở `mode=ro`, nhưng không đ�
 ## Resolution
 
 - **Resolution Type**: `not-applicable`
-- **Resolution Summary**: `chưa giải quyết`
+- **Resolution Summary**: `Phương án A chọn (2026-10-27, checklist C-6): thread thuộc người tạo; approver chỉ duyệt thread cùng department; tra giao dịch chỉ trong tài khoản gắn với department của user. Chốt ở contract (CR riêng) trước E-011; owner B xác nhận.`
 - **Verification Evidence**: `none`
 - **Resolved By**: `none`
 - **Resolved Date**: `none`

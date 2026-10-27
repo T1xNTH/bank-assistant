@@ -19,7 +19,7 @@ Theo dõi finding F-02 trong review baseline của B (`.agent/reports/review/REV
 - **Title**: `Job trong hàng chờ mất tín hiệu PII và quyền của user`
 - **Owner**: `teammate-b`
 - **Reporter**: `claude-code-a`
-- **Status**: `open`
+- **Status**: `triaged`
 - **Issue Type**: `gap`
 - **Priority**: `2`
 - **Created Date**: `2026-10-26`
@@ -61,7 +61,7 @@ Payload job chỉ gồm câu hỏi đã che + `user_id` (`docs/05-database/schem
 ## Resolution
 
 - **Resolution Type**: `not-applicable`
-- **Resolution Summary**: `chưa giải quyết`
+- **Resolution Summary**: `Phương án A chọn (2026-10-27, checklist A-1): payload job thêm pii_types (chỉ tên loại) và force_local; worker phân giải User lại từ user_id qua kho key. Làm trong T-024/T-025; owner B xác nhận.`
 - **Verification Evidence**: `none`
 - **Resolved By**: `none`
 - **Resolved Date**: `none`

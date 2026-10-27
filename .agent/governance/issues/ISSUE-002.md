@@ -19,7 +19,7 @@ Theo dõi finding F-01 trong review baseline của B (`.agent/reports/review/REV
 - **Title**: `top_k và force_local không được truyền xuống Answerer`
 - **Owner**: `trong-hung`
 - **Reporter**: `claude-code-a`
-- **Status**: `open`
+- **Status**: `triaged`
 - **Issue Type**: `gap`
 - **Priority**: `2`
 - **Created Date**: `2026-10-26`
@@ -61,7 +61,7 @@ HTTP `POST /ask` nhận `top_k` và `force_local` (`src/app/schemas.py:12-14`, `
 ## Resolution
 
 - **Resolution Type**: `not-applicable`
-- **Resolution Summary**: `chưa giải quyết`
+- **Resolution Summary**: `Hướng xử lý A đã chọn (2026-10-27, checklist C-1/C-2): thêm top_k, force_local vào Answerer.answer() và mode vào Retriever.retrieve(), qua CR-003 (chờ B duyệt), trước T-016/T-019.`
 - **Verification Evidence**: `none`
 - **Resolved By**: `none`
 - **Resolved Date**: `none`
