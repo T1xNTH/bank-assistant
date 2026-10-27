@@ -11,6 +11,8 @@ priority: 1
 
 ## Usage Purpose
 
+Ghi chú định dạng: đây là checklist review tài liệu của A (không theo `review-report-template.md`, vốn dành cho review task của Reviewer Agent); review độc lập của task nằm ở `.agent/reports/review/T-001.md`.
+
 Bằng chứng phần việc chính của T-001: A (trong-hung) tự đọc ba tài liệu baseline và ghi kết luận cho từng tài liệu. File này trả lời comment của B trên PR #29 (điểm 1: thiếu bằng chứng A đã review).
 
 Cách dùng: với mỗi tài liệu, A đọc tài liệu gốc, tick các mục đã kiểm, đánh giá các **quan sát của executor** (đồng ý / không đồng ý / bỏ qua) và chọn phương án (ví dụ "đồng ý, chọn (a)"), rồi viết **kết luận của A** bằng lời của mình. Các quan sát và cột **Phương án đề xuất** chỉ là phân tích của executor `claude-code-a` (phương án in đậm là phương án executor khuyên dùng), không phải kết luận của A, và không thay cho việc A tự đọc.
@@ -53,7 +55,7 @@ Cách dùng: với mỗi tài liệu, A đọc tài liệu gốc, tick các mụ
 
 | # | Quan sát | Phương án đề xuất (của executor) | A đánh giá |
 |---|---|---|---|
-| S-1 | Trường `Authority` vẫn ghi `draft — pending approval in DEC-001` dù DEC-001 đã `accepted`; contract và kiến trúc cũng vậy. Nên cập nhật thành đã duyệt (sửa trạng thái, không đổi nội dung). | **(a) Đề xuất:** sửa `Authority` của 3 tài liệu thành `approved — DEC-001 (PR #1)` trong một PR docs nhỏ; chỉ đổi trạng thái nên không cần change request. (b) Để nguyên, ghi chú trong DEC-001 — dễ gây hiểu nhầm cho người đọc sau. | Đồng ý, chọn phương án in đậm → CR-002 |
+| S-1 | Trường `Authority` vẫn ghi `draft — pending approval in DEC-001` dù DEC-001 đã `accepted`; contract và kiến trúc cũng vậy. Nên cập nhật thành đã duyệt (sửa trạng thái, không đổi nội dung). | **(a) Đề xuất:** sửa `Authority` của 3 tài liệu thành `approved — DEC-001 (PR #1)` trong một PR docs nhỏ; chỉ đổi trạng thái nên chỉ đổi trạng thái; gộp vào CR-002 để B duyệt cùng các mục SRS khác. (b) Để nguyên, ghi chú trong DEC-001 — dễ gây hiểu nhầm cho người đọc sau. | Đồng ý, chọn phương án in đậm → CR-002 |
 | S-2 | RBAC chỉ theo `department`; SRS không nói ai được xem tài liệu `confidential` trong cùng phòng. Hiện nhân viên `credit` sẽ thấy mọi tài liệu `credit` kể cả `confidential`. Có đúng ý định không? | (a) Giữ như hiện tại: cùng phòng thì xem được mọi tài liệu của phòng, `confidential` chỉ ảnh hưởng routing (đơn giản, đủ cho MVP). (b) Thêm quy tắc: chỉ role `approver` xem `confidential` — cần CR (đổi SRS + kiến trúc) và thêm test. **Đề xuất (a)**, ghi rõ vào SRS khi sửa S-1 để không còn mơ hồ. | Đồng ý, chọn phương án in đậm → CR-002 |
 | S-3 | FR-04 ghi "input nhạy cảm route sang local" nhưng không định nghĩa "nhạy cảm" (PII? classification nào?). Kiến trúc định nghĩa (PII hoặc `confidential`), SRS thì chưa. | **(a) Đề xuất:** định nghĩa trong SRS: "nhạy cảm = câu hỏi có PII sau khi che, hoặc có chunk `confidential` trong context, hoặc `force_local=true`" — khớp kiến trúc. Là làm rõ, không đổi hành vi, nhưng sửa SRS đã duyệt nên đi qua CR nhỏ (gộp với S-2). (b) Để kiến trúc làm nguồn định nghĩa, SRS trỏ sang. | Đồng ý, chọn phương án in đậm → CR-002 |
 | S-4 | NFR-08 (p95 < 10 s) chỉ đo "với Gemini"; route local không có ngưỡng (RISK-002 đã ghi nhận). Chấp nhận được cho MVP? | **(a) Đề xuất:** chấp nhận cho MVP, ghi trong SRS "NFR-08 chỉ áp dụng route cloud; route local đo và báo cáo, không có ngưỡng" (RISK-002 đã theo dõi). (b) Đặt ngưỡng local, ví dụ p95 < 60 s — dễ không đạt trên CPU. | Đồng ý, chọn phương án in đậm → CR-002 |
@@ -124,17 +126,18 @@ Cách dùng: với mỗi tài liệu, A đọc tài liệu gốc, tick các mụ
 - **Những quan sát A đồng ý cần theo dõi**: tất cả, theo phương án in đậm; theo dõi ở CR-001, CR-002, CR-003, ISSUE-002, ISSUE-003, ISSUE-005, ISSUE-006, ISSUE-007, ISSUE-008 (S-5 và A-6 không cần việc)
 - **Ngày**: `2026-10-27`
 - **Nguồn**: A xác nhận trong chat với executor ngày 2026-10-27: "đã đọc và đồng ý", đồng ý cả phương án đề xuất (in đậm); quyết định A-6 (chạy toàn bộ local, không Kaggle) cùng ngày. Executor ghi lại nguyên ý, không thêm kết luận.
+- **Xác nhận trên GitHub**: [https://github.com/caitoithap/bank-assistant/pull/29#issuecomment-6433702231](https://github.com/caitoithap/bank-assistant/pull/29#issuecomment-6433702231) — comment trên PR #29 từ tài khoản `caitoithap` (A), đăng qua Claude Code theo yêu cầu của A.
 
 ## Completion Criteria
 
-- [x] A đã đọc cả ba tài liệu và ghi kết luận bằng lời của mình.
+- [x] A đã đọc cả ba tài liệu và xác nhận kết luận: xác nhận trong chat với executor (2026-10-27), sau đó xác nhận trên PR #29 bằng tài khoản của A. Phần đánh giá từng dòng do executor ghi theo xác nhận chung đó ("đồng ý, chọn phương án in đậm").
 - [x] Mỗi quan sát của executor có đánh giá của A.
 - [x] Các điểm A đồng ý cần theo dõi đã có issue hoặc change request.
 - [x] Trạng thái chuyển sang `approved` (A giữ duyệt) hoặc `changes-required` (A thấy cần sửa baseline).
 
 ## Forbidden Actions
 
-- Executor không điền phần "A đánh giá" hay "Kết luận của A" thay cho A.
+- Executor không tự đưa ra đánh giá hay kết luận thay cho A; chỉ được ghi lại đúng nội dung A đã xác nhận, kèm nguồn.
 - Không coi việc PR #1 đã merge là bằng chứng A đã đọc.
 
 ## Output Requirements

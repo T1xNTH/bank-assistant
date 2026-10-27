@@ -13,4 +13,4 @@ priority: 3
 
 | Task ID | Commit | PR | Report | Ghi chú |
 |---|---|---|---|---|
-| `T-001` | `54c212e, b42dc6f, 18d490d, + vòng 2` | `#29` | `.agent/reports/implementation/T-001.md` | `commit trên nhánh; thay bằng hash squash sau khi merge` |
+| `T-001` | `54c212e, b42dc6f, 6cd249d, 71193a8, ca1f2d4, b1fd81e (executor); 18d490d, 87fcf99, 6a9bfcd (review)` | `#29` | `.agent/reports/implementation/T-001.md` | `commit trên nhánh; thay bằng hash squash sau khi merge` |
