@@ -135,3 +135,5 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261028-002847` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-006` | `completed` | `verify 'make check PY=/home/trong-hung/bank-assistant/.venv/bin/python' passed` | `.agent/reports/implementation/T-006.md` | `none` |
 | `S-20261028-002905` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-006` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-006.md` | `none` |
 | `S-20261028-002905-2` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-006` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-006.md` | `none` |
+| `S-20261028-003555` | `2026-10-28` | `2026-10-28` | `claude-review-a` | `T-006` | `completed` | `review started` | `.agent/reports/review/T-006.md` | `none` |
+| `S-20261028-003646` | `2026-10-28` | `2026-10-28` | `claude-review-a` | `T-006` | `completed` | `changes requested; task review -> in-progress` | `.agent/reports/review/T-006.md` | `none` |
