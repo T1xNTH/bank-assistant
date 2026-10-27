@@ -53,6 +53,8 @@ Payload job chỉ gồm câu hỏi đã che + `user_id` (`docs/05-database/schem
 
 ## Acceptance Criteria
 
+Nguồn định nghĩa sau review A trên PR #31: ISSUE-003 ghi finding và điều kiện khắc phục; CR-005 Q-1/Q-2 sở hữu schema `QueuedAsk` và resolver worker, CR-003 C-1 sở hữu chữ ký Answerer/ánh xạ tham số. Những tên trường trong issue là yêu cầu dữ liệu, không tạo schema payload riêng. Hai CR phải được A+B duyệt và áp dụng đồng bộ cho phần queue; issue vẫn `triaged` cho đến khi có bằng chứng hiện thực/kiểm chứng.
+
 - [ ] Nguyên nhân gốc hoặc hướng xử lý đã được ghi lại.
 - [ ] Kết quả khắc phục được định nghĩa bằng điều kiện quan sát được.
 - [ ] Cách kiểm tra regression được định nghĩa khi cần.

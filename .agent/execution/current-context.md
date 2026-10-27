@@ -22,18 +22,22 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `4`
+- **Context Revision**: `7`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-27`
 - **Updated By**: `codex`
-- **Update Trigger**: `T-001 QA passed; task done; hồ sơ đóng task trong PR #29 (trạng thái merge theo GitHub)`
+- **Update Trigger**: `A approve PR #31 tại 34e54e9; bổ sung danh tính reviewer, quyền sở hữu payload và retry một lớp theo review; follow-up review APPROVED, chờ CI commit mới trước khi đóng task; CR-005 proposed`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 pending); E-002..E-009 (EPIC_READY)`
-- **Active Task IDs**: `none`
+- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review); E-002..E-009 (EPIC_READY)`
+- **Active Task IDs**: `T-002`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
-- **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004 (proposed; T-001 done không phê duyệt các CR)`
-- **Current Session ID**: `S-20261027-121118`
+- **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; task review hoàn tất không phê duyệt các CR)`
+- **Current Session ID**: `S-20261027-154949-t002-followup`
+
+## Revision Provenance
+
+Revision 5 có trong commit `8aa3324` và `f405739`; revision 6 nằm ở `34e54e9`. Diff gộp với main hiển thị 4 → 6 vì các revision trung gian nằm trong cùng PR #31; không mất record thực thi. Revision 7 ghi phản hồi sau approval của A.
