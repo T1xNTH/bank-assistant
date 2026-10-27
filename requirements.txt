@@ -1,5 +1,5 @@
 # Runtime deps. Each epic adds what it needs (docling, FlagEmbedding, qdrant-client, litellm, presidio, rq, langgraph, langfuse<5, ...).
-# CPU-only torch wheels (pip searches this index for every package, but only torch/torchvision live there) (no CUDA download; the dev machines have no usable GPU).
+# CPU-only torch wheels (no CUDA download; the dev machines have no usable GPU). pip also searches this index for other packages (numpy, pillow, ...); torch is pinned below.
 --extra-index-url https://download.pytorch.org/whl/cpu
 fastapi>=0.115
 uvicorn[standard]>=0.30
