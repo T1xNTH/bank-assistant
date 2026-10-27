@@ -26,14 +26,14 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-27`
 - **Updated By**: `codex`
-- **Update Trigger**: `T-002 started trên main 529e86e; review contract/fakes nền tảng; CR-005 proposed`
+- **Update Trigger**: `T-002 implementation complete, CI Linux passed trên 8aa3324, bàn giao review độc lập tại PR #31; CR-005 proposed`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 in-progress); E-002..E-009 (EPIC_READY)`
+- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review); E-002..E-009 (EPIC_READY)`
 - **Active Task IDs**: `T-002`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261027-144253-2`
+- **Current Session ID**: `S-20261027-151653`
