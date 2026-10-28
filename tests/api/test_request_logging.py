@@ -7,7 +7,7 @@ from uuid import UUID
 
 from fastapi.testclient import TestClient
 
-from app.logging import REQUEST_ID, JsonFormatter, configure_logging, get_logger
+from app.log_config import REQUEST_ID, JsonFormatter, configure_logging, get_logger
 from app.main import create_app
 
 
@@ -101,3 +101,14 @@ def test_logging_configuration_is_idempotent_and_preserves_capture_handlers(capl
     for name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
         assert logging.getLogger(name).propagate
         assert not logging.getLogger(name).handlers
+    assert logging.getLogger("uvicorn.access").level == logging.WARNING
+
+
+def test_access_info_suppressed_and_middleware_completion_retained(caplog):
+    configure_logging()
+    with caplog.at_level(logging.INFO):
+        logging.getLogger("uvicorn.access").info("private-url")
+        response = TestClient(create_app()).get("/health")
+    assert response.status_code == 200
+    assert not any(record.name == "uvicorn.access" for record in caplog.records)
+    assert sum(record.getMessage() == "http.request.complete" for record in caplog.records) == 1

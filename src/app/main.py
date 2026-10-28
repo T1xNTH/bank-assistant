@@ -9,7 +9,7 @@ from fastapi import Depends, FastAPI
 from app.contracts import Answerer, User
 from app.deps import get_answerer, get_current_user
 from app.errors import install_error_handlers
-from app.logging import configure_logging
+from app.log_config import configure_logging
 from app.middleware import RequestContextMiddleware
 from app.schemas import AskRequest, AskResponse
 

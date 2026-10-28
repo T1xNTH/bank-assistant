@@ -9,7 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
-from app.logging import get_logger, new_request_id
+from app.log_config import exception_frames, get_logger, new_request_id
 
 logger = get_logger(__name__)
 _CODES = {
@@ -52,7 +52,11 @@ async def internal_error_handler(request: Request, exc: Exception) -> JSONRespon
     response = error_response(request, 500, "INTERNAL_ERROR", "Internal Server Error")
     logger.error(
         "request.failed",
-        extra={"request_id": request.state.request_id, "exception_type": type(exc).__name__},
+        extra={
+            "request_id": request.state.request_id,
+            "exception_type": type(exc).__name__,
+            "exception_frames": exception_frames(exc),
+        },
     )
     return response
 

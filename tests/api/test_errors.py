@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app.deps import get_answerer
-from app.logging import JsonFormatter
+from app.log_config import JsonFormatter
 from app.main import create_app
 from app.schemas import AskResponse
 
@@ -98,6 +98,11 @@ def test_unhandled_failure_returns_safe_500_with_matching_log_id(application, ca
     logs = [json.loads(JsonFormatter().format(record)) for record in caplog.records if record.name.startswith("app.")]
     assert {log["request_id"] for log in logs} == {response.headers["x-request-id"]}
     assert any(log.get("exception_type") == "RuntimeError" for log in logs)
+    failure = next(log for log in logs if log["message"] == "request.failed")
+    assert any(
+        frame.startswith("test_errors.py:") and frame.endswith(":answer") for frame in failure["exception_frames"]
+    )
+    assert all("/" not in frame and "\\" not in frame for frame in failure["exception_frames"])
     assert secret not in json.dumps(logs)
 
 

@@ -9,7 +9,7 @@ from starlette.requests import Request
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.errors import internal_error_handler
-from app.logging import REQUEST_ID, get_logger, http_method, new_request_id
+from app.log_config import REQUEST_ID, exception_frames, get_logger, http_method, new_request_id
 
 logger = get_logger(__name__)
 
@@ -47,7 +47,10 @@ class RequestContextMiddleware:
             except Exception as exc:
                 if response_started:
                     # Streaming failures cannot change an already sent status/body.
-                    logger.error("request.failed_after_start", extra={"exception_type": type(exc).__name__})
+                    logger.error(
+                        "request.failed_after_start",
+                        extra={"exception_type": type(exc).__name__, "exception_frames": exception_frames(exc)},
+                    )
                     raise
                 response = await internal_error_handler(Request(scope), exc)
                 await response(scope, receive, send_with_request_id)

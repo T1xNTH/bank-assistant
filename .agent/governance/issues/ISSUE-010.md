@@ -19,7 +19,7 @@ Track a native runtime crash separately from ISSUE-009 POSIX/encoding failures.
 - **Title**: `Native Windows Python 3.13 logging access violation`
 - **Owner**: `teammate-b`
 - **Reporter**: `codex`
-- **Status**: `open`
+- **Status**: `triaged`
 - **Issue Type**: `defect`
 - **Priority**: `2`
 - **Created Date**: `2026-10-28`
@@ -80,3 +80,9 @@ Windows Python 3.13 crashes with access violation inside logging.LogRecord.__ini
 ## Output Requirements
 
 Store as `.agent/governance/issues/ISSUE-010.md`.
+
+## Verified Workaround (2026-10-28, PR #34 follow-up)
+
+Use a separate native Windows CPython 3.11.11 venv matching Docker's 3.11 minor version. Installed with `uv python install 3.11 --install-dir D:/bank-assistant/.venv/python-runtimes`, then `uv venv --python <3.11 interpreter> .venv/win311` and requirements-dev.txt. `python -m pytest -q tests/api tests/unit`: 29 passed in 2.56s. No 3.13 crash was observed in this run.
+
+Python 3.13 native Windows is not a verified/supported development setup for this task; prefer 3.11 or WSL. This is a verified workaround, not a proven root-cause fix. The package `requires-python >=3.10` is unchanged because no general cross-platform 3.13 incompatibility is established. Full native Windows framework checks remain separate ISSUE-009. ISSUE-010 stays triaged rather than closed; original failure evidence above remains valid for the original environment/commit.
