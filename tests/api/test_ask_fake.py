@@ -20,4 +20,4 @@ def test_ask_refusal_is_200_with_found_false():
 
 
 def test_ask_rejects_empty_question():
-    assert client.post("/ask", json={"question": ""}).status_code == 422
+    assert client.post("/ask", json={"question": ""}).status_code == 400
