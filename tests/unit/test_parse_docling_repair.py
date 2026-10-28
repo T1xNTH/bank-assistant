@@ -1,11 +1,14 @@
 """Scan repair paths of parse_docling (CR-007) without OCR models: runs in CI."""
 
+import os
 import subprocess
+import sys
+import textwrap
 from types import SimpleNamespace
 
 import pytest
 from docling.backend.docling_parse_backend import ThreadedDoclingParseDocumentBackend
-from docling.datamodel.base_models import InputFormat
+from docling.datamodel.base_models import ConversionStatus, InputFormat
 from docling.datamodel.document import InputDocument
 from docling_core.types.doc import (
     BoundingBox,
@@ -73,7 +76,7 @@ def test_choose_pages_takes_the_image_copy_only_where_the_original_is_garbage():
 
 def test_best_rotation_keeps_the_most_readable_orientation(tmp_path, monkeypatch):
     monkeypatch.setattr(pd, "_rotated_page_pdf", lambda path, no, rotate, out: f"rot{rotate}")
-    monkeypatch.setattr(pd, "_converter", lambda full: SimpleNamespace(convert=lambda p: SimpleNamespace(document=p)))
+    monkeypatch.setattr(pd, "_convert", lambda path, full: path)
     monkeypatch.setattr(pd, "doc_to_pages", lambda doc, source: [_page(1, UPRIGHT_OCR if doc == "rot180" else GARBAGE)])
 
     fixed = pd._best_rotation("scan.pdf", _page(7, GARBAGE), tmp_path)
@@ -127,3 +130,78 @@ def test_tesseract_failure_is_raised_not_swallowed(tmp_path, monkeypatch):
 
     with pytest.raises(RuntimeError, match="vie"):
         pd._tesseract(Image.new("L", (10, 10)), tmp_path / "x.png")
+
+
+def test_choose_pages_takes_pages_only_the_image_copy_has():
+    chosen = pd.choose_pages([_page(1, UPRIGHT_OCR), _page(3, UPRIGHT_OCR)], [_page(n, UPRIGHT_OCR) for n in (1, 2, 3)])
+
+    assert [p["page"] for p in chosen] == [1, 2, 3]
+
+
+def test_choose_pages_keeps_a_readable_original_when_the_copy_loses_its_table():
+    # The garbage table (no diacritics) marks the page, and the copy scores higher only
+    # because the table is gone: its figures must not be traded for readability.
+    table = (
+        "| Muc | So tien |\n|---|---|\n"
+        "| Luong co ban thang mot nam nay | 22.700.000 |\n| Phu cap trach nhiem cong viec | 3.000.000 |"
+    )
+    original = _page(1, UPRIGHT_OCR, [table])
+
+    [chosen] = pd.choose_pages([original], [_page(1, UPRIGHT_OCR)])
+
+    assert chosen is original
+
+
+def _conversion(status, pages, errors=()):
+    return SimpleNamespace(convert=lambda path: SimpleNamespace(status=status, errors=list(errors), document=pages))
+
+
+def test_partial_conversion_missing_a_page_is_an_error(monkeypatch):
+    monkeypatch.setattr(pd, "_text_layer", lambda path: UPRIGHT_OCR)
+    monkeypatch.setattr(pd, "_page_count", lambda path: 3)
+    monkeypatch.setattr(pd, "_converter", lambda full: _conversion(ConversionStatus.PARTIAL_SUCCESS, [1, 3]))
+    monkeypatch.setattr(pd, "doc_to_pages", lambda doc, source: [_page(n, UPRIGHT_OCR) for n in doc])
+
+    with pytest.raises(pd.ParseError, match=r"pages \[2\]"):
+        pd.parse("digital.pdf")
+
+
+def test_failed_conversion_is_an_error(monkeypatch):
+    failed = _conversion(ConversionStatus.FAILURE, None, [SimpleNamespace(error_message="page 2: boom")])
+    monkeypatch.setattr(pd, "_converter", lambda full: failed)
+
+    with pytest.raises(pd.ParseError, match="failure: page 2: boom"):
+        pd._convert("x.pdf", True)
+
+
+def test_scan_page_missing_from_both_passes_is_an_error(monkeypatch):
+    monkeypatch.setattr(pd, "_text_layer", lambda path: "")
+    monkeypatch.setattr(pd, "_page_count", lambda path: 3)
+    monkeypatch.setattr(pd, "_image_only_pdf", lambda path, out: out)
+    monkeypatch.setattr(pd, "_ocr_pages", lambda path, source, tmp: [_page(1, UPRIGHT_OCR), _page(3, UPRIGHT_OCR)])
+
+    with pytest.raises(pd.ParseError, match=r"pages \[2\]"):
+        pd.parse("scan.pdf")
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="fake tesseract is a POSIX script")
+def test_tesseract_output_is_decoded_as_utf8_under_a_non_utf8_locale(tmp_path):
+    # Windows decodes pipes as cp1252; an ASCII C locale reproduces that failure on Linux.
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    fake = bin_dir / "tesseract"
+    fake.write_text(f"#!{sys.executable}\nimport sys\nsys.stdout.buffer.write('Ngân hàng'.encode())\n")
+    fake.chmod(0o755)
+    script = textwrap.dedent(f"""
+        from pathlib import Path
+        from PIL import Image
+        from app.rag import parse_docling as pd
+        print(pd._tesseract(Image.new("L", (10, 10)), Path({str(tmp_path / "x.png")!r})).encode("utf-8").hex())
+    """)
+    env = {**os.environ, "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}", "LC_ALL": "C",
+           "PYTHONUTF8": "0", "PYTHONCOERCECLOCALE": "0", "PYTHONPATH": os.pathsep.join(sys.path)}
+
+    done = subprocess.run([sys.executable, "-c", script], capture_output=True, env=env, check=False)
+
+    assert done.returncode == 0, done.stderr.decode(errors="replace")
+    assert bytes.fromhex(done.stdout.decode().strip()).decode("utf-8") == "Ngân hàng"
