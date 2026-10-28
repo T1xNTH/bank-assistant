@@ -47,6 +47,8 @@ MIN_DIACRITIC_RATIO = 0.05  # real Vietnamese text is ~0.2; garbage layers are ~
 
 RENDER_DPI = 200
 MIN_TABLE_LETTERS = 50  # tables with less text (numbers only) are not judged
+MIN_KEPT_FIGURES = 0.5  # a table whose figures the image copy mostly lost is kept from the original
+MIN_WORD_TOKENS = 0.35  # garbage-layer tables are ~0.45+ words (no accents); OCR noise of a stamp or scribble ~0.17
 BW_THRESHOLD = 160  # grey level above which a pixel becomes white
 MIN_GARBLED_LETTERS = 200  # pages with less text are not judged (stamps, signatures, blank forms)
 MIN_COMMON_WORD_RATIO = 0.04  # share of tokens that are frequent Vietnamese words; real text ~0.2, rotated OCR ~0
@@ -59,7 +61,10 @@ _VI_COMMON = frozenset(
     "thực hiện trường hợp dịch vụ thanh toán tài phí tiền lao động đồng sau đây phải".split()
 )
 _TOKEN = re.compile(r"\w+")
-_FIGURE = re.compile(r"\d+[.,]\d+|\d{3,}")  # amounts, rates, dates; not the stray digits of OCR noise
+_WORD = re.compile(r"[^\W\d_]{2,}")
+_NUMBER = re.compile(r"[\d.,%/()-]+")
+# Amounts, rates, dates (22.700.000, 0,5%, 4%, 2025); not the stray one- or two-digit noise of an OCR'd form grid.
+_FIGURE = re.compile(r"\d+(?:[.,]\d+)+%?|\d+%|\d{3,}")
 
 _VI_DIACRITICS = re.compile(
     "[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]", re.IGNORECASE
@@ -160,7 +165,8 @@ def parse(path: str) -> list[dict]:
         images = _ocr_pages(str(_image_only_pdf(path, Path(tmp) / "pages.pdf")), source, Path(tmp))
         # The original keeps table structure best; the bi-level image copy has no
         # garbage text layer and OCRs some rotated pages better. Use the copy only
-        # where the original page, or one of its tables, reads as garbage.
+        # where the original page, or one of its tables, reads as garbage, keeping
+        # any original table whose figures the copy lost.
         pages = _require_all_pages(choose_pages(original, images), _page_count(path), source)
         return [_repair(path, p, Path(tmp)) for p in pages]
 
@@ -193,8 +199,8 @@ def choose_pages(original: list[dict], images: list[dict]) -> list[dict]:
         p, c = orig.get(no), copy.get(no)
         if p is None or c is None:
             chosen.append(p or c)
-        elif _garbage_in(p) and _score(c) > _score(p) and _keeps_tables(p, c):
-            chosen.append(c)
+        elif _garbage_in(p) and _score(c) > _score(p):
+            chosen.append(_with_lost_tables(p, c))
         else:
             chosen.append(p)
     return chosen
@@ -204,14 +210,35 @@ def _score(page: dict) -> float:
     return common_word_ratio(_all_text(page))
 
 
-def _keeps_tables(original: dict, candidate: dict) -> bool:
-    """False when a readable original has a table of figures the candidate lost: dropping it raises the score.
+def _figures(text: str) -> set[str]:
+    return {re.sub(r"[.,]", "", f) for f in _FIGURE.findall(text)}
 
-    A garbled page has nothing readable to lose; a table without figures (e.g. the empty grid
-    of a blank form) is usually OCR noise and is not protected.
+
+def _reads_as_words(table: str) -> bool:
+    """True for a table of (possibly unaccented) words; False for OCR noise whose stray digits look like figures."""
+    tokens = [t for t in re.findall(r"[^\s|]+", table) if not _NUMBER.fullmatch(t)]
+    return sum(bool(_WORD.fullmatch(t.strip(".,:;()"))) for t in tokens) >= MIN_WORD_TOKENS * max(len(tokens), 1)
+
+
+def _with_lost_tables(original: dict, copy: dict) -> dict:
+    """The copy, plus any table of the readable original whose figures the copy lost.
+
+    Dropping a garbage-text table raises the copy's score, so a better score alone cannot
+    tell a cleaner read from lost amounts and rates. A table is kept from the original
+    when the copy has fewer than half of its figures anywhere on the page; its words may
+    be garbage, but its figures came from the text layer. A garbled original has nothing
+    readable to keep, and a table without figures (e.g. the empty grid of a blank form)
+    or without words (OCR noise) is not content.
     """
-    with_figures = sum(bool(_FIGURE.search(t)) for t in original["tables"])
-    return looks_garbled(original) or len(candidate["tables"]) >= with_figures
+    if looks_garbled(original):
+        return copy
+    have = _figures(_all_text(copy))
+    lost = [
+        t
+        for t in original["tables"]
+        if (figs := _figures(t)) and len(figs & have) < MIN_KEPT_FIGURES * len(figs) and _reads_as_words(t)
+    ]
+    return {**copy, "tables": copy["tables"] + lost} if lost else copy
 
 
 def _garbage_in(page: dict) -> bool:
