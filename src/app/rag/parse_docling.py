@@ -50,7 +50,6 @@ MIN_TABLE_LETTERS = 50  # tables with less text (numbers only) are not judged
 BW_THRESHOLD = 160  # grey level above which a pixel becomes white
 MIN_GARBLED_LETTERS = 200  # pages with less text are not judged (stamps, signatures, blank forms)
 MIN_COMMON_WORD_RATIO = 0.04  # share of tokens that are frequent Vietnamese words; real text ~0.2, rotated OCR ~0
-MIN_KEPT_NUMBERS = 0.9  # share of a readable page's numbers an image-copy page must keep to replace it
 
 # Frequent words in Vietnamese legal and banking text. OCR of a rotated page yields
 # diacritics too, but almost never these words.
@@ -60,7 +59,7 @@ _VI_COMMON = frozenset(
     "thực hiện trường hợp dịch vụ thanh toán tài phí tiền lao động đồng sau đây phải".split()
 )
 _TOKEN = re.compile(r"\w+")
-_NUMBER = re.compile(r"\d[\d.,]*\d")
+_FIGURE = re.compile(r"\d+[.,]\d+|\d{3,}")  # amounts, rates, dates; not the stray digits of OCR noise
 
 _VI_DIACRITICS = re.compile(
     "[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]", re.IGNORECASE
@@ -194,7 +193,7 @@ def choose_pages(original: list[dict], images: list[dict]) -> list[dict]:
         p, c = orig.get(no), copy.get(no)
         if p is None or c is None:
             chosen.append(p or c)
-        elif _garbage_in(p) and _score(c) > _score(p) and _keeps_numbers(p, c):
+        elif _garbage_in(p) and _score(c) > _score(p) and _keeps_tables(p, c):
             chosen.append(c)
         else:
             chosen.append(p)
@@ -205,17 +204,14 @@ def _score(page: dict) -> float:
     return common_word_ratio(_all_text(page))
 
 
-def _keeps_numbers(original: dict, candidate: dict) -> bool:
-    """False when the candidate drops the figures of a readable original (e.g. a whole table went missing).
+def _keeps_tables(original: dict, candidate: dict) -> bool:
+    """False when a readable original has a table of figures the candidate lost: dropping it raises the score.
 
-    Garbage text layers keep their digits, so numbers show what a candidate must not lose.
-    A garbled page's "numbers" are OCR noise and are not checked.
+    A garbled page has nothing readable to lose; a table without figures (e.g. the empty grid
+    of a blank form) is usually OCR noise and is not protected.
     """
-    if looks_garbled(original):
-        return True
-    numbers = set(_NUMBER.findall(_all_text(original)))
-    kept = numbers & set(_NUMBER.findall(_all_text(candidate)))
-    return len(kept) >= MIN_KEPT_NUMBERS * len(numbers)
+    with_figures = sum(bool(_FIGURE.search(t)) for t in original["tables"])
+    return looks_garbled(original) or len(candidate["tables"]) >= with_figures
 
 
 def _garbage_in(page: dict) -> bool:

@@ -152,6 +152,19 @@ def test_choose_pages_keeps_a_readable_original_when_the_copy_loses_its_table():
     assert chosen is original
 
 
+def test_choose_pages_drops_a_garbage_table_without_figures():
+    # The empty grid of a blank form: noise, not content the copy must keep.
+    grid = (
+        "| i n khich hirng so til | Ptay tny then loai giiy lil tiry than | v!t Ngnv thrng nIm sinh |\n"
+        "|---|---|---|\n| t2) | 6 | 11 |"
+    )
+    copy = _page(1, UPRIGHT_OCR + " của và các")
+
+    [chosen] = pd.choose_pages([_page(1, UPRIGHT_OCR, [grid])], [copy])
+
+    assert chosen is copy
+
+
 def _conversion(status, pages, errors=()):
     return SimpleNamespace(convert=lambda path: SimpleNamespace(status=status, errors=list(errors), document=pages))
 
