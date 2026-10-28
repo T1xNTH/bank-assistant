@@ -22,11 +22,11 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `12`
+- **Context Revision**: `13`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-28`
-- **Updated By**: `independent-reviewer-t004`
-- **Update Trigger**: `T-004 independent review APPROVED; post-approval task QA passed (conditional-go); retain review pending owner A PR #34 approval; ISSUE-010 unresolved`
+- **Updated By**: `codex`
+- **Update Trigger**: `PR #34 owner A review follow-up: safe frame locations, one completion event, log_config rename, verified Windows3.11 workaround; follow-up independent review pending`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
@@ -41,3 +41,5 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 ## Revision Provenance
 
 Revision 5 có trong commit `8aa3324` và `f405739`; revision 6 nằm ở `34e54e9`. Diff gộp với main hiển thị 4 → 6 vì các revision trung gian nằm trong cùng PR #31; không mất record thực thi. Revision 7 ghi phản hồi sau approval của A.
+
+Revision 11 was an intermediate uncommitted execution state (T-003 closure/T-004 implementation). Commit `103f35b` persisted the final revision 12 together with independent review/QA; there is no standalone revision-11 commit. The PR diff 10 -> 12 reflects that consolidation, not a claim of missing committed history. Revision 13 records owner A review follow-up.
