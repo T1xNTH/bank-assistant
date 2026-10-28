@@ -1,88 +1,79 @@
 ---
 id: issue-010
-title: Native Windows logging runtime crash
+title: "ISSUE-010: Đặt superseded_by cho TT 26/2021 khi VBHN 112 có hiệu lực (2026-11-09)"
 type: governance
 domain: governance
-module: templates
-tags: [issue, template]
-priority: 3
+module: issues
+tags: [issue, data, manifest, t-005, e-003]
+priority: 2
 ---
-# ISSUE-010: Native Windows logging runtime crash
+# ISSUE-010: Đặt `superseded_by` cho TT 26/2021 khi VBHN 112 có hiệu lực (2026-11-09)
 
 ## Usage Purpose
 
-Track a native runtime crash separately from ISSUE-009 POSIX/encoding failures.
+Theo dõi việc theo lịch phát sinh từ PR33-F01 (review của teammate-b trên PR #33) và F-06 (review vòng 2 của `claude-review-a`). Retrieval loại chunk có `superseded_by` khác rỗng mà chưa lọc theo ngày hiệu lực, nên cặp `tt26-2021` → `tt26-2021-vbhn` chỉ được đặt từ ngày VBHN 112 có hiệu lực.
 
 ## Record Metadata
 
 - **Issue ID**: `ISSUE-010`
-- **Title**: `Native Windows Python 3.13 logging access violation`
-- **Owner**: `teammate-b`
-- **Reporter**: `codex`
-- **Status**: `triaged`
-- **Issue Type**: `defect`
+- **Title**: `Đặt superseded_by cho TT 26/2021 khi VBHN 112 có hiệu lực`
+- **Owner**: `trong-hung`
+- **Reporter**: `teammate-b`
+- **Status**: `open`
+- **Issue Type**: `maintenance`
 - **Priority**: `2`
 - **Created Date**: `2026-10-28`
-- **Target Date**: `none`
+- **Target Date**: `2026-11-09`
 
 ## Description
 
-Windows Python 3.13 crashes with access violation inside logging.LogRecord.__init__ at asyncio.current_task().get_name(). Root cause is unconfirmed. Plain logging before TestClient succeeds; logging after TestClient can crash. Do not infer that ISSUE-009 explains this defect.
+`data/manifest.csv` hiện để trống `superseded_by` cho `tt26-2021` (TT 26/2021 bản gốc). VBHN 112 (`tt26-2021-vbhn`, gồm TT 48/2026) có hiệu lực từ 2026-11-09. `scripts/check_manifest.py` báo lỗi nếu đặt cặp trước ngày đó, nhưng không nhắc khi tới ngày.
 
 ## Impact
 
-- **Affected Scope**: `native Windows API tests / Python logging`
-- **Severity**: `medium`
-- **User or Delivery Impact**: `Native Windows suite is not verified; Docker/WSL Linux is verified.`
+- **Affected Scope**: `data/manifest.csv; dữ liệu đã ingest vào Qdrant (payload superseded_by)`
+- **Severity**: `low`
+- **User or Delivery Impact**: `sau 2026-11-09, nếu chưa đặt cặp thì retrieval có thể trả cả TT 26/2021 bản gốc (đã lỗi thời) lẫn VBHN 112`
 
 ## Reproduction Evidence
 
-- **Preconditions**: `Windows, repository .venv Python 3.13, current installed Starlette/httpx2/AnyIO`
-- **Steps**: `PYTHONPATH=src python -X faulthandler -m pytest -q tests/api tests/unit`
-- **Observed Result**: `Initial crash at httpx2 INFO logging; disabling HTTP client INFO allows 21 tests before logging formatter test crashes at the same CPython line 383.`
-- **Expected Result**: `28 tests pass without process crash`
-- **Evidence Paths**: `.agent/reports/implementation/T-004.md`
+- **Preconditions**: `ngày >= 2026-11-09`
+- **Steps**: `xem dòng tt26-2021 trong data/manifest.csv`
+- **Observed Result**: `superseded_by rỗng`
+- **Expected Result**: `superseded_by = tt26-2021-vbhn`
+- **Evidence Paths**: `https://github.com/caitoithap/bank-assistant/pull/33, docs/07-development/corpus.md`
 
 ## Related Files
 
-- **Affected Files**: `src/app/logging.py, tests/api/test_request_logging.py`
-- **Tasks or Epics**: `T-004, E-002`
-- **Decisions**: `none`
+- **Affected Files**: `data/manifest.csv`
+- **Tasks or Epics**: `E-003 (T-005, T-010)`
+- **Decisions**: `.agent/governance/decisions/DEC-001.md`
 - **Risks**: `none`
 - **Blockers**: `none`
 
 ## Acceptance Criteria
 
-- [ ] Identify runtime/dependency cause with minimal reproduction.
-- [ ] API/unit suite passes on a clean supported native Windows environment.
-- [ ] Linux suite remains green.
+- [ ] Từ 2026-11-09: đặt `superseded_by = tt26-2021-vbhn` cho `tt26-2021` và `python scripts/check_manifest.py` ra `0 lỗi`.
+- [ ] Nếu đã ingest: cập nhật payload `superseded_by` của các point thuộc `tt26-2021` trong Qdrant (chạy lại ingest hoặc set payload).
 
 ## Resolution
 
 - **Resolution Type**: `not-applicable`
-- **Resolution Summary**: `Unresolved; use WSL/Docker for task verification. No global logging workaround applied.`
+- **Resolution Summary**: `chưa đến ngày`
 - **Verification Evidence**: `none`
 - **Resolved By**: `none`
 - **Resolved Date**: `none`
 
 ## Completion Criteria
 
-- [ ] Acceptance criteria pass.
-- [ ] Root cause/fix and regression evidence recorded.
+- [ ] Acceptance criteria đạt.
+- [ ] Bằng chứng giải quyết đã được liên kết.
 
 ## Forbidden Actions
 
-- Không đóng issue khi chưa có bằng chứng giải quyết hoặc hướng xử lý được duyệt.
-- Không xoá lịch sử khi trạng thái hay owner thay đổi.
-- Không gộp các vấn đề không liên quan vào một issue.
-- Không bịa bằng chứng tái hiện hay kiểm chứng.
+- Không đặt cặp trước 2026-11-09.
 
 ## Output Requirements
 
-Store as `.agent/governance/issues/ISSUE-010.md`.
-
-## Verified Workaround (2026-10-28, PR #34 follow-up)
-
-Use a separate native Windows CPython 3.11.11 venv matching Docker's 3.11 minor version. Installed with `uv python install 3.11 --install-dir D:/bank-assistant/.venv/python-runtimes`, then `uv venv --python <3.11 interpreter> .venv/win311` and requirements-dev.txt. `python -m pytest -q tests/api tests/unit`: 29 passed in 2.56s. No 3.13 crash was observed in this run.
-
-Python 3.13 native Windows is not a verified/supported development setup for this task; prefer 3.11 or WSL. This is a verified workaround, not a proven root-cause fix. The package `requires-python >=3.10` is unchanged because no general cross-platform 3.13 incompatibility is established. Full native Windows framework checks remain separate ISSUE-009. ISSUE-010 stays triaged rather than closed; original failure evidence above remains valid for the original environment/commit.
+- Lưu tại `.agent/governance/issues/ISSUE-010.md`.
+- Giữ nguyên mọi heading của issue template.

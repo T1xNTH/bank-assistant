@@ -109,3 +109,21 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261028-091520` | `2026-10-28` | `2026-10-28` | `independent-reviewer-t004` | `T-004` | `completed` | `review started` | `.agent/reports/review/T-004.md` | `none` |
 | `S-20261028-091843` | `2026-10-28` | `2026-10-28` | `independent-reviewer-t004` | `T-004` | `completed` | `review approved` | `.agent/reports/review/T-004.md` | `none` |
 | `S-20261028-t004-independent-qa` | `2026-10-28` | `2026-10-28` | `independent-reviewer-t004` | `T-004` | `completed` | `Separate Codex session review APPROVED; post-approval WSL QA make check Ruff/48 tests in 51.00s/framework pass; CLI QA epic-only not-run; retain task review pending A PR34 approval; ISSUE010 unresolved` | `.agent/reports/review/T-004.md, .agent/reports/qa/T-004.md` | `none` |
+| `S-20261027-170633` | `2026-10-27` | `2026-10-27` | `trong-hung` | `E-003` | `completed` | `epic EPIC_READY -> EPIC_IN_PROGRESS` | `.agent/planning/epics.md` | `none` |
+| `S-20261027-170633-2` | `2026-10-27` | `2026-10-27` | `claude-code-a` | `T-005` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
+| `S-20261028-005707` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `implementation report draft` | `.agent/reports/implementation/T-005.md` | `none` |
+| `S-20261028-005707-2` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `verify 'python3 scripts/check_manifest.py' passed` | `.agent/reports/implementation/T-005.md` | `none` |
+| `S-20261028-005707-3` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `verify '.venv/bin/python -m pytest -q tests/unit/test_check_manifest.py' passed` | `.agent/reports/implementation/T-005.md` | `none` |
+| `S-20261028-005715` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `verify 'make check' passed` | `.agent/reports/implementation/T-005.md` | `none` |
+| `S-20261028-005809` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-005.md` | `none` |
+| `S-20261028-005809-2` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-005.md` | `none` |
+| `S-20261028-010144` | `2026-10-28` | `2026-10-28` | `claude-review-a` | `T-005` | `completed` | `review started` | `.agent/reports/review/T-005.md` | `none` |
+| `S-20261028-010231` | `2026-10-28` | `2026-10-28` | `claude-review-a` | `T-005` | `completed` | `review approved` | `.agent/reports/review/T-005.md` | `none` |
+| `S-20261028-091500` | `2026-10-28` | `2026-10-28` | `claude-code-a (sửa tay ngoài CLI)` | `T-005` | `completed` | `task review -> in-progress: teammate-b CHANGES_REQUESTED trên PR #33 (PR33-F01..F03); CLI không có lệnh cho reviewer ngoài framework` | `https://github.com/caitoithap/bank-assistant/pull/33` | `none` |
+| `S-20261028-091350` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `verify 'python3 scripts/check_manifest.py' passed` | `.agent/reports/implementation/T-005.md` | `none` |
+| `S-20261028-091350-2` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `verify '.venv/bin/python -m pytest -q tests/unit/test_check_manifest.py' passed` | `.agent/reports/implementation/T-005.md` | `none` |
+| `S-20261028-091357` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `verify 'make check' passed` | `.agent/reports/implementation/T-005.md` | `none` |
+| `S-20261028-091358` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-005.md` | `none` |
+| `S-20261028-091358-2` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-005.md` | `none` |
+| `S-20261028-091614` | `2026-10-28` | `2026-10-28` | `claude-review-a` | `T-005` | `completed` | `review started` | `.agent/reports/review/T-005.md` | `none` |
+| `S-20261028-091614-2` | `2026-10-28` | `2026-10-28` | `claude-review-a` | `T-005` | `completed` | `review approved` | `.agent/reports/review/T-005.md` | `none` |
