@@ -18,3 +18,5 @@ Phần này cung cấp hướng dẫn phát triển, chuẩn viết code và cô
 - `tooling.md` – Công cụ phát triển và cách cài đặt
 - `corpus.md` – Dựng lại bộ tài liệu `data/` theo manifest, quy ước `superseded_by`
 - `workflow.md` – Git workflow và quy trình PR
+
+- [Qdrant store](qdrant-store.md) - T009 input format, identity and real-server checks.
