@@ -95,3 +95,48 @@ def test_table_alignment_padding_is_removed():
     [chunk] = chunk_pages([_page(1, tables=[padded])])
 
     assert chunk["text"] == "| Vùng | Mức lương tối thiểu tháng |\n|---|---|\n| Vùng I | 5.310.000 |"
+
+
+def test_full_stop_never_pushes_a_piece_over_size_or_leaves_an_empty_chunk():
+    chunks = chunk_pages([_page(1, "aaaaaaaaaa. bbbb")], size=10, overlap=0)
+
+    assert [c["text"] for c in chunks] == ["aaaaaaaaaa", "bbbb"]
+
+
+@pytest.mark.parametrize("size", [50, 120, 300, 800])
+def test_text_chunks_are_non_empty_and_within_size(size):
+    text = "\n\n".join(
+        f"## Điều {i}. Quy định chung\n- Khoản {i}: {SENTENCE} " + " ".join([SENTENCE] * (i % 7)) + "."
+        for i in range(1, 40)
+    )
+
+    chunks = chunk_pages([_page(1, text)], size=size, overlap=size // 5)
+
+    assert chunks and all(c["text"].strip() and len(c["text"]) <= size for c in chunks)
+
+
+def test_data_row_of_dashes_is_not_taken_for_the_separator():
+    table = "| Phí | Mức |\n|:----|----:|\n| ---   | 4%   |\n| Rút tiền | 1.100 |"
+
+    [chunk] = chunk_pages([_page(1, tables=[table])])
+
+    assert chunk["text"] == "| Phí | Mức |\n|---|---|\n| --- | 4% |\n| Rút tiền | 1.100 |"
+
+
+def test_overlap_keeps_the_whole_tail_when_it_starts_on_a_word():
+    words = " ".join(f"w{i:02d}" for i in range(40))  # every word is 3 chars + a space
+
+    chunks = chunk_pages([_page(1, words)], size=40, overlap=8)
+
+    for prev, nxt in zip(chunks, chunks[1:], strict=False):
+        assert nxt["text"].split("\n")[0] == prev["text"][-7:]  # "wNN wNN": the full 8-char overlap, whole words
+
+
+def test_words_are_only_cut_when_longer_than_size():
+    long_word = "x" * 25
+
+    texts = [c["text"] for c in chunk_pages([_page(1, f"aaaaaaaaaa. bbbb {long_word}")], size=10, overlap=3)]
+
+    assert "aaaaaaaaaa" in texts  # fits in size: kept whole although it leaves no room for overlap
+    assert "".join(t for t in texts if set(t) == {"x"}) == long_word  # only the 25-char word is cut
+    assert all(0 < len(t) <= 10 for t in texts)

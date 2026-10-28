@@ -22,7 +22,7 @@ from __future__ import annotations
 import re
 
 _SEPARATORS = ["\n\n", "\n", ". ", " "]
-_TABLE_SEPARATOR = re.compile(r"^\|?\s*:?-{3,}")
+_TABLE_SEPARATOR = re.compile(r"^\|?(\s*:?-{3,}:?\s*\|)*\s*:?-{3,}:?\s*\|?$")  # only |, -, : and spaces
 _SPACES = re.compile(r" {2,}")
 
 
@@ -40,7 +40,8 @@ def chunk_pages(pages: list[dict], size: int = 800, overlap: int = 100) -> list[
 
 
 def _text_chunks(text: str, size: int, overlap: int) -> list[str]:
-    pieces = _split(text.strip(), size, _SEPARATORS)
+    # Pieces leave room for the overlap carried into the next chunk.
+    pieces = _split(text.strip(), size - overlap - 1 if overlap else size, _SEPARATORS, size)
     chunks: list[str] = []
     current = ""
     for piece in pieces:
@@ -48,7 +49,8 @@ def _text_chunks(text: str, size: int, overlap: int) -> list[str]:
         if len(joined) <= size:
             current = joined
             continue
-        chunks.append(current)
+        if current:
+            chunks.append(current)
         tail = _tail(current, overlap)
         current = f"{tail}\n{piece}" if tail and len(tail) + 1 + len(piece) <= size else piece
     if current:
@@ -56,16 +58,21 @@ def _text_chunks(text: str, size: int, overlap: int) -> list[str]:
     return chunks
 
 
-def _split(text: str, size: int, separators: list[str]) -> list[str]:
-    """Pieces of at most ``size`` characters: parts at the coarsest separator, merged back while they fit."""
+def _split(text: str, size: int, separators: list[str], hard: int) -> list[str]:
+    """Pieces of at most ``size`` characters: parts at the coarsest separator, merged back while they fit.
+
+    A single word is only cut when it is longer than ``hard`` (the real chunk size).
+    """
     if len(text) <= size:
         return [text] if text else []
     if not separators:
-        return [text[i : i + size] for i in range(0, len(text), size)]  # one word longer than size
+        if len(text) <= hard:
+            return [text]
+        return [text[i : i + hard] for i in range(0, len(text), hard)]
     sep, rest = separators[0], separators[1:]
     parts = [p.strip() for p in text.split(sep) if p.strip()]
     if len(parts) <= 1:
-        return _split(text, size, rest)
+        return _split(text, size, rest, hard)
     end = sep.strip()  # ". " keeps its full stop where a piece is cut
     out: list[str] = []
     current = ""
@@ -75,11 +82,12 @@ def _split(text: str, size: int, separators: list[str]) -> list[str]:
             current = joined
             continue
         if current:
-            out.append(current + end if end and not current.endswith(end) else current)
+            closes = end and not current.endswith(end) and len(current) + len(end) <= size
+            out.append(current + end if closes else current)
         if len(part) <= size:
             current = part
         else:
-            out += _split(part, size, rest)
+            out += _split(part, size, rest, hard)
             current = ""
     if current:
         out.append(current)
@@ -90,25 +98,29 @@ def _tail(text: str, overlap: int) -> str:
     if overlap == 0 or len(text) <= overlap:
         return "" if overlap == 0 else text
     cut = text[-overlap:]
+    if text[-overlap - 1].isspace():
+        return cut.strip()  # already starts at a word boundary
     gap = re.search(r"\s", cut)
-    return cut[gap.end() :].strip() if gap else ""  # start at a word boundary
+    return cut[gap.end() :].strip() if gap else ""  # start at the next word boundary
 
 
-def _compact(line: str) -> str:
+def _compact(line: str, separator: bool) -> str:
     """docling pads cells to align columns; the padding is only noise for search and the size limit."""
-    if _TABLE_SEPARATOR.match(line.strip()):
+    if separator:
         return "|" + "|".join("---" for _ in line.strip().strip("|").split("|")) + "|"
     return _SPACES.sub(" ", line.strip())
 
 
 def _table_chunks(table: str, size: int) -> list[str]:
-    table = "\n".join(_compact(line) for line in table.strip().splitlines())
+    lines = table.strip().splitlines()
+    sep_row = 1 if len(lines) > 1 and _TABLE_SEPARATOR.match(lines[1].strip()) else -1  # Markdown: 2nd line only
+    table = "\n".join(_compact(line, i == sep_row) for i, line in enumerate(lines))
     if not table:
         return []
     if len(table) <= size:
         return [table]
     lines = table.splitlines()
-    head_len = 2 if len(lines) > 1 and _TABLE_SEPARATOR.match(lines[1].strip()) else 0
+    head_len = 2 if sep_row == 1 else 0
     head, rows = lines[:head_len], lines[head_len:]
     chunks: list[str] = []
     current: list[str] = []
