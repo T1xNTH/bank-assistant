@@ -53,5 +53,5 @@ PY
 
 - Retrieval loại mọi chunk có `superseded_by` khác rỗng (`docs/02-architecture/architecture.md`), chưa lọc theo ngày hiệu lực. Vì vậy chỉ đặt `superseded_by` khi văn bản thay thế **đã có hiệu lực**. `check_manifest.py` báo lỗi nếu văn bản thay thế chưa có hiệu lực hoặc không mới hơn văn bản bị thay.
 - Các cặp hiện có: `tt39-2016-vbhn06` → `tt39-2016-vbhn86` (cho vay, từ 2026-08-15) và `nd74-2024` → `nd293-2025` (lương tối thiểu, từ 2026-01-01).
-- **Việc theo lịch:** từ **2026-11-09**, đặt `tt26-2021` có `superseded_by = tt26-2021-vbhn` (VBHN 112 gồm cả TT 48/2026). Trước ngày đó cả hai đều được truy xuất.
+- **Việc theo lịch (ISSUE-010):** từ **2026-11-09**, đặt `tt26-2021` có `superseded_by = tt26-2021-vbhn` (VBHN 112 gồm cả TT 48/2026). Trước ngày đó cả hai đều được truy xuất.
 - Thông tư sửa đổi (TT 25, 29, 48/2026) vẫn được truy xuất song song với văn bản hợp nhất tương ứng.
