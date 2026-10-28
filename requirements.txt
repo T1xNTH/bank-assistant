@@ -1,4 +1,11 @@
 # Runtime deps. Each epic adds what it needs (docling, FlagEmbedding, qdrant-client, litellm, presidio, rq, langgraph, langfuse<5, ...).
+# CPU-only torch wheels (no CUDA download; the dev machines have no usable GPU). pip also searches this index for other packages (numpy, pillow, ...); torch is pinned below.
+--extra-index-url https://download.pytorch.org/whl/cpu
 fastapi>=0.115
 uvicorn[standard]>=0.30
 pydantic>=2.7
+# E-003 embeddings (bge-m3).
+FlagEmbedding==1.4.2
+# Pinned so the CPU index above resolves the same +cpu build everywhere.
+torch==2.14.1
+torchvision==0.29.1
