@@ -177,7 +177,7 @@ def test_choose_pages_keeps_the_original_table_when_the_copy_table_has_no_amount
     assert chosen["tables"] == [generic, table]
 
 
-def test_choose_pages_does_not_duplicate_a_table_whose_figures_the_copy_kept():
+def test_choose_pages_keeps_a_table_when_the_copy_loses_half_its_rows():
     table = (
         "| Vung | Muc luong toi thieu thang theo quy dinh |\n|---|---|\n"
         "| Vung I cac quan noi thanh | 5.310.000 |\n| Vung II cac huyen ngoai thanh | 4.730.000 |"
@@ -187,7 +187,8 @@ def test_choose_pages_does_not_duplicate_a_table_whose_figures_the_copy_kept():
 
     [chosen] = pd.choose_pages([_page(1, UPRIGHT_OCR, [table])], [copy])
 
-    assert chosen is copy  # half the figures survive: the copy's read of the table stands
+    assert chosen["text"] == copy["text"]
+    assert chosen["tables"] == [read, table]
 
 
 def test_choose_pages_drops_a_garbage_table_without_figures():

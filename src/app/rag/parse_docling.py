@@ -32,6 +32,8 @@ from __future__ import annotations
 import re
 import subprocess
 import tempfile
+import unicodedata
+from collections import Counter
 from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -47,7 +49,6 @@ MIN_DIACRITIC_RATIO = 0.05  # real Vietnamese text is ~0.2; garbage layers are ~
 
 RENDER_DPI = 200
 MIN_TABLE_LETTERS = 50  # tables with less text (numbers only) are not judged
-MIN_KEPT_FIGURES = 0.5  # a table whose figures the image copy mostly lost is kept from the original
 MIN_WORD_TOKENS = 0.35  # garbage-layer tables are ~0.45+ words (no accents); OCR noise of a stamp or scribble ~0.17
 BW_THRESHOLD = 160  # grey level above which a pixel becomes white
 MIN_GARBLED_LETTERS = 200  # pages with less text are not judged (stamps, signatures, blank forms)
@@ -210,8 +211,9 @@ def _score(page: dict) -> float:
     return common_word_ratio(_all_text(page))
 
 
-def _figures(text: str) -> set[str]:
-    return {re.sub(r"[.,]", "", f) for f in _FIGURE.findall(text)}
+def _figures(text: str) -> Counter[str]:
+    # Preserve decimal places: 1.5% must not match 15%. Accept either decimal separator.
+    return Counter(f.replace(",", ".") for f in _FIGURE.findall(text))
 
 
 def _reads_as_words(table: str) -> bool:
@@ -220,23 +222,53 @@ def _reads_as_words(table: str) -> bool:
     return sum(bool(_WORD.fullmatch(t.strip(".,:;()"))) for t in tokens) >= MIN_WORD_TOKENS * max(len(tokens), 1)
 
 
-def _with_lost_tables(original: dict, copy: dict) -> dict:
-    """The copy, plus any table of the readable original whose figures the copy lost.
+def _table_rows(table: str) -> list[list[tuple[frozenset[str], Counter[str]]]]:
+    rows = []
+    for line in table.splitlines():
+        if not line.strip("|:- "):
+            continue  # Markdown separator or blank line
+        line = line.strip().removeprefix("|").removesuffix("|")
+        cells = []
+        for cell in re.split(r"(?<!\\)\|", line):
+            label = unicodedata.normalize("NFKD", _FIGURE.sub(" ", cell).casefold().replace("đ", "d"))
+            label = "".join(c for c in label if not unicodedata.combining(c))
+            cells.append((frozenset(_TOKEN.findall(label)), _figures(cell)))
+        rows.append(cells)
+    return rows
 
-    Dropping a garbage-text table raises the copy's score, so a better score alone cannot
-    tell a cleaner read from lost amounts and rates. A table is kept from the original
-    when the copy has fewer than half of its figures anywhere on the page; its words may
-    be garbage, but its figures came from the text layer. A garbled original has nothing
-    readable to keep, and a table without figures (e.g. the empty grid of a blank form)
-    or without words (OCR noise) is not content.
+
+def _covers_row(original, candidate) -> bool:
+    return len(original) == len(candidate) and all(
+        words <= labels and figures <= values
+        for (words, figures), (labels, values) in zip(original, candidate, strict=True)
+    )
+
+
+def _covers_table(original: str, candidate: str) -> bool:
+    """Each original row must retain its labels, figures and columns in one candidate table."""
+    remaining = _table_rows(candidate)
+    for row in _table_rows(original):
+        match = next((i for i, candidate_row in enumerate(remaining) if _covers_row(row, candidate_row)), None)
+        if match is None:
+            return False
+        remaining.pop(match)  # one surviving row cannot cover several original rows
+    return True
+
+
+def _with_lost_tables(original: dict, copy: dict) -> dict:
+    """The copy, plus original tables whose rows it cannot account for.
+
+    Page-wide figures cannot establish table coverage: the same rates may occur in
+    unrelated prose or another service's row. Keep a table if any row is missing or
+    changed, while retaining the copy's clearer text and tables. Accents are ignored
+    when matching labels. Garbled pages, figureless grids and OCR noise are excluded.
     """
     if looks_garbled(original):
         return copy
-    have = _figures(_all_text(copy))
     lost = [
         t
         for t in original["tables"]
-        if (figs := _figures(t)) and len(figs & have) < MIN_KEPT_FIGURES * len(figs) and _reads_as_words(t)
+        if _figures(t) and _reads_as_words(t) and not any(_covers_table(t, c) for c in copy["tables"])
     ]
     return {**copy, "tables": copy["tables"] + lost} if lost else copy
 
