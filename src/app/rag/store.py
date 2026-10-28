@@ -13,7 +13,15 @@ from datetime import date
 from typing import Annotated, Literal
 from uuid import NAMESPACE_URL, uuid5
 
-from pydantic import BaseModel, ConfigDict, Field, FiniteFloat, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    FiniteFloat,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.exceptions import UnexpectedResponse
 
@@ -22,7 +30,8 @@ from app.rag.embed import DIM
 COLLECTION = "bank_docs"
 BATCH_SIZE = 64
 _INDEX_FIELDS = ("department", "classification", "superseded_by")
-_NonEmpty = Annotated[str, Field(min_length=1)]
+# Stripped first: a blank CSV cell must not pass as a doc_id or as "superseded by ' '".
+_NonEmpty = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 _TokenId = Annotated[int, Field(strict=True, ge=0, le=2**32 - 1)]
 
 
@@ -62,7 +71,7 @@ class _Chunk(BaseModel):
     @field_validator("superseded_by", mode="before")
     @classmethod
     def empty_means_current(cls, value: object) -> object:
-        return None if value == "" else value
+        return None if isinstance(value, str) and not value.strip() else value
 
 
 def point_id(doc_id: str, chunk_index: int) -> str:
@@ -132,10 +141,48 @@ def ensure_collection(*, client: QdrantClient | None = None, collection: str | N
 def upsert_chunks(chunks: list[dict], *, client: QdrantClient | None = None, collection: str | None = None) -> int:
     """Validate all input, then upsert in batches; return chunks submitted, not new-point count.
 
-    Existing IDs are replaced. This does not remove stale chunks after re-chunking a document.
+    Existing IDs are replaced. This does not remove stale chunks after re-chunking a document;
+    use ``replace_document`` when ingesting a whole document.
     Each batch waits for completion; transport failure can leave earlier batches committed.
     Replaying the same input converges to the same points.
     """
+    points = _points(chunks)
+    if not points:
+        return 0
+    name = _collection_name(collection)
+    with _connection(client) as connection:
+        ensure_collection(client=connection, collection=name)
+        _upsert(connection, name, points)
+    return len(points)
+
+
+def replace_document(
+    doc_id: str, chunks: list[dict], *, client: QdrantClient | None = None, collection: str | None = None
+) -> int:
+    """Make ``chunks`` the complete set of points for ``doc_id``; return chunks submitted.
+
+    Upserts first, then deletes the document's other points, so a re-chunk that yields fewer
+    chunks (or a re-ingest that sets ``superseded_by``) leaves no stale chunk that still passes
+    the retrieval filter. Empty ``chunks`` removes the document. An interrupted call leaves a
+    superset of the new chunks; replaying it converges.
+    """
+    points = _points(chunks)
+    if not doc_id.strip() or any(point.payload["doc_id"] != doc_id for point in points):
+        raise ValueError(f"Every chunk must belong to doc_id {doc_id!r}")
+    name = _collection_name(collection)
+    with _connection(client) as connection:
+        ensure_collection(client=connection, collection=name)
+        _upsert(connection, name, points)
+        stale = models.Filter(
+            must=[models.FieldCondition(key="doc_id", match=models.MatchValue(value=doc_id))],
+            must_not=[models.HasIdCondition(has_id=[point.id for point in points])] if points else None,
+        )
+        connection.delete(name, points_selector=models.FilterSelector(filter=stale), wait=True)
+    return len(points)
+
+
+def _points(chunks: list[dict]) -> list[models.PointStruct]:
+    """Validate every chunk before any write."""
     points = []
     for raw in chunks:
         chunk = _Chunk.model_validate(raw)
@@ -146,11 +193,9 @@ def upsert_chunks(chunks: list[dict], *, client: QdrantClient | None = None, col
                 vector={"dense": chunk.dense, "sparse": models.SparseVector(**chunk.sparse.model_dump())},
             )
         )
-    if not points:
-        return 0
-    name = _collection_name(collection)
-    with _connection(client) as connection:
-        ensure_collection(client=connection, collection=name)
-        for start in range(0, len(points), BATCH_SIZE):
-            connection.upsert(name, points=points[start : start + BATCH_SIZE], wait=True)
-    return len(points)
+    return points
+
+
+def _upsert(connection: QdrantClient, name: str, points: list[models.PointStruct]) -> None:
+    for start in range(0, len(points), BATCH_SIZE):
+        connection.upsert(name, points=points[start : start + BATCH_SIZE], wait=True)

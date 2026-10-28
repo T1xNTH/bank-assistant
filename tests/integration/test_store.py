@@ -6,7 +6,7 @@ from uuid import uuid4
 import pytest
 from qdrant_client import QdrantClient, models
 
-from app.rag.store import ensure_collection, point_id, upsert_chunks
+from app.rag.store import ensure_collection, point_id, replace_document, upsert_chunks
 
 pytestmark = pytest.mark.integration
 
@@ -86,6 +86,25 @@ def test_upsert_twice_keeps_count_stable_across_batches_and_updates_payload(stor
         exact=True,
     )
     assert current.count == 64
+
+
+def test_reingesting_fewer_superseded_chunks_leaves_none_retrievable(store):
+    connection, name = store
+    replace_document("synthetic-doc", [chunk(index) for index in range(70)])
+    upsert_chunks([chunk(doc_id="other-doc")])
+    assert replace_document("synthetic-doc", [chunk(index, superseded_by="new-doc") for index in range(3)]) == 3
+    assert connection.count(name, exact=True).count == 4
+    current = connection.count(
+        name,
+        count_filter=models.Filter(
+            must=[
+                models.FieldCondition(key="department", match=models.MatchAny(any=["credit", "public"])),
+                models.IsNullCondition(is_null=models.PayloadField(key="superseded_by")),
+            ]
+        ),
+        exact=True,
+    )
+    assert current.count == 1  # only other-doc
 
 
 def test_incompatible_existing_vectors_leave_data_untouched(store):

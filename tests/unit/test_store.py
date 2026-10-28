@@ -4,7 +4,7 @@ from uuid import UUID
 import pytest
 from qdrant_client import QdrantClient, models
 
-from app.rag.store import ensure_collection, point_id, upsert_chunks
+from app.rag.store import ensure_collection, point_id, replace_document, upsert_chunks
 
 
 def sample_chunk(**updates):
@@ -66,6 +66,8 @@ def test_empty_input_does_not_create_collection(client):
         {"department": None},
         {"classification": "unknown"},
         {"doc_id": ""},
+        {"doc_id": " "},
+        {"text": "  \n"},
         {"page": 0},
         {"chunk_index": -1},
         {"chunk_index": True},
@@ -92,11 +94,50 @@ def test_missing_security_metadata_is_rejected(client):
     assert not client.collection_exists("bank_docs")
 
 
-def test_empty_superseded_field_becomes_null_and_extra_metadata_is_omitted(client):
-    upsert_chunks([sample_chunk(superseded_by="", private_extra="omit")], client=client)
+@pytest.mark.parametrize("blank", ["", " ", "\t"])
+def test_blank_superseded_field_becomes_null_and_extra_metadata_is_omitted(client, blank):
+    upsert_chunks([sample_chunk(superseded_by=blank, private_extra="omit")], client=client)
     payload = client.retrieve("bank_docs", [point_id("public-doc", 0)])[0].payload
     assert payload["superseded_by"] is None
     assert "private_extra" not in payload
+
+
+def test_identity_and_superseded_values_are_stripped(client):
+    upsert_chunks([sample_chunk(doc_id=" public-doc ", superseded_by=" new-doc ")], client=client)
+    payload = client.retrieve("bank_docs", [point_id("public-doc", 0)])[0].payload
+    assert payload["doc_id"] == "public-doc"
+    assert payload["superseded_by"] == "new-doc"
+
+
+def document_points(client, doc_id):
+    points, _ = client.scroll(
+        "bank_docs",
+        scroll_filter=models.Filter(must=[models.FieldCondition(key="doc_id", match=models.MatchValue(value=doc_id))]),
+        limit=100,
+    )
+    return sorted((point.payload["chunk_index"], point.payload["superseded_by"]) for point in points)
+
+
+def test_replace_document_removes_stale_chunks_of_that_document_only(client):
+    replace_document("public-doc", [sample_chunk(chunk_index=index) for index in range(5)], client=client)
+    upsert_chunks([sample_chunk(doc_id="other-doc")], client=client)
+    rechunked = [sample_chunk(chunk_index=index, superseded_by="new-doc") for index in range(3)]
+    assert replace_document("public-doc", rechunked, client=client) == 3
+    assert document_points(client, "public-doc") == [(0, "new-doc"), (1, "new-doc"), (2, "new-doc")]
+    assert document_points(client, "other-doc") == [(0, None)]
+
+
+def test_replace_document_with_no_chunks_removes_the_document(client):
+    replace_document("public-doc", [sample_chunk(), sample_chunk(chunk_index=1)], client=client)
+    assert replace_document("public-doc", [], client=client) == 0
+    assert document_points(client, "public-doc") == []
+
+
+@pytest.mark.parametrize("doc_id", ["other-doc", " "])
+def test_replace_document_rejects_chunks_of_another_document_before_writing(client, doc_id):
+    with pytest.raises(ValueError, match="doc_id"):
+        replace_document(doc_id, [sample_chunk()], client=client)
+    assert not client.collection_exists("bank_docs")
 
 
 def test_incompatible_collection_is_not_recreated(client):
