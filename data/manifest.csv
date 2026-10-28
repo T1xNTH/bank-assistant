@@ -1,7 +1,7 @@
 doc_id,file,department,classification,effective_date,superseded_by,source_url
 tt15-2023-vbhn,104-vbhn-nhnn.signed.pdf,credit,public,2026-11-01,,https://datafiles.chinhphu.vn/cpp/files/vbpq/2026/9/104-vbhn-nhnn.signed.pdf
 tt01-2024-vbhn,110-vbhn-nhnn.signed.pdf,public,public,2026-10-13,,https://datafiles.chinhphu.vn/cpp/files/vbpq/2026/9/110-vbhn-nhnn.signed.pdf
-tt26-2021,26-nhnn.pdf,public,public,2022-02-15,tt26-2021-vbhn,https://datafiles.chinhphu.vn/cpp/files/vbpq/2022/01/26-nhnn.pdf
+tt26-2021,26-nhnn.pdf,public,public,2022-02-15,,https://datafiles.chinhphu.vn/cpp/files/vbpq/2022/01/26-nhnn.pdf
 tt26-2021-vbhn,112-vbhn-nhnn.signed.pdf,public,public,2026-11-09,,https://datafiles.chinhphu.vn/cpp/files/vbpq/2026/10/112-vbhn-nhnn.signed.pdf
 tt25-2026,25-nhnn.pdf,credit,public,2026-07-01,,https://datafiles.chinhphu.vn/cpp/files/vbpq/2026/6/25-nhnn.pdf
 nq40-2026-cp,40_2026_nq-cp_04092026-signed.signed.pdf,public,public,2026-09-04,,https://datafiles.chinhphu.vn/cpp/files/vbpq/2026/9/40_2026_nq-cp_04092026-signed.signed.pdf

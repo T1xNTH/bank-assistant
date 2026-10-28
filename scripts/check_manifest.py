@@ -20,7 +20,9 @@ CLASSIFICATIONS = {"public", "internal", "confidential"}
 DOC_ID = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
 
-def check(manifest: Path, expect: int | None = 30) -> list[str]:
+def check(manifest: Path, expect: int | None = 30, as_of: date | None = None) -> list[str]:
+    """Problems in the manifest. ``as_of`` (default today) decides which replacements are already in force."""
+    as_of = as_of or date.today()
     if not manifest.is_file():
         return [f"{manifest}: không tìm thấy file"]
     with manifest.open(newline="", encoding="utf-8") as fh:
@@ -34,6 +36,7 @@ def check(manifest: Path, expect: int | None = 30) -> list[str]:
         errors.append(f"cần {expect} dòng, đang có {len(rows)}")
 
     ids = [r["doc_id"] for r in rows]
+    by_id = {r["doc_id"]: r for r in rows}
     for n, r in enumerate(rows, start=2):  # line 1 is the header
         where = f"dòng {n} ({r['doc_id'] or '?'})"
         if not DOC_ID.match(r["doc_id"]):
@@ -44,6 +47,8 @@ def check(manifest: Path, expect: int | None = 30) -> list[str]:
             errors.append(f"{where}: file phải là .pdf")
         elif not (manifest.parent / r["file"]).is_file():
             errors.append(f"{where}: không có file {manifest.parent / r['file']}")
+        elif not _is_pdf(manifest.parent / r["file"]):
+            errors.append(f"{where}: {r['file']} không phải PDF; xem docs/07-development/corpus.md")
         if r["department"] not in DEPARTMENTS:
             errors.append(f"{where}: department phải thuộc {sorted(DEPARTMENTS)}")
         if r["classification"] not in CLASSIFICATIONS:
@@ -55,6 +60,8 @@ def check(manifest: Path, expect: int | None = 30) -> list[str]:
         sup = r["superseded_by"]
         if sup and (sup not in ids or sup == r["doc_id"]):
             errors.append(f"{where}: superseded_by '{sup}' phải là doc_id khác có trong manifest")
+        elif sup:
+            errors += _replacement_errors(where, r, by_id[sup], as_of)
         if not r["source_url"].startswith(("https://", "http://")):
             errors.append(f"{where}: source_url phải là link http(s) tải được")
 
@@ -70,14 +77,33 @@ def check(manifest: Path, expect: int | None = 30) -> list[str]:
     return errors
 
 
+def _is_pdf(path: Path) -> bool:
+    with path.open("rb") as fh:
+        return fh.read(5) == b"%PDF-"
+
+
+def _replacement_errors(where: str, row: dict, new: dict, as_of: date) -> list[str]:
+    """Retrieval drops a row as soon as superseded_by is set, so the replacement must already be in force."""
+    try:
+        old_date, new_date = date.fromisoformat(row["effective_date"]), date.fromisoformat(new["effective_date"])
+    except ValueError:
+        return []  # reported per row already
+    if new_date > as_of:
+        return [f"{where}: superseded_by '{new['doc_id']}' chưa có hiệu lực ({new_date}); chỉ đánh dấu từ ngày đó"]
+    if new_date <= old_date:
+        return [f"{where}: '{new['doc_id']}' ({new_date}) phải có hiệu lực sau văn bản bị thay ({old_date})"]
+    return []
+
+
 def _tracked_pdfs(data_dir: Path) -> list[str]:
     try:
+        # -z: NUL-separated, unquoted UTF-8 paths (otherwise non-ASCII names come back as "\341..." escapes)
         out = subprocess.run(
-            ["git", "ls-files", "--", str(data_dir)], capture_output=True, text=True, check=True
-        ).stdout.split()
+            ["git", "-C", str(data_dir), "ls-files", "-z", "--", "."], capture_output=True, check=True
+        ).stdout.decode("utf-8").split("\0")
     except (OSError, subprocess.CalledProcessError):
         return []  # not a git checkout: nothing to check
-    return [f"PDF không được commit: {f}" for f in out if f.lower().endswith(".pdf")]
+    return [f"PDF không được commit: {data_dir / f}" for f in out if f.lower().endswith(".pdf")]
 
 
 def main(argv: list[str] | None = None) -> int:
