@@ -118,3 +118,4 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261028-091358-2` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-005.md` | `none` |
 | `S-20261028-091614` | `2026-10-28` | `2026-10-28` | `claude-review-a` | `T-005` | `completed` | `review started` | `.agent/reports/review/T-005.md` | `none` |
 | `S-20261028-091614-2` | `2026-10-28` | `2026-10-28` | `claude-review-a` | `T-005` | `completed` | `review approved` | `.agent/reports/review/T-005.md` | `none` |
+| `S-20261028-094412` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-005` | `completed` | `task review -> done` | `.agent/reports/review/T-005.md` | `none` |
