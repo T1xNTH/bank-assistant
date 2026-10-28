@@ -1,6 +1,8 @@
 """embed(): output shape with a fake model (CI); the real bge-m3 under -m integration."""
 
 import math
+import threading
+import time
 
 import numpy as np
 import pytest
@@ -49,6 +51,33 @@ def test_empty_input_does_not_load_the_model(monkeypatch):
     assert emb.embed([]) == ([], [])
 
 
+def test_concurrent_first_calls_load_the_model_once(monkeypatch):
+    loads = []
+
+    def slow_load():
+        loads.append(1)
+        time.sleep(0.2)  # long enough for every thread to reach _model() before it returns
+        return FakeModel()
+
+    monkeypatch.setattr(emb, "_instance", None)
+    monkeypatch.setattr(emb, "_load", slow_load)
+    start = threading.Barrier(4)
+    models = []
+
+    def call():
+        start.wait()
+        models.append(emb._model())
+
+    threads = [threading.Thread(target=call) for _ in range(4)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert len(loads) == 1
+    assert len(models) == 4 and all(m is models[0] for m in models)
+
+
 def _cos(a, b):
     return float(np.dot(a, b))
 
@@ -76,6 +105,7 @@ def test_bge_m3_ranks_the_relevant_vietnamese_text_first():
 @pytest.mark.integration
 def test_bge_m3_is_loaded_once_per_process():
     emb.embed([WAGE])
+    model = emb._instance
     emb.embed([CARD_FEE])
 
-    assert emb._model.cache_info().misses == 1
+    assert model is not None and emb._instance is model

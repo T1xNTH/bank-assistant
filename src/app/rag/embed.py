@@ -12,20 +12,32 @@ runs on CPU (fp32) and is loaded once per process, on first use.
 
 from __future__ import annotations
 
-from functools import lru_cache
+import threading
 
 MODEL = "BAAI/bge-m3"
 DIM = 1024
 BATCH_SIZE = 16
 MAX_LENGTH = 2048  # tokens; chunks are ~800 characters, the longest table rows ~2100
 
+_instance = None
+_lock = threading.Lock()
 
-@lru_cache(maxsize=1)
-def _model():
+
+def _load():
     # Imported lazily: FlagEmbedding pulls in torch.
     from FlagEmbedding import BGEM3FlagModel
 
     return BGEM3FlagModel(MODEL, use_fp16=False, devices="cpu", normalize_embeddings=True)
+
+
+def _model():
+    """The process-wide model; concurrent first calls load it once (2.2 GB, ~1 min)."""
+    global _instance
+    if _instance is None:
+        with _lock:
+            if _instance is None:  # another thread may have loaded it while we waited
+                _instance = _load()
+    return _instance
 
 
 def embed(texts: list[str]) -> tuple[list[list[float]], list[dict]]:
