@@ -24,7 +24,7 @@ Lưu registry chính thức các kết quả bàn giao có giới hạn rõ, có
 
 | `E-001` | `M-001` | `Baseline SRS, contract, kiến trúc; src/app/contracts.py + tests/fakes.py` | `trong-hung` | `EPIC_IN_PROGRESS` | `T-001, T-002` | `pending` | `.agent/governance/decisions/DEC-001.md` |
 | `E-002` | `M-001` | `Nền tảng: Docker, compose (api, qdrant, redis), job CI check, branch protection` | `teammate-b` | `EPIC_IN_PROGRESS` | `T-003, T-004` | `pending` | `.agent/governance/decisions/DEC-001.md` |
-| `E-003` | `M-001` | `FR-01 ingest: docling -> chunk -> bge-m3 dense+sparse -> Qdrant với đủ payload; 30 PDF + manifest` | `trong-hung` | `EPIC_READY` | `T-005, T-006, T-007, T-008, T-009, T-010` | `pending` | `.agent/governance/decisions/DEC-001.md` |
+| `E-003` | `M-001` | `FR-01 ingest: docling -> chunk -> bge-m3 dense+sparse -> Qdrant với đủ payload; 30 PDF + manifest` | `trong-hung` | `EPIC_IN_PROGRESS` | `T-005, T-006, T-007, T-008, T-009, T-010` | `pending` | `.agent/governance/decisions/DEC-001.md` |
 | `E-004` | `M-001` | `FR-02 retrieval + /ask: hybrid RRF, rerank, trích dẫn, ngưỡng từ chối` | `trong-hung` | `EPIC_READY` | `T-016, T-017, T-018, T-019` | `pending` | `.agent/governance/decisions/DEC-001.md` |
 | `E-005` | `M-001` | `FR-04a LLM gateway: LiteLLM + Ollama, llm.chat(), alias` | `teammate-b` | `EPIC_READY` | `T-011, T-012, T-013` | `pending` | `.agent/governance/decisions/DEC-001.md` |
 | `E-006` | `M-001` | `FR-05 xác thực (API key đã hash -> User), mô hình RBAC, audit log` | `teammate-b` | `EPIC_READY` | `T-014, T-015` | `pending` | `.agent/governance/decisions/DEC-001.md` |
