@@ -153,3 +153,7 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261028-094319-2` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-007` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-007.md` | `none` |
 | `S-20261028-094548` | `2026-10-28` | `2026-10-28` | `claude-review-a` | `T-007` | `completed` | `review started` | `.agent/reports/review/T-007.md` | `none` |
 | `S-20261028-094633` | `2026-10-28` | `2026-10-28` | `claude-review-a` | `T-007` | `completed` | `changes requested; task review -> in-progress` | `.agent/reports/review/T-007.md` | `none` |
+| `S-20261028-095247` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-007` | `completed` | `verify '.venv/bin/python -m pytest -q tests/unit/test_chunk.py' passed` | `.agent/reports/implementation/T-007.md` | `none` |
+| `S-20261028-095301` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-007` | `completed` | `verify 'make check' passed` | `.agent/reports/implementation/T-007.md` | `none` |
+| `S-20261028-095301-2` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-007` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-007.md` | `none` |
+| `S-20261028-095301-3` | `2026-10-28` | `2026-10-28` | `claude-code-a` | `T-007` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-007.md` | `none` |
