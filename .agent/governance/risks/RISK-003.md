@@ -1,18 +1,18 @@
 ---
 id: risk-003
-title: Gemini free-tier rate limits
+title: OpenAI budget and rate limits
 type: governance
 domain: governance
 module: risks
 tags: [risk, external]
 priority: 2
 ---
-# RISK-003: Giới hạn tốc độ của Gemini bản free
+# RISK-003: Ngân sách và giới hạn tốc độ OpenAI
 
 ## Record Metadata
 
 - **Risk ID**: `RISK-003`
-- **Title**: `Gemini free-tier rate limits`
+- **Title**: `OpenAI budget and rate limits`
 - **Owner**: `teammate-b`
 - **Status**: `identified`
 - **Category**: `external`
@@ -24,7 +24,7 @@ priority: 2
 
 ## Risk Statement
 
-Nếu Gemini trả 429 khi chạy eval hoặc demo thì các lượt chạy fail, dẫn tới thiếu số liệu eval và demo hỏng.
+Nếu vượt ngân sách OpenAI hoặc quota/tier trả 429 khi chạy eval/demo thì các lượt chạy fail, dẫn tới thiếu số liệu eval và demo hỏng. Ngân sách theo CR-008 là 5–6 USD; owner cần kiểm tra spending controls trước lượt eval đầu tiên.
 
 ## Exposure Assessment
 
@@ -38,7 +38,7 @@ Nếu Gemini trả 429 khi chạy eval hoặc demo thì các lượt chạy fail
 - **Epics or Tasks**: `E-008, E-009, E-014`
 - **Decisions**: `none`
 - **Issues or Blockers**: `none`
-- **Change Requests**: `none`
+- **Change Requests**: `CR-008 (approved)`
 - **Evidence**: `none`
 
 ## Response Plan
@@ -75,3 +75,5 @@ Nếu Gemini trả 429 khi chạy eval hoặc demo thì các lượt chạy fail
 - Lưu thành `.agent/governance/risks/RISK-003.md`.
 - Giữ nguyên mọi heading trong template này.
 - Dùng link tương đối theo repo và đúng giá trị enum.
+
+CR-008 (approved, 2026-10-29) authorizes the cloud provider change to OpenAI. Only LiteLLM receives OPENAI_API_KEY; local routing remains unchanged. Usage is paid and subject to account quota/rate limits. The owner budget is USD 5-6; verify account spending controls before the first evaluation.

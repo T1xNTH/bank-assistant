@@ -34,7 +34,7 @@ flowchart LR
   API --> AGENT[LangGraph agent]
   AGENT --> GW
   AGENT --> SQLITE[(SQLite core_banking ro, tickets)]
-  GW --> GEMINI[Gemini API]
+  GW --> OPENAI[OpenAI API]
   GW --> OLLAMA[Ollama Qwen2.5 Q4]
   API -.traces.-> LF[Langfuse]
   WORKER -.traces.-> LF
@@ -56,7 +56,7 @@ flowchart LR
 | Observability | `src/app/tracing.py`, `llm_cost.py` | B | compose profile `obs` | Langfuse tự host |
 | Tự động hoá | `infrastructure/n8n/` | B | compose profile `automation` | n8n + Mailpit |
 | UI | `ui/app.py` | A | local | Streamlit, chọn role → API key |
-| Eval | `eval/` | A | CLI / CI | Judge RAGAS = Gemini |
+| Eval | `eval/` | A | CLI / CI | Judge RAGAS = OpenAI |
 
 ## Topology triển khai
 
@@ -91,3 +91,5 @@ Ghi thành governance decision (ADR) trong `.agent/governance/decisions/` — Qd
 - Không gọi LLM ở ngoài `app/llm.py`.
 - Không chỉ áp RBAC sau khi retrieval.
 - Không ghi log hay đưa vào hàng chờ văn bản chưa che.
+
+CR-008 (approved, 2026-10-29) authorizes the cloud provider change to OpenAI. Only LiteLLM receives OPENAI_API_KEY; local routing remains unchanged. Usage is paid and subject to account quota/rate limits. The owner budget is USD 5-6; verify account spending controls before the first evaluation.
