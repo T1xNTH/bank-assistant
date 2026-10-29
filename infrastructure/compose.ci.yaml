@@ -13,3 +13,7 @@ services:
     ports: !reset []
   redis:
     ports: !reset []
+  litellm:
+    environment:
+      OPENAI_API_KEY: ""
+    ports: !reset []
