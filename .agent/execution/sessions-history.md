@@ -231,3 +231,7 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261029-112311` | `2026-10-29` | `2026-10-29` | `trong-hung` | `T-007` | `completed` | `task review -> done` | `.agent/reports/review/T-007.md` | `none` |
 | `S-20261029-112311-2` | `2026-10-29` | `2026-10-29` | `trong-hung` | `T-010` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
 | `S-20261029-140000` | `2026-10-29` | `2026-10-29` | `claude-code-a (theo yêu cầu của trong-hung)` | `T-007` | `completed` | `tạo CR-009 (approved bởi trong-hung): chia chunk theo đầu mục Chương/Điều/khoản và gắn tiêu đề vào mỗi chunk; làm sau T-010, chưa sửa chunk.py` | `.agent/governance/change-requests/CR-009.md` | `none` |
+| `S-20261029-124356` | `2026-10-29` | `2026-10-29` | `claude-code-a` | `T-010` | `completed` | `implementation report draft` | `.agent/reports/implementation/T-010.md` | `none` |
+| `S-20261029-124421` | `2026-10-29` | `2026-10-29` | `trong-hung` | `T-010` | `completed` | `verify 'make check' passed` | `.agent/reports/implementation/T-010.md` | `none` |
+| `S-20261029-124533` | `2026-10-29` | `2026-10-29` | `claude-code-a` | `T-010` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-010.md` | `none` |
+| `S-20261029-124533-2` | `2026-10-29` | `2026-10-29` | `claude-code-a` | `T-010` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-010.md` | `none` |
