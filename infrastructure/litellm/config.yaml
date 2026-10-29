@@ -1,0 +1,17 @@
+model_list:
+  - model_name: cloud-chat
+    litellm_params:
+      model: os.environ/GEMINI_MODEL
+      api_key: os.environ/GEMINI_API_KEY
+  - model_name: local-chat
+    litellm_params:
+      model: ollama_chat/qwen2.5:3b
+      api_base: http://ollama:11434
+  - model_name: local-chat-7b
+    litellm_params:
+      model: ollama_chat/qwen2.5:7b
+      api_base: http://ollama:11434
+
+# No cross-provider fallbacks: local requests must stay local.
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
