@@ -6,7 +6,7 @@ requires-python = ">=3.10"
 [tool.pytest.ini_options]
 pythonpath = ["src", "."]
 testpaths = ["tests"]
-markers = ["integration: needs docker compose services"]
+markers = ["integration: needs docker compose services or downloaded models (docling, EasyOCR)"]
 addopts = "-m 'not integration'"
 
 [tool.ruff]
