@@ -41,7 +41,9 @@ docker compose -f infrastructure/compose.yaml --env-file .env.local exec -T lite
 ```
 
 The smoke sends only a synthetic ping and checks for a nonempty answer. Cloud
-checks call Gemini and can consume quota. Errors print status/type without keys
+ping requests use `reasoning_effort=low` and a 2048-token budget so a reasoning
+model can produce an answer within the smoke limit. This affects only the smoke.
+Cloud checks call Gemini and can consume quota. Errors print status/type without keys
 or provider response bodies. CI starts LiteLLM without credentials, and does not
 download local weights or make paid model requests. CI generates an ephemeral
 gateway key before rendering Compose.

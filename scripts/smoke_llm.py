@@ -20,11 +20,16 @@ def main():
         headers["Authorization"] = f"Bearer {key}"
     failed = False
     for model in args.models:
+        payload = {"model": model, "messages": [
+            {"role": "user", "content": "Reply with the single word pong."}
+        ], "max_tokens": 512}
+        if model == "cloud-chat":
+            # Gemini Flash variants do not all support the minimal/none level.
+            payload["reasoning_effort"] = "low"
+            payload["max_tokens"] = 2048
         request = urllib.request.Request(
             args.base_url.rstrip("/") + "/v1/chat/completions",
-            data=json.dumps({"model": model, "messages": [
-                {"role": "user", "content": "Reply with the single word pong."}
-            ], "max_tokens": 32}).encode(),
+            data=json.dumps(payload).encode(),
             headers=headers,
         )
         try:

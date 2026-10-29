@@ -23,7 +23,12 @@ def test_checks_both_aliases_with_auth(monkeypatch, capsys):
     def respond(request, timeout):
         assert request.full_url == "http://127.0.0.1:4000/v1/chat/completions"
         assert request.get_header("Authorization") == "Bearer sk-test-secret"
-        seen.append(json.loads(request.data)["model"])
+        payload = json.loads(request.data)
+        if payload["model"] == "cloud-chat":
+            assert payload["reasoning_effort"] == "low"
+        else:
+            assert "reasoning_effort" not in payload
+        seen.append(payload["model"])
         return io.BytesIO(b'{"choices":[{"message":{"content":"pong"}}]}')
 
     monkeypatch.setattr(smoke.urllib.request, "urlopen", respond)
