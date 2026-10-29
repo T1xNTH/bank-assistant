@@ -63,7 +63,7 @@ def test_filters_on_the_real_corpus(corpus, mode):
     public = ask(corpus, wage, "public", mode, k=20)
     assert public and {h.department for h in public} == {"public"}  # hr documents are hidden
     credit = ask(corpus, wage, "credit", mode, k=20)
-    assert {h.department for h in credit} <= {"credit", "public"}
+    assert credit and {h.department for h in credit} <= {"credit", "public"}
     hr = ask(corpus, wage, "hr", mode, k=20)
     assert "nd293-2025" in {h.doc_id for h in hr}
     assert "nd74-2024" not in {h.doc_id for h in hr}  # superseded by nd293-2025

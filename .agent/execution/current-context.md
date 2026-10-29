@@ -22,16 +22,16 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `24`
+- **Context Revision**: `25`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-29`
-- **Updated By**: `codex-b`
-- **Update Trigger**: `PR #49 re-review: synchronize E-006/T-014 state and board evidence`
+- **Updated By**: `claude-code-a`
+- **Update Trigger**: `T-016 implementation and review; T-010 closed (squash 603c80a, PR #47); E-004 started`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005 review); E-005 (EPIC_IN_PROGRESS); E-006 (EPIC_IN_PROGRESS; T-014 review); E-004, E-007..E-009 (EPIC_READY)`
-- **Active Task IDs**: `T-002, T-009, T-011, T-014`
+- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 chờ PR); E-005 (EPIC_IN_PROGRESS); E-006 (EPIC_IN_PROGRESS; T-014 review); E-004 (EPIC_IN_PROGRESS; T-016 review); E-007..E-009 (EPIC_READY)`
+- **Active Task IDs**: `T-002, T-011, T-014, T-016`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`

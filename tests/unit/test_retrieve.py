@@ -98,15 +98,25 @@ def test_hit_carries_the_payload_and_score(ranked):
 def mixed(client):
     upsert_chunks(
         [
-            chunk("hr-wage", (1.0, 0.0), department="hr", classification="internal"),
-            chunk("credit-loan", (1.0, 0.05), department="credit", classification="confidential"),
-            chunk("old-fee", (1.0, 0.1), superseded_by="new-fee"),
+            # Hidden chunks also match the question's sparse token, so both hybrid branches must filter them.
+            chunk("hr-wage", (1.0, 0.0), QUESTION_SPARSE, department="hr", classification="internal"),
+            chunk("credit-loan", (1.0, 0.05), QUESTION_SPARSE, department="credit", classification="confidential"),
+            chunk("old-fee", (1.0, 0.1), QUESTION_SPARSE, superseded_by="new-fee"),
             chunk("new-fee", (1.0, 0.5)),
         ],
         client=client,
         collection=COLLECTION,
     )
     return client
+
+
+@pytest.mark.parametrize(
+    ("user", "doc", "labels"),
+    [(HR, "hr-wage", ("hr", "internal")), (CREDIT, "credit-loan", ("credit", "confidential"))],
+)
+def test_hit_carries_department_and_classification_of_the_chunk(mixed, user, doc, labels):
+    [hit] = run(mixed, user, mode="dense", k=1)
+    assert (hit.doc_id, hit.department, hit.classification) == (doc, *labels)  # routing reads classification
 
 
 @pytest.mark.parametrize("mode", ["dense", "hybrid"])
