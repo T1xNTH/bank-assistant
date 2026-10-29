@@ -19,11 +19,11 @@ evidence does not validate this new OpenAI provider configuration.
 - **Report ID**: `T-011-openai`
 - **Owner**: `teammate-b`
 - **Executor**: `codex-b`
-- **Status**: `draft`
+- **Status**: `complete`
 - **Task ID**: `T-011`
 - **Epic ID**: `E-005`
 - **Report Date**: `2026-10-29`
-- **Completion Outcome**: `Code implemented and controlled verification passed; real OpenAI acceptance blocked by BLOCKER-003`
+- **Completion Outcome**: `Implemented; controlled and real OpenAI verification passed; independent review pending`
 
 ## Scope
 
@@ -38,7 +38,7 @@ evidence does not validate this new OpenAI provider configuration.
 | File or artifact | Change | Task ID |
 |---|---|---|
 | `infrastructure/litellm/config.yaml`, Compose files | OPENAI_API_KEY only in LiteLLM; openai/OPENAI_MODEL alias; gateway/provider retries set to zero; local aliases unchanged | `T-011` |
-| `.env.example`, root git-ignored `.env.local` | OPENAI_MODEL=gpt-6-luna; OPENAI_API_KEY field added; Gemini variables removed; key remains empty | `T-011` |
+| `.env.example`, root git-ignored `.env.local` | OPENAI_MODEL=gpt-6-luna; OPENAI_API_KEY field added; Gemini variables removed; key subsequently configured privately by explicit user instruction | `T-011` |
 | `scripts/smoke_llm.py` | OpenAI max_completion_tokens and reasoning_effort=none; optional strict JSON-schema pong check; errors remain redacted | `T-011` |
 | `tests/unit/test_smoke_llm.py`, gateway integration tests | OpenAI isolation, strict output validation, real pinned LiteLLM with fake OpenAI upstream; 429 generates exactly one upstream call | `T-011` |
 | SRS, architecture, AI design, product plan, RISK-003, ISSUE-006, setup guide | Approved provider/budget baseline and default judge model documented; historical reports and approved CR text preserved | `T-011` |
@@ -51,8 +51,8 @@ evidence does not validate this new OpenAI provider configuration.
 - **Current Context**: `.agent/execution/current-context.md`
 - **Decisions**: `DEC-001`
 - **Change Requests**: `CR-008 (approved on main 3ad1cb9)`
-- **Risks or Blockers**: `BLOCKER-003; RISK-003`
-- **Review Request**: `pending new provider acceptance; no independent approval claimed`
+- **Risks or Blockers**: `BLOCKER-003 resolved; RISK-003 remains monitored`
+- **Review Request**: `claude-review-a; local handoff recorded in task board/session history, independent review has not run`
 - **Commits**: `3dc6c2e (merge main); e81fddfd5852640589dab8cfb0997b5d913e383a (provider migration)`
 
 ## Command Evidence
@@ -84,9 +84,16 @@ evidence does not validate this new OpenAI provider configuration.
   `output/t011-openai-focused.log`. Test containers/network are removed by fixture.
 - Root untracked ISSUE-017 was preserved at
   `output/pull-backup-20261029/ISSUE-017-local.md` before pulling its tracked upstream version.
-- Real OpenAI ping/structured output and 5-10 real-query cost sampling: **not-run**;
-  OPENAI_API_KEY remains empty. The cost sample and spending-control verification
-  are prerequisites for the first full evaluation, not claims made by this task.
+- Initial real OpenAI verification was blocked by an empty key. The user later explicitly supplied a credential for this verification, and the real acceptance below passed. The 5-10 representative-query cost sample and spending-control verification remain prerequisites for the first full evaluation.
+
+### Real provider follow-up
+
+- Actual OpenAI API model access verified for gpt-6-luna using the configured key without printing credential data.
+- Real pinned LiteLLM on host port 4000: `scripts/smoke_llm.py --models cloud-chat` passed; 13 input / 4 output tokens, estimated standard USD 0.00000330.
+- Real strict JSON-schema smoke: `scripts/smoke_llm.py --models cloud-chat --structured` passed and validated the reply against the required pong structure; 43 input / 11 output tokens, estimated standard USD 0.00000980.
+- Total: 56 input + 15 output tokens, estimated standard cost USD 0.00001310. This is a synthetic two-request sample, not the representative evaluation sample required before full eval.
+- Runtime evidence: `output/t011-openai-real-smoke.log`, `output/t011-openai-real-up.log`; sensitive error bodies/key values are not included.
+- BLOCKER-003 resolved; lifecycle CLI resumed task. Dedicated runtime containers/network were removed after verification. Local handoff to claude-review-a is recorded without changing the immutable canonical Gemini report; the CLI has no supplement-report target. No actual independent review or approval is claimed.
 
 ## Deviations
 
@@ -94,16 +101,15 @@ evidence does not validate this new OpenAI provider configuration.
   economical successor `gpt-6-luna` rather than deprecated GPT-4o mini. Provider and
   public contract remain exactly as approved. OPENAI_MODEL is configurable.
 - **Approved By**: CR-008 authorizes the provider change; user explicitly requested it.
-- **Known Limitations**: Real model access/billing/quota and independent review
-  remain unverified. Prior exposed chat credentials were not reused.
+- **Known Limitations**: The key/model supported the two small real tests; production quota, full-evaluation budget and independent review remain unverified. Credential was supplied by explicit user instruction; no value is tracked. Root framework validation also encounters 5 pre-existing untracked local review reports with invalid/missing statuses; clean worktree validation passes. Those historical reports were preserved.
 
 ## Completion Criteria
 
 - [x] Source implementation linked to authorized task and CR-008.
 - [x] Automated and controlled gateway evidence recorded.
 - [x] Final Gemini report preserved; new evidence has a separate report.
-- [ ] Real OpenAI plain and structured smoke passed.
-- [ ] Independent review completed; task must not be marked done.
+- [x] Real OpenAI plain and structured smoke passed.
+- [x] Independent review handoff prepared; approval is pending and task remains review.
 
 ## Forbidden Actions
 
@@ -111,5 +117,4 @@ No secret values, fabricated real-provider evidence, self-approval, or task clos
 
 ## Output Requirements
 
-Keep this report draft until real OpenAI acceptance is recorded; request independent
-review of the OpenAI changes separately from the prior Gemini implementation.
+This final implementation report preserves the prior Gemini report. Independent review of the OpenAI follow-up is still required; corrections to this final report must use a supplement.

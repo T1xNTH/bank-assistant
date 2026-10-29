@@ -22,7 +22,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `20`
+- **Context Revision**: `21`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-29`
 - **Updated By**: `codex-b`
@@ -32,7 +32,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 review); E-003 (EPIC_IN_PROGRESS; T-005 review); E-005 (EPIC_IN_PROGRESS); E-004, E-006..E-009 (EPIC_READY)`
 - **Active Task IDs**: `T-002, T-004, T-009, T-011`
-- **Active Blocker IDs**: `BLOCKER-003`
+- **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; task review hoàn tất không phê duyệt các CR)`
@@ -63,3 +63,5 @@ Revision 19 records the user credential follow-up: BLOCKER-002 resolved after bo
 Revision 20: user requested latest code and OpenAI migration. Main 3ad1cb9 (approved CR-008) merged into T-011 with both session/commit histories retained. The user explicitly resumes T-011 implementation for the provider follow-up; prior Gemini final report remains immutable and does not validate OpenAI. New evidence belongs to T-011-openai.md. OPENAI_API_KEY is currently empty; no exposed chat key is reused. Root workspace branch feat/T-011-openai will receive the tested implementation by fast-forward.
 
 OpenAI follow-up e81fddf: make check 167 passed/17 deselected; controlled gateway tests 15 passed (real LiteLLM, fake OpenAI, strict output and single upstream call on 429). BLOCKER-003 records missing local OPENAI_API_KEY; task is blocked, new report remains draft and no new independent review is claimed.
+
+Revision 21: user explicitly supplied the OpenAI credential for verification. Model access and real cloud-chat plain + strict structured smoke both passed via :4000 (56 input/15 output tokens total, estimated USD 0.00001310). BLOCKER-003 resolved, OpenAI implementation report finalized, task/board agree on review. Supplement handoff to claude-review-a recorded locally; no actual independent review, approval or merge is claimed. Root legacy untracked review reports still cause validator errors; tested clean worktree validation passes.

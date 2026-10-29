@@ -30,4 +30,4 @@ priority: 3
 | `T-011` | `dec03dd7231cb7d0b29d652b6d780791c03e17fc, df1fe4a296515c5e74e5dfcf8ef8431730e61d75` | `none; local branch feat/T-011-litellm-ollama` | `.agent/reports/implementation/T-011.md` | `Authenticated LiteLLM, optional Ollama, three aliases and credential isolation. Both cloud/local real smokes passed; BLOCKER-002 resolved; independent review pending` |
 | `T-009` | `fc06249 (squash)` | `#38` | `.agent/reports/implementation/T-009.md` | `squash merge fc06249 vào main (PR #38), trong-hung approve 2026-10-29; task done ghi trong PR #35` |
 
-| `T-011` | `e81fddfd5852640589dab8cfb0997b5d913e383a` | `none; local feat/T-011-openai` | `.agent/reports/implementation/T-011-openai.md` | `Approved CR-008 OpenAI migration; 167 default tests + 15 focused tests pass; real OpenAI acceptance pending BLOCKER-003` |
+| `T-011` | `e81fddfd5852640589dab8cfb0997b5d913e383a` | `none; local feat/T-011-openai` | `.agent/reports/implementation/T-011-openai.md` | `Approved CR-008 OpenAI migration; 167 default tests + 15 focused tests pass; real OpenAI plain/strict output acceptance passed; BLOCKER-003 resolved; independent review pending` |

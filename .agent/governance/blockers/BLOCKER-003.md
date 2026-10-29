@@ -19,7 +19,7 @@ Dùng template này khi một epic hoặc task không thể tiếp tục vì m�
 - **Title**: `Real OpenAI smoke requires a configured API key`
 - **Owner**: `teammate-b`
 - **Reporter**: `codex-b`
-- **Status**: `open`
+- **Status**: `resolved`
 - **Blocker Type**: `access`
 - **Priority**: `2`
 - **Created Date**: `2026-10-29`
@@ -27,7 +27,7 @@ Dùng template này khi một epic hoặc task không thể tiếp tục vì m�
 
 ## Blocking Condition
 
-OPENAI_API_KEY is empty in root `.env.local`. No real OpenAI request has been made. User was asked to enter a new key directly into the file; previously exposed chat credentials were not reused. The provider migration code and controlled gateway tests are complete.
+Initially OPENAI_API_KEY was empty. The user subsequently explicitly supplied a credential for the OpenAI verification. It was stored only in git-ignored root `.env.local`; no value is included here. Model access to gpt-6-luna and real gateway plain/strict structured completions passed on 2026-10-29. Evidence: `.agent/reports/implementation/T-011-openai.md`, local `output/t011-openai-real-smoke.log`.
 
 ## Impact
 
@@ -53,10 +53,10 @@ OPENAI_API_KEY is empty in root `.env.local`. No real OpenAI request has been ma
 
 ## Completion Criteria
 
-- [ ] Điều kiện chặn không còn cản trở các công việc bị ảnh hưởng.
-- [ ] Bằng chứng giải quyết đã được liên kết.
-- [ ] Trạng thái các epic và task bị ảnh hưởng đã được cập nhật.
-- [ ] Việc gỡ bỏ workaround được theo dõi khi có.
+- [x] Điều kiện chặn không còn cản trở các công việc bị ảnh hưởng.
+- [x] Bằng chứng giải quyết đã được liên kết.
+- [x] Trạng thái các epic và task bị ảnh hưởng đã được cập nhật.
+- [x] Việc gỡ bỏ workaround được theo dõi khi có.
 
 ## Forbidden Actions
 
@@ -70,3 +70,7 @@ OPENAI_API_KEY is empty in root `.env.local`. No real OpenAI request has been ma
 - Lưu thành `.agent/governance/blockers/BLOCKER-003.md`.
 - Giữ nguyên mọi heading trong template này.
 - Dùng link tương đối theo repo và đúng giá trị enum.
+
+## Resolution Evidence
+
+Real cloud-chat via host port 4000: plain and strict JSON-schema smoke both passed (exit 0). Model access verified. Two calls consumed 56 input and 15 output tokens; estimated standard cost USD 0.00001310. No independent review or full evaluation is claimed.

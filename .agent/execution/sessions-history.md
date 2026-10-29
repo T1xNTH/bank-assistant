@@ -245,3 +245,6 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 
 | `S-20261029-t011-openai-start` | `2026-10-29` | `2026-10-29` | `codex-b` | `T-011` | `completed` | `User requested pull latest main and switch to OpenAI under approved CR-008. Resume implementation for provider follow-up; preserve final Gemini evidence, no reviewer decision claimed` | `.agent/reports/implementation/T-011-openai.md` | `none` |
 | `S-20261029-112916` | `2026-10-29` | `2026-10-29` | `codex-b` | `T-011` | `completed` | `task blocked by BLOCKER-003` | `.agent/governance/blockers/BLOCKER-003.md` | `none` |
+| `S-20261029-113343` | `2026-10-29` | `2026-10-29` | `codex-b` | `T-011` | `completed` | `task blocked -> in-progress` | `.agent/execution/task-board.md` | `none` |
+
+| `S-20261029-t011-openai-review` | `2026-10-29` | `2026-10-29` | `codex-b` | `T-011` | `completed` | `Real OpenAI plain/strict structured acceptance passed; implementation supplement finalized and local handoff to claude-review-a recorded; task in-progress -> review. CLI has no supplement report target, immutable Gemini report preserved; no independent approval claimed` | `.agent/reports/implementation/T-011-openai.md` | `none` |
