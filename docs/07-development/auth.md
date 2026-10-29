@@ -13,6 +13,8 @@ Run from the repository root. Select `AUTH_BACKEND=apikey` and set
 `API_KEYS_FILE=config/api_keys.json` (or an absolute path). `AUTH_BACKEND=fake`
 returns the development user `dev/public/staff`; use it only for development.
 Unknown backends and unreadable or invalid registries return 503.
+The entire registry is validated on each request: one malformed record makes all
+authenticated requests return 503 until the registry is corrected.
 
 The Compose API mounts the host `config/` directory read-only at `/app/config`.
 Keep `API_KEYS_FILE=config/api_keys.json` for this setup. For a custom registry

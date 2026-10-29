@@ -37,7 +37,7 @@ Lưu registry chính thức các task thực thi được và trạng thái life
 | `T-008` | `E-003` | `embed: bge-m3 dense + sparse` | `trong-hung` | `done` | `none` | `none` | `.agent/execution/tasks/T-008.md, .agent/reports/implementation/T-008.md, .agent/reports/review/T-008.md` | `2026-10-28` |
 | `T-009` | `E-003` | `store: Qdrant collection, payload index, upsert` | `trong-hung` | `done` | `T-003` | `none` | `.agent/execution/tasks/T-009.md, .agent/reports/implementation/T-009.md, .agent/reports/review/T-009.md` | `2026-10-29` |
 | `T-010` | `E-003` | `scripts/ingest.py chạy end-to-end trên bộ tài liệu` | `trong-hung` | `pending` | `T-005, T-007, T-008, T-009` | `none` | `.agent/execution/tasks/T-010.md` | `2026-10-24` |
-| `T-011` | `E-005` | `Service LiteLLM + Ollama và các alias` | `teammate-b` | `pending` | `T-003` | `none` | `.agent/execution/tasks/T-011.md` | `2026-10-24` |
+| `T-011` | `E-005` | `Service LiteLLM + Ollama và các alias` | `teammate-b` | `review` | `T-003` | `none` | `.agent/execution/tasks/T-011.md, .agent/reports/implementation/T-011.md, .agent/reports/implementation/T-011-openai.md` | `2026-10-29` |
 | `T-012` | `E-005` | `app/llm.py chat() qua gateway có retry; công tắc LLM_BACKEND` | `teammate-b` | `pending` | `T-011` | `none` | `.agent/execution/tasks/T-012.md` | `2026-10-24` |
 | `T-013` | `E-005` | `POST /chat với output có cấu trúc` | `teammate-b` | `pending` | `T-012, T-004` | `none` | `.agent/execution/tasks/T-013.md` | `2026-10-24` |
 | `T-014` | `E-006` | `auth: API key đã hash -> User, 401/403` | `teammate-b` | `review` | `T-004` | `none` | `.agent/execution/tasks/T-014.md, .agent/reports/implementation/T-014.md, .agent/reports/review/T-014.md, .agent/reports/review/T-014-round-2.md` | `2026-10-29` |
