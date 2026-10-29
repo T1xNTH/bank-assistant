@@ -85,6 +85,34 @@ def calls(env, command):
     return json.loads(result.stdout)["calls"]
 
 
+def test_app_chat_through_real_gateway(gateway, monkeypatch):
+    from app.llm import chat
+
+    url, env, command = gateway
+    monkeypatch.setenv("LLM_BACKEND", "litellm")
+    monkeypatch.setenv("LLM_BASE_URL", url)
+    monkeypatch.setenv("LITELLM_MASTER_KEY", env["LITELLM_MASTER_KEY"])
+    before = calls(env, command)
+    result = chat([{"role": "user", "content": "Reply pong"}], "cloud-chat")
+    assert result.text == "pong"
+    assert result.input_tokens == 10
+    assert result.output_tokens == 3
+    assert calls(env, command) == before + 1
+
+
+def test_app_retry_has_exactly_three_provider_calls(gateway, monkeypatch):
+    from app.llm import LLMError, chat
+
+    url, env, command = gateway
+    monkeypatch.setenv("LLM_BACKEND", "litellm")
+    monkeypatch.setenv("LLM_BASE_URL", url)
+    monkeypatch.setenv("LITELLM_MASTER_KEY", env["LITELLM_MASTER_KEY"])
+    before = calls(env, command)
+    with pytest.raises(LLMError, match="HTTP 429"):
+        chat([{"role": "user", "content": "force-rate-limit"}], "cloud-chat")
+    assert calls(env, command) == before + 3
+
+
 @pytest.mark.parametrize("structured", [False, True])
 def test_openai_smoke_through_real_gateway(gateway, structured):
     url, env, command = gateway
