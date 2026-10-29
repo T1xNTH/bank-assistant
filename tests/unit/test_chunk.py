@@ -427,3 +427,13 @@ def test_a_marked_line_longer_than_300_characters_is_text():
     text = f"## Biểu phí thẻ\n\nA.\n\n## {long}"
 
     assert _texts(chunk_pages([_page(1, text)], size=2000)) == [f"Biểu phí thẻ\nA.\n{long.strip()}"]
+
+
+def test_a_heading_closing_the_page_does_not_head_its_tables():
+    pages = [_page(1, "## Biểu phí chuyển tiền\n\nPhí trong nước.\n\n## Tệp đính kèm", ["\n".join([HEADER, ROWS[0]])])]
+
+    assert _texts(chunk_pages(pages)) == [
+        "Biểu phí chuyển tiền\nPhí trong nước.",
+        "Tệp đính kèm",
+        f"Biểu phí chuyển tiền\n{HEADER}\n{ROWS[0]}",
+    ]

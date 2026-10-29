@@ -30,7 +30,7 @@ characters.
   every part repeats the header and separator rows. A single row longer than
   ``size`` stays whole. Tables get no overlap. docling does not say where on a
   page a table sits, so its heading line is the one in effect at the end of
-  that page's text.
+  that page's text, unless that heading ends the page with no text after it.
 """
 
 from __future__ import annotations
@@ -74,6 +74,7 @@ def chunk_pages(pages: list[dict], size: int = 800, overlap: int = 100) -> list[
     levels: dict[int, str] = {}  # heading level -> heading text of the open section
     section: list[tuple[int, str]] = []  # (page, line) of the open section
     opened: tuple[int, str] | None = None  # (page, heading) that opened the section
+    before = ""  # heading path in effect before ``opened``
 
     def close(following: str | None) -> None:
         """Emit the open section; ``following`` is the next section's heading path (None at the end)."""
@@ -104,8 +105,10 @@ def chunk_pages(pages: list[dict], size: int = 800, overlap: int = 100) -> list[
             heading = _clean(line).lstrip(_NOISE) if line.startswith("## ") else _clean(line)
             following = {k: v for k, v in levels.items() if k < level} | {level: heading}
             close(_header(following, size))
-            levels, opened = following, (page["page"], heading)
-        header = _header(levels, size)
+            before, levels, opened = _header(levels, size), following, (page["page"], heading)
+        # A heading closing the page with no text after it ("## Tệp đính kèm") comes after the page's tables.
+        trailing = opened is not None and opened[0] == page["page"] and not section
+        header = before if trailing else _header(levels, size)
         for table in page["tables"]:
             for text in _table_chunks(table, size - len(header) - 1 if header else size):
                 out.append((page["page"], 1, len(out), f"{header}\n{text}" if header else text))
