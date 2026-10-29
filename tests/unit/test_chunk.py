@@ -1,4 +1,4 @@
-"""chunk_pages: text and table chunking on hand-made pages."""
+"""chunk_pages: structure-aware text chunking (CR-009) and table chunking on hand-made pages."""
 
 import json
 from pathlib import Path
@@ -33,7 +33,8 @@ def test_paragraphs_are_kept_together_when_they_fit():
 
     [chunk] = chunk_pages([_page(2, text)], size=800, overlap=100)
 
-    assert chunk["text"] == text
+    lines = ["Điều 3. Mức lương tối thiểu", "- Vùng I: 5.310.000 đồng/tháng.", "- Vùng II: 4.730.000 đồng/tháng."]
+    assert chunk["text"] == "\n".join(lines)  # the heading leads, paragraphs one per line
 
 
 def test_small_table_is_one_chunk():
@@ -75,11 +76,12 @@ def test_metadata_and_chunk_index_run_across_pages():
 
     chunks = chunk_pages(pages)
 
+    # Text without headings is one section across the page break; it is cited from the page it starts on.
     assert [(c["source"], c["page"], c["chunk_index"]) for c in chunks] == [
         ("nd293.pdf", 1, 0),
         ("nd293.pdf", 3, 1),
-        ("nd293.pdf", 3, 2),
     ]
+    assert chunks[0]["text"] == f"{SENTENCE}\n{SENTENCE}"
 
 
 @pytest.mark.parametrize(("size", "overlap"), [(0, 0), (100, 100), (100, -1)])
@@ -174,3 +176,264 @@ def test_real_single_row_page_is_not_lost_when_size_is_reduced(size, overlap):
 
 def test_empty_table_still_produces_no_chunk():
     assert chunk_pages([_page(1, tables=[" \n\t"])]) == []
+
+
+# --- CR-009: sections at headings, heading line on every chunk ---
+
+
+def _texts(chunks):
+    return [c["text"] for c in chunks]
+
+
+def test_an_article_across_a_page_break_is_one_section_cited_from_its_first_page():
+    pages = [
+        _page(4, f"## Điều 5. Mức tham chiếu\n\n- {SENTENCE}"),
+        _page(5, f"- {SENTENCE}\n\n## Điều 6. Đăng ký tham gia\n\n- Người lao động nộp tờ khai."),
+    ]
+
+    chunks = chunk_pages(pages)
+
+    assert [(c["page"], c["text"]) for c in chunks] == [
+        (4, f"Điều 5. Mức tham chiếu\n- {SENTENCE}\n- {SENTENCE}"),
+        (5, "Điều 6. Đăng ký tham gia\n- Người lao động nộp tờ khai."),
+    ]
+
+
+def test_every_chunk_of_a_long_article_starts_with_its_heading_and_fits():
+    body = "\n\n".join(f"- Khoản {i}: {SENTENCE}" for i in range(1, 30))
+
+    chunks = chunk_pages([_page(1, f"## Chương II QUY ĐỊNH CỤ THỂ\n\n## Điều 7. Tiền lương\n\n{body}")], 300, 60)
+
+    assert len(chunks) > 1
+    assert all(c["text"].startswith("Chương II QUY ĐỊNH CỤ THỂ › Điều 7. Tiền lương\n") for c in chunks)
+    assert all(len(c["text"]) <= 300 for c in chunks)
+    joined = "\n".join(c["text"] for c in chunks)
+    assert all(f"Khoản {i}:" in joined for i in range(1, 30))  # nothing lost
+
+
+def test_overlap_stays_inside_the_section_and_page_follows_the_first_new_line():
+    pages = [_page(1, "## Điều 1. A\n\n" + " ".join([SENTENCE] * 5)), _page(2, " ".join([SENTENCE] * 5))]
+
+    chunks = chunk_pages(pages, size=300, overlap=60)
+
+    assert {c["page"] for c in chunks} == {1, 2}
+    for c in chunks:
+        lines = c["text"].split("\n")
+        assert lines[0] == "Điều 1. A" and len(c["text"]) <= 300
+
+
+def test_a_new_chapter_clears_the_article_and_a_section_can_start_without_a_chapter():
+    text = (
+        "## Điều 1. Phạm vi\n\nNội dung một.\n\n## Chương II MỤC TIÊU\n\nGiới thiệu.\n\n"
+        "## Mục 1 Chung\n\n## Điều 2. Đối tượng\n\nNội dung hai."
+    )
+
+    assert _texts(chunk_pages([_page(1, text)])) == [
+        "Điều 1. Phạm vi\nNội dung một.",
+        "Chương II MỤC TIÊU\nGiới thiệu.",
+        "Chương II MỤC TIÊU › Mục 1 Chung › Điều 2. Đối tượng\nNội dung hai.",
+    ]
+
+
+def test_ocr_headings_without_markdown_markers_are_recognised():
+    text = (
+        "Điều 4. Bản sao các giấy tờ\n\nBản sao được cơ quan bảo hiểm xã hội xác nhận.\n\n"
+        "Điều 5: Mức tham chiếu\n\nBằng mức lương cơ sở."
+    )
+
+    assert _texts(chunk_pages([_page(1, text)])) == [
+        "Điều 4. Bản sao các giấy tờ\nBản sao được cơ quan bảo hiểm xã hội xác nhận.",
+        "Điều 5: Mức tham chiếu\nBằng mức lương cơ sở.",
+    ]
+
+
+def test_references_to_articles_inside_a_sentence_are_not_headings():
+    body = ["Điều 31 của Luật Bảo hiểm xã hội quy định tiền lương đóng.", "Chương này áp dụng chung."]
+
+    [chunk] = chunk_pages([_page(1, "## Điều 7. Tiền lương\n\n" + "\n\n".join(body))])
+
+    assert chunk["text"] == "\n".join(["Điều 7. Tiền lương", *body])
+
+
+def test_preamble_has_no_heading_and_boilerplate_headings_of_a_legal_text_stay_body():
+    text = (
+        "CHÍNH PHỦ\n\n## CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc\n\n## NGHỊ ĐỊNH\n\n"
+        "Căn cứ Bộ luật Lao động;\n\n## Điều 1. Phạm vi điều chỉnh\n\nNghị định này quy định mức lương tối thiểu."
+    )
+
+    first, second = _texts(chunk_pages([_page(1, text)]))
+
+    assert first.startswith("CHÍNH PHỦ\n") and "\nNGHỊ ĐỊNH\n" in first and "Căn cứ Bộ luật Lao động;" in first
+    assert "##" not in first  # docling's marker is dropped from lines that are not section headings
+    assert second == "Điều 1. Phạm vi điều chỉnh\nNghị định này quy định mức lương tối thiểu."
+
+
+def test_a_document_without_legal_headings_uses_docling_headings():
+    pages = [
+        _page(1, "## BIỂU PHÍ DỊCH VỤ TÀI KHOẢN\n\n(Từ 01/08/2025)", ["\n".join([HEADER, ROWS[0]])]),
+        _page(2, "## Phụ lục 1\n\nGhi chú.\n\n## THẺ GHI NỢ\n\nPhí phát hành thẻ."),
+    ]
+
+    assert _texts(chunk_pages(pages)) == [
+        "BIỂU PHÍ DỊCH VỤ TÀI KHOẢN\n(Từ 01/08/2025)",
+        f"BIỂU PHÍ DỊCH VỤ TÀI KHOẢN\n{HEADER}\n{ROWS[0]}",
+        "Phụ lục 1\nGhi chú.",
+        "THẺ GHI NỢ\nPhí phát hành thẻ.",
+    ]
+
+
+def test_tables_get_the_heading_in_effect_at_the_end_of_their_page_and_stay_within_size():
+    table = "\n".join([HEADER, *ROWS])
+    chunks = chunk_pages([_page(2, "## Điều 3. Mức lương tối thiểu\n\nTheo vùng như sau:", [table])], size=400)
+
+    tables = [c for c in chunks if HEADER in c["text"]]
+    assert len(tables) > 1
+    assert all(c["text"].startswith(f"Điều 3. Mức lương tối thiểu\n{HEADER}\n") for c in tables)
+    assert all(len(c["text"]) <= 400 for c in tables)
+    assert [r for c in tables for r in c["text"].split("\n")[3:]] == ROWS
+
+
+def test_a_long_heading_path_keeps_the_innermost_heading_within_a_quarter_of_size():
+    chapter = "## Chương III " + "QUY ĐỊNH VỀ QUẢN LÝ " * 10
+    article = "## Điều 12. " + "Trách nhiệm của tổ chức tín dụng " * 5
+
+    first, chunk = chunk_pages([_page(1, f"{chapter}\n\n{article}\n\nNội dung.")], size=400)
+
+    header = chunk["text"].split("\n")[0]
+    assert len(header) <= 100 and header.startswith("Điều 12.") and header.endswith("…")
+    assert chunk["text"].endswith("\nNội dung.")
+    # Neither heading survives whole in a path, so each one's words start the text of a chunk.
+    assert " ".join(chunk["text"].split("\n")[1:-1]) == article.removeprefix("## ").strip()
+    assert " ".join(first["text"].split("\n")[1:]) == chapter.removeprefix("## ").strip()
+
+
+def test_an_untitled_fee_schedule_takes_its_first_line_as_the_title_of_every_chunk():
+    title = "Biểu phí thẻ Ghi nợ nội địa (doanh nghiệp)"
+    pages = [
+        _page(1, f"{title}\n\n(Hiệu lực từ ngày 22/4/2026)", ["\n".join([HEADER, ROWS[0]])]),
+        _page(2, "Phí cấp lại PIN.", ["\n".join([HEADER, ROWS[1]])]),
+        _page(3, "## Tệp đính kèm\n\nMẫu đề nghị."),
+    ]
+
+    assert _texts(chunk_pages(pages)) == [
+        f"{title}\n(Hiệu lực từ ngày 22/4/2026)\nPhí cấp lại PIN.",
+        f"{title}\n{HEADER}\n{ROWS[0]}",
+        f"{title}\n{HEADER}\n{ROWS[1]}",
+        f"{title} › Tệp đính kèm\nMẫu đề nghị.",
+    ]
+
+
+def test_a_document_of_plain_text_keeps_its_first_line_as_text_only():
+    [chunk] = chunk_pages([_page(1, f"{SENTENCE}\n\nCâu thứ hai.")])
+
+    assert chunk["text"] == f"{SENTENCE}\nCâu thứ hai."
+
+
+def test_a_heading_without_text_is_kept_as_a_chunk_of_its_own():
+    text = (
+        "## Điều 8. Bãi bỏ Điều 32c và Điều 32h\n\n"
+        "## Điều 9. Hiệu lực thi hành\n\nThông tư có hiệu lực từ 01/7/2026."
+    )
+
+    assert _texts(chunk_pages([_page(1, text)])) == [
+        "Điều 8. Bãi bỏ Điều 32c và Điều 32h",
+        "Điều 9. Hiệu lực thi hành\nThông tư có hiệu lực từ 01/7/2026.",
+    ]
+
+
+def test_a_heading_carried_by_the_next_path_is_not_repeated_on_its_own():
+    text = "## Chương I NHỮNG QUY ĐỊNH CHUNG\n\n## Điều 1. Phạm vi điều chỉnh\n\nNghị định này quy định chi tiết."
+
+    assert _texts(chunk_pages([_page(1, text)])) == [
+        "Chương I NHỮNG QUY ĐỊNH CHUNG › Điều 1. Phạm vi điều chỉnh\nNghị định này quy định chi tiết."
+    ]
+
+
+def test_a_repealed_article_at_the_end_of_the_document_is_kept():
+    text = "## Điều 5. Phạm vi\n\nNội dung.\n\n## Điều 6. (được bãi bỏ)"
+
+    assert _texts(chunk_pages([_page(1, text)]))[-1] == "Điều 6. (được bãi bỏ)"
+
+
+def test_consecutive_headings_of_a_fee_schedule_nest():
+    text = (
+        "## Dịch vụ ngân hàng điện tử\n\n## BIỂU PHÍ DỊCH VỤ ÁP DỤNG CHO KHÁCH HÀNG TỔ CHỨC\n\n"
+        "## DỊCH VỤ NGÂN HÀNG ĐIỆN TỬ\n\nPhí duy trì.\n\n## Phí khác\n\nPhí in sao kê."
+    )
+
+    assert _texts(chunk_pages([_page(1, text)])) == [
+        "Dịch vụ ngân hàng điện tử › BIỂU PHÍ DỊCH VỤ ÁP DỤNG CHO KHÁCH HÀNG TỔ CHỨC › DỊCH VỤ NGÂN HÀNG ĐIỆN TỬ\n"
+        "Phí duy trì.",
+        "Phí khác\nPhí in sao kê.",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("line", "path"),
+    [
+        ("Chương IH CHẾ ĐỘ BẢO HIỂM XÃ HỘI", "Chương IH CHẾ ĐỘ BẢO HIỂM XÃ HỘI"),
+        ("Chương VỊ. - QUY ĐỊNH CHUYỂN TIẾP", "Chương VỊ. - QUY ĐỊNH CHUYỂN TIẾP"),
+        ("Chương H QUẢN LÝ LAO ĐỘNG", "Chương H QUẢN LÝ LAO ĐỘNG"),
+        ("Phụ lục EV", "Phụ lục EV"),
+        ("## - Chương X - - NHỮNG QUY ĐỊNH RIÊNG", "Chương X - - NHỮNG QUY ĐỊNH RIÊNG"),
+    ],
+)
+def test_ocr_misread_roman_numerals_still_open_a_chapter(line, path):
+    text = f"## Chương I NHỮNG QUY ĐỊNH CHUNG\n\n## Điều 1. Phạm vi\n\nA.\n\n{line}\n\n## Điều 13. Mức đóng\n\nB."
+
+    assert _texts(chunk_pages([_page(1, text)]))[-1] == f"{path} › Điều 13. Mức đóng\nB."
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "Phụ lục II ban hành kèm theo Nghị định số 135/2020/NĐ-CP",
+        "Chương II của Nghị định này được sửa đổi",
+        "Mục 1: Số dư tiền mặt tại thời điểm cuối ngày",
+        "Mục 1.1: Tiền gửi không kỳ hạn",
+        "- Chương II quy định về hợp đồng",  # a list item, not a marked heading
+    ],
+)
+def test_body_lines_that_start_like_headings_stay_text(line):
+    text = f"## Chương I NHỮNG QUY ĐỊNH CHUNG\n\n## Điều 1. Phạm vi\n\n{line}\n\nCâu tiếp theo."
+
+    assert _texts(chunk_pages([_page(1, text)])) == [
+        f"Chương I NHỮNG QUY ĐỊNH CHUNG › Điều 1. Phạm vi\n{line}\nCâu tiếp theo."
+    ]
+
+
+def test_a_short_first_line_without_tables_is_not_a_title():
+    assert _texts(chunk_pages([_page(1, "Lưu ý chung\n\nNội dung.\n\n## Phí khác\n\nPhí in sao kê.")])) == [
+        "Lưu ý chung\nNội dung.",
+        "Phí khác\nPhí in sao kê.",
+    ]
+
+
+def test_a_first_line_longer_than_a_quarter_of_size_is_not_a_title():
+    first = "Biểu phí áp dụng cho khách hàng " * 3  # > 200 // 4
+    chunks = chunk_pages([_page(1, f"{first}\n\nNội dung.", ["\n".join([HEADER, ROWS[0]])])], size=200, overlap=0)
+
+    assert chunks[-1]["text"] == f"{HEADER}\n{ROWS[0]}"
+
+
+def test_the_national_motto_is_not_a_heading_of_a_fee_schedule():
+    text = "## Biểu phí thẻ\n\nA.\n\n## CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\n\nB."
+
+    assert _texts(chunk_pages([_page(1, text)])) == ["Biểu phí thẻ\nA.\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nB."]
+
+
+def test_a_marked_line_longer_than_300_characters_is_text():
+    long = "Phí dịch vụ " * 30  # > 300 characters
+    text = f"## Biểu phí thẻ\n\nA.\n\n## {long}"
+
+    assert _texts(chunk_pages([_page(1, text)], size=2000)) == [f"Biểu phí thẻ\nA.\n{long.strip()}"]
+
+
+def test_a_heading_closing_the_page_does_not_head_its_tables():
+    pages = [_page(1, "## Biểu phí chuyển tiền\n\nPhí trong nước.\n\n## Tệp đính kèm", ["\n".join([HEADER, ROWS[0]])])]
+
+    assert _texts(chunk_pages(pages)) == [
+        "Biểu phí chuyển tiền\nPhí trong nước.",
+        "Tệp đính kèm",
+        f"Biểu phí chuyển tiền\n{HEADER}\n{ROWS[0]}",
+    ]
