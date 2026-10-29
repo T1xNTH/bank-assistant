@@ -20,4 +20,5 @@ Phần này cung cấp hướng dẫn phát triển, chuẩn viết code và cô
 - `workflow.md` – Git workflow và quy trình PR
 - `ci.md` – CI quality gate, chạy Docker stack và smoke test API; giới hạn kiểm tra UI hiện tại
 - [Qdrant store](qdrant-store.md) - T009 input format, identity and real-server checks.
+- `ingest.md` – Chạy `scripts/ingest.py` nạp bộ tài liệu vào Qdrant, cache parse/embed
 - [LLM gateway](llm-gateway.md) - LiteLLM aliases, OpenAI setup, optional Ollama and smoke checks.
