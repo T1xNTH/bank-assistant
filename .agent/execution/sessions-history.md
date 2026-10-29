@@ -248,3 +248,5 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261029-113343` | `2026-10-29` | `2026-10-29` | `codex-b` | `T-011` | `completed` | `task blocked -> in-progress` | `.agent/execution/task-board.md` | `none` |
 
 | `S-20261029-t011-openai-review` | `2026-10-29` | `2026-10-29` | `codex-b` | `T-011` | `completed` | `Real OpenAI plain/strict structured acceptance passed; implementation supplement finalized and local handoff to claude-review-a recorded; task in-progress -> review. CLI has no supplement report target, immutable Gemini report preserved; no independent approval claimed` | `.agent/reports/implementation/T-011-openai.md` | `none` |
+
+| `S-20261029-t011-pr-package` | `2026-10-29` | `2026-10-29` | `codex-b` | `T-011` | `completed` | `User authorized publishing PRs. Split tested source 3dbce64 into four dependent PRs below 400 changed lines; Claude CLI available but unauthenticated, so publish drafts with independent review pending. Separate template repair PR; no self-approval or merge` | `.agent/reports/implementation/T-011-pr-handoff.md` | `none` |
