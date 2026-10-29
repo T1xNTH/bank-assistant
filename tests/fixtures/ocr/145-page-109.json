@@ -1,0 +1,23 @@
+{
+  "source_pdf": "145.signed.pdf",
+  "source_sha256": "a72a1ff295cc06fbddd335d57257688f5118826968cd8b62d58f50fc1554b230",
+  "parser_commit": "7c4111316151d3ff4a35ec7e0f7e34e81f2327a6",
+  "source_page": 109,
+  "source_data_rows": 33,
+  "selected": {
+    "source": "145.signed.pdf",
+    "page": 109,
+    "text": "## Mẫu số 12/PLIN\n\n## DANH MỤC MÃ TỈNH, THÀNH PHÓ TRỰC THUỘC TRUNG ƯƠNG\n\n|",
+    "tables": [
+      "| STT      | Tên tỉnh, thành phố   | Mã tỉnh, thành phố   |\n|----------|-----------------------|----------------------|\n| l &#124; | An Giang              | SAG                  |\n| 2        | Bà Rịa- VũngTàu _     | SBRVT                |\n| 3        | Bắc Cạn               | SBC                  |\n|          |                       | SBL                  |\n| 6        | Bắc Ninh              | SBN                  |\n|          | Bến Tre               | SBT                  |\n| &#124;8  | &#124;BìnhĐịnh        | SBĐ                  |\n| 10       | Bình Phước            | SBP                  |\n|          |                       | SBTH                 |\n|          |                       | SCM                  |\n| 13       |                       | SCT                  |\n| 14 7     | xa                    | SCB &#124;           |\n|          | Đắk Lắk               | SÐL                  |\n| 17       | Đắk Nông              | SĐKN                 |\n| 18       | Điện Biên -           | SĐB                  |\n|          | Đồng Nai              | SĐÐGN                |\n| 20       | Đồng Tháp             | SĐT                  |\n| 21       | Gia Lai               | SGL                  |\n| 22       | Hà Giang              | SHG                  |\n| 23       | Hà Nam                | SHN                  |\n| 24       | Hà Nội                | SHNI                 |\n| 25       | Hà Tĩnh               | SHT                  |\n| 26       | Hải Dương             | SHD                  |\n| 27       | &#124;Hải Phòng       | SHP                  |\n| 28       | Hậu Giang             | SHG                  |\n| 29       | Hoà Bình              | SHB                  |\n| 30       | Hưng Yên              | SHY                  |\n| 3l       | &#124; Khánh Hoà      |                      |\n| 32 —     | &#124;Kiên Giang      |                      |\n|          | Kon Tum               | SKT                  |"
+    ]
+  },
+  "bad_rotation": {
+    "source": "145.signed.pdf",
+    "page": 109,
+    "text": "|\n\n## DANH MỤC MÃ TỈNH, THÀNH PHÓ TRỰC THUỘC TRUNG ƯƠNG\n\n## Mẫu số 12/PLIN",
+    "tables": [
+      "|         | 32 —             | 3l               | 30                | 29        | 27 28           | 26        | 24 25   | 23     | 22     | 21       | 20      | 18                   | 17                 |         |     | 13 7   | 14   | 10   | &#124;8   | 6          | l                      | STT      |     | 3                       |                   | 2               |     |                        |\n|---------|------------------|------------------|-------------------|-----------|-----------------|-----------|---------|--------|--------|----------|---------|----------------------|--------------------|---------|-----|--------|------|------|-----------|------------|------------------------|----------|-----|-------------------------|-------------------|-----------------|-----|------------------------|\n| Kon Tum | &#124;Kiên Giang | &#124; Khánh Hoà | Hoà Bình Hưng Yên | Hậu Giang | &#124;Hải Phòng | Hải Dương | Hà Tĩnh | Hà Nội | Hà Nam | Hà Giang | Gia Lai | - Đồng Nai Đồng Tháp | Đắk Nông Điện Biên | Đắk Lắk |     |        |      |      |           | Bình Phước | Bến Tre &#124;BìnhĐịnh | Bắc Ninh |     | Bà Rịa- VũngTàu Bắc Cạn | Tên tỉnh, thành _ | &#124; An Giang |     |                        |\n| SKT     |                  |                  | SHY               | SHB       | SHP SHG         | SHD       | SHT     |        | SHNI   | SHN      | SGL SHG | SĐÐGN SĐT            | SĐB                | SĐKN    | SÐL | xa SCB | SCT  | SCM  | SBTH      | SBP        | SBT                    | SBĐ      | SBN |                         | SBL               | SBRVT SBC       | SAG | phố Mã tỉnh, thành phố |"
+    ]
+  }
+}

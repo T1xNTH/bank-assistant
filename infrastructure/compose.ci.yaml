@@ -1,0 +1,15 @@
+# Use with compose.yaml. CI has its own project/volume and publishes no host ports.
+services:
+  api:
+    env_file: !reset []
+    environment:
+      RAG_BACKEND: fake
+      LLM_BACKEND: fake
+      AUTH_BACKEND: fake
+      QDRANT_URL: http://qdrant:6333
+      REDIS_URL: redis://redis:6379/0
+    ports: !reset []
+  qdrant:
+    ports: !reset []
+  redis:
+    ports: !reset []

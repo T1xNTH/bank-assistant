@@ -1,11 +1,14 @@
 """Scan repair paths of parse_docling (CR-007) without OCR models: runs in CI."""
 
+import os
 import subprocess
+import sys
+import textwrap
 from types import SimpleNamespace
 
 import pytest
 from docling.backend.docling_parse_backend import ThreadedDoclingParseDocumentBackend
-from docling.datamodel.base_models import InputFormat
+from docling.datamodel.base_models import ConversionStatus, InputFormat
 from docling.datamodel.document import InputDocument
 from docling_core.types.doc import (
     BoundingBox,
@@ -73,7 +76,7 @@ def test_choose_pages_takes_the_image_copy_only_where_the_original_is_garbage():
 
 def test_best_rotation_keeps_the_most_readable_orientation(tmp_path, monkeypatch):
     monkeypatch.setattr(pd, "_rotated_page_pdf", lambda path, no, rotate, out: f"rot{rotate}")
-    monkeypatch.setattr(pd, "_converter", lambda full: SimpleNamespace(convert=lambda p: SimpleNamespace(document=p)))
+    monkeypatch.setattr(pd, "_convert", lambda path, full: path)
     monkeypatch.setattr(pd, "doc_to_pages", lambda doc, source: [_page(1, UPRIGHT_OCR if doc == "rot180" else GARBAGE)])
 
     fixed = pd._best_rotation("scan.pdf", _page(7, GARBAGE), tmp_path)
@@ -127,3 +130,145 @@ def test_tesseract_failure_is_raised_not_swallowed(tmp_path, monkeypatch):
 
     with pytest.raises(RuntimeError, match="vie"):
         pd._tesseract(Image.new("L", (10, 10)), tmp_path / "x.png")
+
+
+def test_choose_pages_takes_pages_only_the_image_copy_has():
+    chosen = pd.choose_pages([_page(1, UPRIGHT_OCR), _page(3, UPRIGHT_OCR)], [_page(n, UPRIGHT_OCR) for n in (1, 2, 3)])
+
+    assert [p["page"] for p in chosen] == [1, 2, 3]
+
+
+def test_choose_pages_keeps_the_original_table_when_the_copy_loses_its_amounts():
+    # The garbage table (no diacritics) marks the page, and the copy scores higher only
+    # because the table is gone: its figures must not be traded for readability.
+    table = (
+        "| Muc | So tien |\n|---|---|\n"
+        "| Luong co ban thang mot nam nay | 22.700.000 |\n| Phu cap trach nhiem cong viec | 3.000.000 |"
+    )
+    copy = _page(1, UPRIGHT_OCR)
+
+    [chosen] = pd.choose_pages([_page(1, UPRIGHT_OCR, [table])], [copy])
+
+    assert chosen["text"] == copy["text"]
+    assert chosen["tables"] == [table]
+
+
+def test_choose_pages_keeps_a_table_of_short_rates_the_copy_lost():
+    table = (
+        "| Loai phi | Muc phi |\n|---|---|\n"
+        "| Phi rut tien mat tai cay ATM ngoai he thong | 4% |\n| Phi chuyen doi ngoai te khi giao dich | 5% |"
+    )
+
+    [chosen] = pd.choose_pages([_page(1, UPRIGHT_OCR, [table])], [_page(1, UPRIGHT_OCR)])
+
+    assert chosen["tables"] == [table]
+
+
+def test_choose_pages_keeps_the_original_table_when_the_copy_table_has_no_amounts():
+    # Same number of tables, but the copy's table lost every amount.
+    table = (
+        "| Muc | So tien |\n|---|---|\n"
+        "| Phi phat hanh the tin dung quoc te hang vang | 22.700.000 |\n| Phi thuong nien the chinh | 1.000.000 |"
+    )
+    generic = "| Phí | Theo quy định |\n|---|---|\n| Phí phát hành thẻ | Theo biểu phí hiện hành |"
+
+    [chosen] = pd.choose_pages([_page(1, UPRIGHT_OCR, [table])], [_page(1, UPRIGHT_OCR + " của và các", [generic])])
+
+    assert chosen["tables"] == [generic, table]
+
+
+def test_choose_pages_keeps_a_table_when_the_copy_loses_half_its_rows():
+    table = (
+        "| Vung | Muc luong toi thieu thang theo quy dinh |\n|---|---|\n"
+        "| Vung I cac quan noi thanh | 5.310.000 |\n| Vung II cac huyen ngoai thanh | 4.730.000 |"
+    )
+    read = "| Vùng | Mức lương tối thiểu tháng |\n|---|---|\n| Vùng I | 5.310.000 |"
+    copy = _page(1, UPRIGHT_OCR + " của và các", [read])
+
+    [chosen] = pd.choose_pages([_page(1, UPRIGHT_OCR, [table])], [copy])
+
+    assert chosen["text"] == copy["text"]
+    assert chosen["tables"] == [read, table]
+
+
+def test_choose_pages_drops_a_garbage_table_without_figures():
+    # The empty grid of a blank form: noise, not content the copy must keep.
+    grid = (
+        "| i n khich hirng so til | Ptay tny then loai giiy lil tiry than | v!t Ngnv thrng nIm sinh |\n"
+        "|---|---|---|\n| t2) | 6 | 11 |"
+    )
+    copy = _page(1, UPRIGHT_OCR + " của và các")
+
+    [chosen] = pd.choose_pages([_page(1, UPRIGHT_OCR, [grid])], [copy])
+
+    assert chosen is copy
+
+
+def test_choose_pages_drops_an_ocr_noise_table_with_a_stray_figure():
+    # 77-nhnn p.13: scribble OCR'd into a "table" whose noise happens to contain 124.
+    noise = (
+        "| | 0 i |\n|---|---|\n| .i5 E:r oe | a te tc |\n"
+        "| --o!nl- XoE-BE. -ita5o-o '. L.l' .9,E' If c-9' a) 2>S | o |\n"
+        "| ra - O r.J = = Or o- - = e /'\\ F nE$=rx;Y$r€gE8. - i Ftiee'ilE=S-aF |\n"
+        "| E3€a, Eg 1+ A *a.22 124 :o E= | := - j |"
+    )
+    copy = _page(1, UPRIGHT_OCR + " của và các")
+
+    [chosen] = pd.choose_pages([_page(1, UPRIGHT_OCR, [noise])], [copy])
+
+    assert chosen is copy
+
+
+def _conversion(status, pages, errors=()):
+    return SimpleNamespace(convert=lambda path: SimpleNamespace(status=status, errors=list(errors), document=pages))
+
+
+def test_partial_conversion_missing_a_page_is_an_error(monkeypatch):
+    monkeypatch.setattr(pd, "_text_layer", lambda path: UPRIGHT_OCR)
+    monkeypatch.setattr(pd, "_page_count", lambda path: 3)
+    monkeypatch.setattr(pd, "_converter", lambda full: _conversion(ConversionStatus.PARTIAL_SUCCESS, [1, 3]))
+    monkeypatch.setattr(pd, "doc_to_pages", lambda doc, source: [_page(n, UPRIGHT_OCR) for n in doc])
+
+    with pytest.raises(pd.ParseError, match=r"pages \[2\]"):
+        pd.parse("digital.pdf")
+
+
+def test_failed_conversion_is_an_error(monkeypatch):
+    failed = _conversion(ConversionStatus.FAILURE, None, [SimpleNamespace(error_message="page 2: boom")])
+    monkeypatch.setattr(pd, "_converter", lambda full: failed)
+
+    with pytest.raises(pd.ParseError, match="failure: page 2: boom"):
+        pd._convert("x.pdf", True)
+
+
+def test_scan_page_missing_from_both_passes_is_an_error(monkeypatch):
+    monkeypatch.setattr(pd, "_text_layer", lambda path: "")
+    monkeypatch.setattr(pd, "_page_count", lambda path: 3)
+    monkeypatch.setattr(pd, "_image_only_pdf", lambda path, out: out)
+    monkeypatch.setattr(pd, "_ocr_pages", lambda path, source, tmp: [_page(1, UPRIGHT_OCR), _page(3, UPRIGHT_OCR)])
+
+    with pytest.raises(pd.ParseError, match=r"pages \[2\]"):
+        pd.parse("scan.pdf")
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="fake tesseract is a POSIX script")
+def test_tesseract_output_is_decoded_as_utf8_under_a_non_utf8_locale(tmp_path):
+    # Windows decodes pipes as cp1252; an ASCII C locale reproduces that failure on Linux.
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    fake = bin_dir / "tesseract"
+    fake.write_text(f"#!{sys.executable}\nimport sys\nsys.stdout.buffer.write('Ngân hàng'.encode())\n")
+    fake.chmod(0o755)
+    script = textwrap.dedent(f"""
+        from pathlib import Path
+        from PIL import Image
+        from app.rag import parse_docling as pd
+        print(pd._tesseract(Image.new("L", (10, 10)), Path({str(tmp_path / "x.png")!r})).encode("utf-8").hex())
+    """)
+    env = {**os.environ, "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}", "LC_ALL": "C",
+           "PYTHONUTF8": "0", "PYTHONCOERCECLOCALE": "0", "PYTHONPATH": os.pathsep.join(sys.path)}
+
+    done = subprocess.run([sys.executable, "-c", script], capture_output=True, env=env, check=False)
+
+    assert done.returncode == 0, done.stderr.decode(errors="replace")
+    assert bytes.fromhex(done.stdout.decode().strip()).decode("utf-8") == "Ngân hàng"

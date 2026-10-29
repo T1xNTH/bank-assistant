@@ -16,12 +16,17 @@ Vietnamese diacritics), is OCR'd page by page instead, with a PDF backend whose
 text-layer lookup returns nothing: docling's table model otherwise falls back to
 the garbage text layer for cells without an OCR match. A page whose OCR output
 has almost no common Vietnamese words was likely scanned rotated; it is retried
-at 90/180/270 degrees (PDF /Rotate, lossless) and the most readable orientation
-is kept. A page that
+at 90/180/270 degrees (PDF /Rotate, lossless). A better orientation is kept only
+when its common-word ratio reaches the readability threshold; otherwise the
+original structure is retained. A page that
 comes back nearly empty (e.g. TableFormer found a table but no cells) falls back
-to plain Tesseract text of the page image when that reads more. A table that
+to plain Tesseract text of the page image when that reads more, retaining any
+structured numerical tables because plain text cannot establish cell coverage. A table that
 TableFormer detects but cannot split into cells is OCR'd as a region instead,
 so its rows survive as text lines.
+
+A conversion docling reports as failed, or that leaves a page of the PDF without
+any result, raises ``ParseError`` rather than silently returning fewer pages.
 """
 
 from __future__ import annotations
@@ -29,7 +34,10 @@ from __future__ import annotations
 import re
 import subprocess
 import tempfile
+import unicodedata
+from collections import Counter
 from functools import lru_cache
+from html import unescape
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -44,6 +52,7 @@ MIN_DIACRITIC_RATIO = 0.05  # real Vietnamese text is ~0.2; garbage layers are ~
 
 RENDER_DPI = 200
 MIN_TABLE_LETTERS = 50  # tables with less text (numbers only) are not judged
+MIN_WORD_TOKENS = 0.35  # garbage-layer tables are ~0.45+ words (no accents); OCR noise of a stamp or scribble ~0.17
 BW_THRESHOLD = 160  # grey level above which a pixel becomes white
 MIN_GARBLED_LETTERS = 200  # pages with less text are not judged (stamps, signatures, blank forms)
 MIN_COMMON_WORD_RATIO = 0.04  # share of tokens that are frequent Vietnamese words; real text ~0.2, rotated OCR ~0
@@ -56,10 +65,18 @@ _VI_COMMON = frozenset(
     "thực hiện trường hợp dịch vụ thanh toán tài phí tiền lao động đồng sau đây phải".split()
 )
 _TOKEN = re.compile(r"\w+")
+_WORD = re.compile(r"[^\W\d_]{2,}")
+_NUMBER = re.compile(r"[\d.,%/()-]+")
+# Amounts, rates, dates (22.700.000, 0,5%, 4%, 2025); not the stray one- or two-digit noise of an OCR'd form grid.
+_FIGURE = re.compile(r"\d+(?:[.,]\d+)+(?:[^\S\r\n]*%)?|\d+[^\S\r\n]*%|\d{3,}")
 
 _VI_DIACRITICS = re.compile(
     "[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]", re.IGNORECASE
 )
+
+
+class ParseError(RuntimeError):
+    """Docling failed on the PDF, or some of its pages have no parse result."""
 
 
 def needs_full_page_ocr(text_layer: str) -> bool:
@@ -79,15 +96,29 @@ def common_word_ratio(text: str) -> float:
     return sum(t in _VI_COMMON for t in tokens) / len(tokens) if tokens else 0.0
 
 
+def _all_text(page: dict) -> str:
+    return page["text"] + "\n" + "\n".join(page["tables"])
+
+
 def _letters(page: dict) -> int:
-    return sum(c.isalpha() for c in page["text"] + "\n".join(page["tables"]))
+    return sum(c.isalpha() for c in _all_text(page))
 
 
 def looks_garbled(page: dict) -> bool:
     """True for an OCR'd page with plenty of characters but almost no real Vietnamese words."""
     if _letters(page) < MIN_GARBLED_LETTERS:
         return False
-    return common_word_ratio(page["text"] + "\n".join(page["tables"])) < MIN_COMMON_WORD_RATIO
+    return common_word_ratio(_all_text(page)) < MIN_COMMON_WORD_RATIO
+
+
+def _page_count(path: str) -> int:
+    import pypdfium2
+
+    pdf = pypdfium2.PdfDocument(path)
+    try:
+        return len(pdf)
+    finally:
+        pdf.close()
 
 
 def _text_layer(path: str) -> str:
@@ -132,27 +163,118 @@ def _converter(full_page_ocr: bool) -> DocumentConverter:
 def parse(path: str) -> list[dict]:
     source = Path(path).name
     if not needs_full_page_ocr(_text_layer(path)):
-        return doc_to_pages(_converter(False).convert(path).document, source)
+        return _require_all_pages(doc_to_pages(_convert(path, False), source), _page_count(path), source)
     with tempfile.TemporaryDirectory() as tmp:
         original = _ocr_pages(path, source, Path(tmp))
         images = _ocr_pages(str(_image_only_pdf(path, Path(tmp) / "pages.pdf")), source, Path(tmp))
         # The original keeps table structure best; the bi-level image copy has no
         # garbage text layer and OCRs some rotated pages better. Use the copy only
-        # where the original page, or one of its tables, reads as garbage.
-        return [_repair(path, p, Path(tmp)) for p in choose_pages(original, images)]
+        # where the original page, or one of its tables, reads as garbage, keeping
+        # any original table whose figures the copy lost.
+        pages = _require_all_pages(choose_pages(original, images), _page_count(path), source)
+        return [_repair(path, p, Path(tmp)) for p in pages]
+
+
+def _convert(path: str, full_page_ocr: bool) -> DoclingDocument:
+    result = _converter(full_page_ocr).convert(path)
+    # PARTIAL_SUCCESS drops the pages that failed; _require_all_pages reports any still missing.
+    if result.status.value not in ("success", "partial_success"):
+        errors = "; ".join(e.error_message for e in result.errors)[:500]
+        raise ParseError(f"{Path(path).name}: docling {result.status.value}: {errors}")
+    return result.document
+
+
+def _require_all_pages(pages: list[dict], page_count: int, source: str) -> list[dict]:
+    missing = sorted(set(range(1, page_count + 1)) - {p["page"] for p in pages})
+    if missing:
+        raise ParseError(f"{source}: no parse result for pages {missing}")
+    return pages
 
 
 def choose_pages(original: list[dict], images: list[dict]) -> list[dict]:
-    """Per page number, the image-copy result where the original reads as garbage and the copy reads better."""
+    """Per page number, the image-copy result where the original reads as garbage and the copy reads better.
+
+    A page only one of the two passes produced is taken from that pass.
+    """
+    orig = {p["page"]: p for p in original}
     copy = {p["page"]: p for p in images}
-    return [
-        copy[p["page"]] if p["page"] in copy and _garbage_in(p) and _score(copy[p["page"]]) > _score(p) else p
-        for p in original
-    ]
+    chosen = []
+    for no in sorted(orig.keys() | copy.keys()):
+        p, c = orig.get(no), copy.get(no)
+        if p is None or c is None:
+            chosen.append(p or c)
+        elif _garbage_in(p) and _score(c) > _score(p):
+            chosen.append(_with_lost_tables(p, c))
+        else:
+            chosen.append(p)
+    return chosen
 
 
 def _score(page: dict) -> float:
-    return common_word_ratio(page["text"] + "\n" + "\n".join(page["tables"]))
+    return common_word_ratio(_all_text(page))
+
+
+def _figures(text: str) -> Counter[str]:
+    # Preserve decimal places: 1.5% must not match 15%. Accept either decimal separator.
+    # Markdown can contain escaped pipes (&#124;), which are not numerical values.
+    return Counter(re.sub(r"\s+", "", f).replace(",", ".") for f in _FIGURE.findall(unescape(text)))
+
+
+def _reads_as_words(table: str) -> bool:
+    """True for a table of (possibly unaccented) words; False for OCR noise whose stray digits look like figures."""
+    tokens = [t for t in re.findall(r"[^\s|]+", table) if not _NUMBER.fullmatch(t)]
+    return sum(bool(_WORD.fullmatch(t.strip(".,:;()"))) for t in tokens) >= MIN_WORD_TOKENS * max(len(tokens), 1)
+
+
+def _table_rows(table: str) -> list[list[tuple[frozenset[str], Counter[str]]]]:
+    rows = []
+    for line in table.splitlines():
+        if not line.strip("|:- "):
+            continue  # Markdown separator or blank line
+        line = line.strip().removeprefix("|").removesuffix("|")
+        cells = []
+        for cell in re.split(r"(?<!\\)\|", line):
+            label = unicodedata.normalize("NFKD", _FIGURE.sub(" ", cell).casefold().replace("đ", "d"))
+            label = "".join(c for c in label if not unicodedata.combining(c))
+            cells.append((frozenset(_TOKEN.findall(label)), _figures(cell)))
+        rows.append(cells)
+    return rows
+
+
+def _covers_row(original, candidate) -> bool:
+    return len(original) == len(candidate) and all(
+        words <= labels and figures <= values
+        for (words, figures), (labels, values) in zip(original, candidate, strict=True)
+    )
+
+
+def _covers_table(original: str, candidate: str) -> bool:
+    """Each original row must retain its labels, figures and columns in one candidate table."""
+    remaining = _table_rows(candidate)
+    for row in _table_rows(original):
+        match = next((i for i, candidate_row in enumerate(remaining) if _covers_row(row, candidate_row)), None)
+        if match is None:
+            return False
+        remaining.pop(match)  # one surviving row cannot cover several original rows
+    return True
+
+
+def _with_lost_tables(original: dict, copy: dict) -> dict:
+    """The copy, plus original tables whose rows it cannot account for.
+
+    Page-wide figures cannot establish table coverage: the same rates may occur in
+    unrelated prose or another service's row. Keep a table if any row is missing or
+    changed, while retaining the copy's clearer text and tables. Accents are ignored
+    when matching labels. Garbled pages, figureless grids and OCR noise are excluded.
+    """
+    if looks_garbled(original):
+        return copy
+    lost = [
+        t
+        for t in original["tables"]
+        if _figures(t) and _reads_as_words(t) and not any(_covers_table(t, c) for c in copy["tables"])
+    ]
+    return {**copy, "tables": copy["tables"] + lost} if lost else copy
 
 
 def _garbage_in(page: dict) -> bool:
@@ -164,7 +286,7 @@ def _garbage_in(page: dict) -> bool:
 
 
 def _ocr_pages(path: str, source: str, tmp: Path) -> list[dict]:
-    doc = _converter(True).convert(path).document
+    doc = _convert(path, True)
     pages = doc_to_pages(doc, source)
     for page in pages:
         extra = _ocr_empty_tables(path, doc, page["page"], tmp)
@@ -175,7 +297,8 @@ def _ocr_pages(path: str, source: str, tmp: Path) -> list[dict]:
 def _tesseract(img, file: Path, psm: int | None = None) -> str:
     img.save(file)
     cmd = ["tesseract", str(file), "-", "-l", "+".join(OCR_LANGS)] + (["--psm", str(psm)] if psm else [])
-    done = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    # Tesseract writes UTF-8 whatever the locale (Windows pipes default to cp1252).
+    done = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="replace", check=False)
     if done.returncode != 0:
         raise RuntimeError(f"tesseract failed ({done.returncode}): {done.stderr.strip()[-500:]}")
     return done.stdout.strip()
@@ -204,7 +327,9 @@ def _repair(path: str, page: dict, tmp: Path) -> dict:
     if _letters(page) < MIN_GARBLED_LETTERS:
         text = _tesseract(_render(path, page["page"]), tmp / f"plain{page['page']}.png")
         if sum(c.isalpha() for c in text) > _letters(page):
-            return {**page, "text": text, "tables": []}  # the page OCR already includes any table text
+            # Plain OCR cannot establish row/column coverage. Keep structured
+            # numerical tables even if this duplicates part of the plain text.
+            return {**page, "text": text, "tables": [t for t in page["tables"] if _figures(t)]}
     return page
 
 
@@ -220,12 +345,19 @@ def _render(path: str, page_no: int):
 
 
 def _best_rotation(path: str, page: dict, tmp: Path) -> dict:
-    best, best_score = page, common_word_ratio(page["text"] + "\n".join(page["tables"]))
+    """Keep the original unless a rotation is both more readable and above the noise floor."""
+    best, best_score = page, common_word_ratio(_all_text(page))
     for rotate in (90, 180, 270):
         one = _rotated_page_pdf(path, page["page"], rotate, tmp / f"rot{page['page']}-{rotate}.pdf")
-        cand = doc_to_pages(_converter(True).convert(str(one)).document, page["source"])[0]
-        score = common_word_ratio(cand["text"] + "\n".join(cand["tables"]))
-        if score > best_score:
+        cands = doc_to_pages(_convert(str(one), True), page["source"])
+        if not cands:
+            continue
+        cand = cands[0]
+        score = common_word_ratio(_all_text(cand))
+        # Code/name tables can score poorly even when upright. A tiny increase
+        # among equally noisy candidates is not evidence of a correct rotation
+        # and can transpose their rows into columns (145.signed.pdf, page 109).
+        if score >= MIN_COMMON_WORD_RATIO and score > best_score:
             best, best_score = {**cand, "page": page["page"]}, score
     return best
 
