@@ -27,13 +27,13 @@ Theo dõi quan sát A-3 trong review baseline của A (`.agent/reports/review/T-
 
 ## Description
 
-Judge RAGAS là Gemini (cloud), nên khi eval, câu hỏi và context được gửi lên cloud. M-001 chỉ dùng tài liệu `public` (CR-001) nên chưa ảnh hưởng; từ M-002 eval trên tài liệu `internal`/`confidential` sẽ đẩy chunk mật lên cloud.
+Judge RAGAS là OpenAI (cloud), nên khi eval, câu hỏi và context được gửi lên cloud. M-001 chỉ dùng tài liệu `public` (CR-001) nên chưa ảnh hưởng; từ M-002 eval trên tài liệu `internal`/`confidential` sẽ đẩy chunk mật lên cloud.
 
 ## Impact
 
 - **Affected Scope**: `eval/, docs/12-ai/ai-design.md`
 - **Severity**: `medium`
-- **User or Delivery Impact**: `eval từ M-002 có thể gửi chunk internal/confidential lên Gemini qua judge`
+- **User or Delivery Impact**: `eval từ M-002 có thể gửi chunk internal/confidential lên OpenAI qua judge`
 
 ## Reproduction Evidence
 
@@ -80,3 +80,5 @@ Judge RAGAS là Gemini (cloud), nên khi eval, câu hỏi và context được g
 
 - Lưu tại `.agent/governance/issues/ISSUE-006.md`.
 - Giữ nguyên mọi heading của issue template.
+
+CR-008 (approved, 2026-10-29) authorizes the cloud provider change to OpenAI. Only LiteLLM receives OPENAI_API_KEY; local routing remains unchanged. Usage is paid and subject to account quota/rate limits. The owner budget is USD 5-6; verify account spending controls before the first evaluation.

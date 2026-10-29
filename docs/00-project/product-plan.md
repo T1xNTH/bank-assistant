@@ -100,7 +100,7 @@ Theo `project-onboarding-prompt.md`: điền nội dung thật, có frontmatter 
    - blocker khi bị chặn;
    - change request khi phải đổi contract/SRS;
    - decision record cho lựa chọn kỹ thuật (chính là ADR);
-   - risk record cho rủi ro (Docker chưa có, CPU chậm, Gemini 429, hết token).
+   - risk record cho rủi ro (Docker chưa có, CPU chậm, OpenAI 429, hết token).
 7. **Release:** cuối N5 và N10, release-manager chạy `release-manager-prompt.md` → `.agent/reports/releases/RELEASE-v0.1.md`, `RELEASE-v1.0-mvp.md`, tag git.
 
 **Nhịp team:**
@@ -131,3 +131,5 @@ Theo `project-onboarding-prompt.md`: điền nội dung thật, có frontmatter 
    - Mỗi PR chỉ sửa dòng task của chính mình trong `task-board.md`. `sessions-history.md` chỉ append.
    - **Bạn (A) là coordinator**, cập nhật `current-context.md` mỗi ngày.
    - Bạn là governance cho roadmap. Thay đổi contract/SRS cần cả hai cùng duyệt change request.
+
+CR-008 (approved, 2026-10-29) authorizes the cloud provider change to OpenAI. Only LiteLLM receives OPENAI_API_KEY; local routing remains unchanged. Usage is paid and subject to account quota/rate limits. The owner budget is USD 5-6; verify account spending controls before the first evaluation.
