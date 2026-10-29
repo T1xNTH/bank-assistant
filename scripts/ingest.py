@@ -104,24 +104,38 @@ def _run(rows: list[dict], data: Path, collection: str, cache: Path | None, clie
 
 def ingest_document(row: dict, data: Path, collection: str, cache: Path | None, client) -> dict:
     """Parse, chunk, embed and store one manifest row; return counts and which steps hit the cache."""
+    return _ingest(row, data, collection, cache, client, refresh=False)
+
+
+def _ingest(row: dict, data: Path, collection: str, cache: Path | None, client, refresh: bool) -> dict:
+    from pydantic import ValidationError
+
     from app.rag.chunk import chunk_pages
     from app.rag.store import replace_document
 
     pdf = data / row["file"]
-    pages, parse_hit = _parsed(pdf, row["doc_id"], cache)
+    pages, parse_hit = _parsed(pdf, row["doc_id"], cache, refresh)
     pages = [{**p, "source": pdf.name} for p in pages]  # cached pages keep the name the file had when parsed
     chunks = chunk_pages(pages)
-    dense, sparse, embed_hit = _embedded([c["text"] for c in chunks], row["doc_id"], cache)
+    dense, sparse, embed_hit = _embedded([c["text"] for c in chunks], row["doc_id"], cache, refresh)
     meta = {k: row[k] for k in META_FIELDS} | {"doc_id": row["doc_id"]}
     points = [c | meta | {"dense": d, "sparse": s} for c, d, s in zip(chunks, dense, sparse, strict=True)]
-    replace_document(row["doc_id"], points, client=client, collection=collection)
+    try:
+        replace_document(row["doc_id"], points, client=client, collection=collection)
+    except ValidationError:
+        # The store checks every point before writing any, so nothing was written. A cached value
+        # it rejects (page 0, NaN, a duplicate token id, ...) is recomputed once and overwritten;
+        # freshly computed values that fail are a real error.
+        if refresh or not (parse_hit or embed_hit):
+            raise
+        return _ingest(row, data, collection, cache, client, refresh=True)
     hits = [name for name, hit in (("parse", parse_hit), ("embed", embed_hit)) if hit]
     return {"pages": len(pages), "chunks": len(points), "cached": "cache: " + "+".join(hits) if hits else "mới"}
 
 
-def _parsed(pdf: Path, doc_id: str, cache: Path | None) -> tuple[list[dict], bool]:
+def _parsed(pdf: Path, doc_id: str, cache: Path | None, refresh: bool = False) -> tuple[list[dict], bool]:
     key = _digest(_sha256(pdf), _parser_version())
-    cached = _load(cache, "parsed", doc_id, key)
+    cached = None if refresh else _load(cache, "parsed", doc_id, key)
     if _valid_pages(cached):
         return cached, True
     from app.rag.parse_docling import parse
@@ -131,11 +145,11 @@ def _parsed(pdf: Path, doc_id: str, cache: Path | None) -> tuple[list[dict], boo
     return pages, False
 
 
-def _embedded(texts: list[str], doc_id: str, cache: Path | None) -> tuple[list, list, bool]:
+def _embedded(texts: list[str], doc_id: str, cache: Path | None, refresh: bool = False) -> tuple[list, list, bool]:
     from app.rag import embed
 
     key = _digest(embed.MODEL, str(embed.MAX_LENGTH), json.dumps(texts, ensure_ascii=False))
-    cached = _load(cache, "embedded", doc_id, key)
+    cached = None if refresh else _load(cache, "embedded", doc_id, key)
     if _valid_embedding(cached, len(texts), embed.DIM):
         return cached["dense"], cached["sparse"], True
     dense, sparse = embed.embed(texts)
@@ -145,7 +159,7 @@ def _embedded(texts: list[str], doc_id: str, cache: Path | None) -> tuple[list, 
 
 def _valid_pages(value) -> bool:
     """A cached parse is used only if it has the shape parse() returns: an empty list would
-    replace the document with no points."""
+    replace the document with no points. Value ranges are left to the store (see ingest_document)."""
     return (
         isinstance(value, list)
         and len(value) > 0

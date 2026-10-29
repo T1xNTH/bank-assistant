@@ -78,8 +78,15 @@ def test_every_document_is_indexed_with_the_schema_payload(corpus, calls, client
     stored = payloads(client)
     assert len(stored) == 4 * 4  # 4 documents x (3 text chunks + 1 table chunk)
     assert set(stored[0]) == {
-        "doc_id", "source", "page", "chunk_index", "text",
-        "department", "classification", "effective_date", "superseded_by",
+        "doc_id",
+        "source",
+        "page",
+        "chunk_index",
+        "text",
+        "department",
+        "classification",
+        "effective_date",
+        "superseded_by",
     }
     by_doc = {p["doc_id"]: p for p in stored}
     assert by_doc["loan-old"]["superseded_by"] == "loan-new"
@@ -257,3 +264,39 @@ def test_malformed_cached_embeddings_are_embedded_again(corpus, calls, client, v
 
     assert calls["embed"] == 2  # recomputed once, then the repaired entry is a hit
     assert len(payloads(client)) == 4
+
+
+@pytest.mark.parametrize(
+    ("kind", "edit"),
+    [
+        ("parsed", lambda v: [{**p, "page": p["page"] - 1} for p in v]),  # PR47-F01: page 0
+        ("embedded", lambda v: {**v, "sparse": [{"indices": [-1], "values": [0.5]}] * len(v["sparse"])}),
+        ("embedded", lambda v: {**v, "sparse": [{"indices": [7, 7], "values": [0.5, 0.5]}] * len(v["sparse"])}),
+        ("embedded", lambda v: {**v, "dense": [[float("nan")] * len(d) for d in v["dense"]]}),
+        ("embedded", lambda v: {**v, "sparse": [{"indices": [7], "values": [float("inf")]}] * len(v["sparse"])}),
+    ],
+)
+def test_cached_values_the_store_rejects_are_recomputed_once(corpus, calls, client, kind, edit):
+    ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025"])
+    entry = corpus / f"cache/{kind}/fee-2025.json"
+    _replace_cached_value(entry, edit(json.loads(entry.read_text(encoding="utf-8"))["value"]))
+
+    assert ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025"]) == 0
+    assert ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025"]) == 0
+
+    assert (len(calls["parse"]), calls["embed"]) == (2, 2)  # recomputed once; the repaired entry is then a hit
+    assert len(payloads(client)) == 4
+
+
+@pytest.mark.parametrize("flags", [[], ["--no-cache"]])
+def test_freshly_computed_invalid_values_fail_without_a_retry(corpus, calls, client, monkeypatch, capsys, flags):
+    def embed(texts):
+        calls["embed"] += 1
+        return [[float("nan")] * emb.DIM for _ in texts], [{"indices": [7], "values": [0.5]} for _ in texts]
+
+    monkeypatch.setattr(emb, "embed", embed)
+
+    assert ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025", *flags]) == 1
+
+    assert "LỖI  fee-2025: ValidationError" in capsys.readouterr().out
+    assert (len(calls["parse"]), calls["embed"]) == (1, 1)  # nothing came from the cache: no second attempt
