@@ -29,8 +29,8 @@ services:
     image: ghcr.io/berriai/litellm:v1.106.6
     command: ["--config", "/app/config.yaml", "--host", "0.0.0.0", "--port", "4000"]
     environment:
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GEMINI_MODEL: gemini/${GEMINI_MODEL:-gemini-flash-latest}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: openai/${OPENAI_MODEL:-gpt-6-luna}
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?Set a random sk- prefixed gateway key in .env.local}
     volumes: [./litellm/config.yaml:/app/config.yaml:ro]
     ports: ["127.0.0.1:4000:4000"]

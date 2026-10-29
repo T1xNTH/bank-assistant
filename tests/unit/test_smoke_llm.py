@@ -25,7 +25,9 @@ def test_checks_both_aliases_with_auth(monkeypatch, capsys):
         assert request.get_header("Authorization") == "Bearer sk-test-secret"
         payload = json.loads(request.data)
         if payload["model"] == "cloud-chat":
-            assert payload["reasoning_effort"] == "low"
+            assert payload["reasoning_effort"] == "none"
+            assert "max_completion_tokens" in payload
+            assert "max_tokens" not in payload
         else:
             assert "reasoning_effort" not in payload
         seen.append(payload["model"])
@@ -74,3 +76,18 @@ def test_connection_reset_is_a_failed_smoke_without_traceback(monkeypatch, capsy
     monkeypatch.setattr(smoke.urllib.request, "urlopen", reset)
     assert smoke.main() == 1
     assert "private network detail" not in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("content,expected", [('{"reply":"pong"}', 0),
+    ('{"reply":"other"}', 1), ('plain pong', 1)])
+def test_structured_smoke_requires_schema_compliant_content(monkeypatch, content, expected):
+    monkeypatch.setattr("sys.argv", ["smoke_llm", "--models", "cloud-chat", "--structured"])
+
+    def respond(request, timeout):
+        payload = json.loads(request.data)
+        assert payload["response_format"]["type"] == "json_schema"
+        assert payload["response_format"]["json_schema"]["strict"] is True
+        return io.BytesIO(json.dumps({"choices": [{"message": {"content": content}}]}).encode())
+
+    monkeypatch.setattr(smoke.urllib.request, "urlopen", respond)
+    assert smoke.main() == expected

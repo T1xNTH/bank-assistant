@@ -10,11 +10,11 @@ priority: 2
 # LLM gateway
 
 Run from the repository root with Docker (on Windows, use WSL).
-Copy `.env.example` to `.env.local` and set `GEMINI_API_KEY`, `GEMINI_MODEL`
-(bare model ID, default `gemini-flash-latest`) and a random
+Copy `.env.example` to `.env.local` and set `OPENAI_API_KEY`, `OPENAI_MODEL`
+(bare model ID, default `gpt-6-luna`) and a random
 `LITELLM_MASTER_KEY` beginning with `sk-` (required by Compose).
 Generate one with `python3 -c "import secrets; print('sk-'+secrets.token_hex(32))"`.
-Only LiteLLM receives the Gemini key.
+Only LiteLLM receives the OpenAI key.
 API receives the gateway key and uses `http://litellm:4000` inside Compose.
 All published ports bind to localhost. The gateway requires bearer authentication.
 
@@ -41,13 +41,17 @@ docker compose -f infrastructure/compose.yaml --env-file .env.local exec -T lite
 ```
 
 The smoke sends only a synthetic ping and checks for a nonempty answer. Cloud
-ping requests use `reasoning_effort=low` and a 2048-token budget so a reasoning
-model can produce an answer within the smoke limit. This affects only the smoke.
-Cloud checks call Gemini and can consume quota. Errors print status/type without keys
+ping requests use `reasoning_effort=none` and `max_completion_tokens=2048` for the
+default economical OpenAI model `gpt-6-luna`. This affects only the smoke.
+Cloud checks call OpenAI and can consume quota. Errors print status/type without keys
 or provider response bodies. CI starts LiteLLM without credentials, and does not
 download local weights or make paid model requests. CI generates an ephemeral
 gateway key before rendering Compose.
 
+To verify OpenAI structured output with synthetic input:
+`python3 scripts/smoke_llm.py --models cloud-chat --structured`.
+The default model and pricing are recorded in `docs/12-ai/ai-design.md` under CR-008.
+
 Alias configuration follows the official [LiteLLM config reference](https://docs.litellm.ai/docs/proxy/configs),
-[Gemini provider](https://docs.litellm.ai/docs/providers/gemini), and
+[OpenAI provider](https://docs.litellm.ai/docs/providers/openai), and
 [Ollama chat provider](https://docs.litellm.ai/docs/providers/ollama).

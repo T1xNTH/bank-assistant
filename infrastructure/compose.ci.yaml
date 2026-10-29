@@ -15,5 +15,5 @@ services:
     ports: !reset []
   litellm:
     environment:
-      GEMINI_API_KEY: ""
+      OPENAI_API_KEY: ""
     ports: !reset []
