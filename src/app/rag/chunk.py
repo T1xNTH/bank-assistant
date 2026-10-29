@@ -122,6 +122,10 @@ def _table_chunks(table: str, size: int) -> list[str]:
     lines = table.splitlines()
     head_len = 2 if sep_row == 1 else 0
     head, rows = lines[:head_len], lines[head_len:]
+    if not rows:
+        # Docling exports a one-row table as header + separator. The header
+        # can contain all the data; retain it like any other oversized row.
+        return [table]
     chunks: list[str] = []
     current: list[str] = []
     for row in rows:

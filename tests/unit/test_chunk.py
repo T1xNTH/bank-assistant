@@ -1,5 +1,8 @@
 """chunk_pages: text and table chunking on hand-made pages."""
 
+import json
+from pathlib import Path
+
 import pytest
 
 from app.rag.chunk import chunk_pages
@@ -140,3 +143,34 @@ def test_words_are_only_cut_when_longer_than_size():
     assert "aaaaaaaaaa" in texts  # fits in size: kept whole although it leaves no room for overlap
     assert "".join(t for t in texts if set(t) == {"x"}) == long_word  # only the 25-char word is cut
     assert all(0 < len(t) <= 10 for t in texts)
+
+
+@pytest.mark.parametrize("size", [800, 500, 300])
+def test_single_row_table_over_size_is_kept_whole(size):
+    # Docling represents a one-row table as header + separator, even when the
+    # first row contains data rather than column labels.
+    label = ("Transfer service conditions and applicable charges " * 20).strip()
+    table = f"| {label} | 22.700.000 |\n|---|---|"
+
+    [chunk] = chunk_pages([_page(3, tables=[table])], size=size, overlap=0)
+
+    assert chunk == {"source": "nd293.pdf", "page": 3, "chunk_index": 0, "text": table}
+    assert len(chunk["text"]) > size  # same deliberate exception as an oversized data row
+
+
+@pytest.mark.parametrize(("size", "overlap"), [(500, 50), (300, 30), (100, 0)])
+def test_real_single_row_page_is_not_lost_when_size_is_reduced(size, overlap):
+    fixture = Path(__file__).parents[1] / "fixtures/chunk/52-nd-cp-page-56.json"
+    page = json.loads(fixture.read_text(encoding="utf-8"))["page"]
+    assert page["text"] == "" and len(page["tables"]) == 1
+
+    [chunk] = chunk_pages([page], size=size, overlap=overlap)
+
+    assert (chunk["source"], chunk["page"], chunk["chunk_index"]) == ("52-nd-cp.signed.pdf", 56, 0)
+    assert "Phương án được một tổ chức" in chunk["text"]
+    assert "Quyền và trách nhiệm" in chunk["text"]
+    assert len(chunk["text"].splitlines()) == 2
+
+
+def test_empty_table_still_produces_no_chunk():
+    assert chunk_pages([_page(1, tables=[" \n\t"])]) == []
