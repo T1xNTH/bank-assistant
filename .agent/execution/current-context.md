@@ -35,7 +35,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
-- **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; task review hoàn tất không phê duyệt các CR)`
+- **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
 - **Current Session ID**: `S-20261029-t006-final-fixes`
 
 ## Revision Provenance
