@@ -23,7 +23,6 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 
 | Session ID | Ngày bắt đầu | Ngày kết thúc | Owner | Task hoặc phạm vi | Kết quả | Tóm tắt | Link output và bằng chứng | Thay thế cho |
 |---|---|---|---|---|---|---|---|---|
-
 | `S-20261024-onboarding` | `2026-10-24` | `2026-10-24` | `trong-hung` | `R-001, M-001, M-002, E-001..E-016` | `completed` | `Kit installed; SRS, contract, architecture ingested; roadmap drafted; DEC-001..005 and RISK-001..004 recorded` | `docs/01-business/srs.md, .agent/planning/roadmap.md` | `none` |
 | `S-20261024-165137` | `2026-10-24` | `2026-10-24` | `trong-hung` | `E-001` | `completed` | `epic EPIC_PROPOSED -> EPIC_READY` | `.agent/planning/epics.md` | `none` |
 | `S-20261024-165137-2` | `2026-10-24` | `2026-10-24` | `trong-hung` | `E-002` | `completed` | `epic EPIC_PROPOSED -> EPIC_READY` | `.agent/planning/epics.md` | `none` |
@@ -242,13 +241,10 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261029-103441` | `2026-10-29` | `2026-10-29` | `trong-hung` | `T-009` | `completed` | `task review -> done` | `.agent/reports/review/T-009.md` | `none` |
 | `S-20261029-113000` | `2026-10-29` | `2026-10-29` | `claude-code-a (theo yêu cầu của trong-hung)` | `none` | `completed` | `tạo CR-008 (proposed): chuyển LLM cloud và judge RAGAS từ Gemini sang OpenAI qua LiteLLM; chờ trong-hung và teammate-b duyệt, chưa sửa baseline hay T-011` | `.agent/governance/change-requests/CR-008.md` | `none` |
 | `S-20261029-114500` | `2026-10-29` | `2026-10-29` | `claude-code-a (theo yêu cầu của trong-hung)` | `none` | `completed` | `CR-008 proposed -> approved: trong-hung duyệt, sự đồng ý của teammate-b do trong-hung báo lại (chưa xác nhận trên GitHub); PR #41 merge bằng quyền admin theo yêu cầu của trong-hung, bỏ qua review chéo của DEC-004` | `.agent/governance/change-requests/CR-008.md` | `none` |
-
 | `S-20261029-t011-openai-start` | `2026-10-29` | `2026-10-29` | `codex-b` | `T-011` | `completed` | `User requested pull latest main and switch to OpenAI under approved CR-008. Resume implementation for provider follow-up; preserve final Gemini evidence, no reviewer decision claimed` | `.agent/reports/implementation/T-011-openai.md` | `none` |
 | `S-20261029-112916` | `2026-10-29` | `2026-10-29` | `codex-b` | `T-011` | `completed` | `task blocked by BLOCKER-003` | `.agent/governance/blockers/BLOCKER-003.md` | `none` |
 | `S-20261029-113343` | `2026-10-29` | `2026-10-29` | `codex-b` | `T-011` | `completed` | `task blocked -> in-progress` | `.agent/execution/task-board.md` | `none` |
-
 | `S-20261029-t011-openai-review` | `2026-10-29` | `2026-10-29` | `codex-b` | `T-011` | `completed` | `Real OpenAI plain/strict structured acceptance passed; implementation supplement finalized and local handoff to claude-review-a recorded; task in-progress -> review. CLI has no supplement report target, immutable Gemini report preserved; no independent approval claimed` | `.agent/reports/implementation/T-011-openai.md` | `none` |
-
 | `S-20261029-t011-pr-package` | `2026-10-29` | `2026-10-29` | `codex-b` | `T-011` | `completed` | `User authorized publishing PRs. Split tested source 3dbce64 into four dependent PRs below 400 changed lines; Claude CLI available but unauthenticated, so publish drafts with independent review pending. Separate template repair PR; no self-approval or merge` | `.agent/reports/implementation/T-011-pr-handoff.md` | `none` |
-
 | `S-20261029-t011-single-pr` | `2026-10-29` | `2026-10-29` | `codex-b` | `T-011` | `completed` | `User requested one PR and another reviewer. Published consolidated PR50 against main; supersede split PR42-46 without merging, preserve history. User-requested size exception; independent review/owner approval and CI remain required` | `.agent/reports/implementation/T-011-single-pr-handoff.md` | `none` |
+| `S-20261029-t011-pr50-fixes` | `2026-10-29` | `2026-10-29` | `codex-b` | `T-011` | `completed` | `User requested PR50 comment fixes: container Langfuse DNS, judge alias docs/example, gateway index and contiguous Markdown tables; Compose checks 3 passed; task remains review` | `.agent/reports/implementation/T-011-PR50-fixes.md` | `none` |

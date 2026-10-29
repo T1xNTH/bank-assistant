@@ -26,7 +26,9 @@ def config(*extra):
     return json.loads(result.stdout)["services"]
 
 
-def test_core_excludes_ollama_and_isolates_provider_key():
+def test_core_excludes_ollama_and_isolates_provider_key(monkeypatch):
+    # Host-side tracing URLs must not override the API container's service DNS.
+    monkeypatch.setenv("LANGFUSE_BASE_URL", "http://127.0.0.1:3000")
     services = config()
     assert "litellm" in services
     assert "ollama" not in services
@@ -35,6 +37,7 @@ def test_core_excludes_ollama_and_isolates_provider_key():
     assert services["litellm"]["environment"]["OPENAI_MODEL"] == "openai/test-model"
     assert all("GEMINI_API_KEY" not in service.get("environment", {}) for service in services.values())
     assert services["api"]["environment"]["LLM_BASE_URL"] == "http://litellm:4000"
+    assert services["api"]["environment"]["LANGFUSE_BASE_URL"] == "http://langfuse:3000"
     assert all(port["host_ip"] == "127.0.0.1" for service in services.values()
                for port in service.get("ports", []))
 
