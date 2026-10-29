@@ -1,12 +1,14 @@
 """scripts/ingest.py with a fake parser and embedder and an in-memory Qdrant."""
 
 import csv
+import json
 from pathlib import Path
 
 import pytest
 import qdrant_client
 from qdrant_client import QdrantClient
 
+from app.rag import chunk as chunking
 from app.rag import embed as emb
 from app.rag import parse_docling
 from scripts import ingest
@@ -154,10 +156,56 @@ def test_unknown_only_doc_id_is_an_error(corpus, calls, client, capsys):
     assert "ghost" in capsys.readouterr().out and calls["parse"] == []
 
 
-def test_corrupt_cache_entry_is_recomputed(corpus, calls, client):
+@pytest.mark.parametrize("content", ["{not json", "[]", "key without value"])
+def test_corrupt_cache_entry_is_recomputed(corpus, calls, client, content):
     ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025"])
-    (corpus / "cache/parsed/fee-2025.json").write_text("{not json", encoding="utf-8")
+    entry = corpus / "cache/parsed/fee-2025.json"
+    if content == "key without value":  # the right key, so only the shape check makes it a miss
+        content = json.dumps({"key": json.loads(entry.read_text(encoding="utf-8"))["key"]})
+    entry.write_text(content, encoding="utf-8")
+
+    assert ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025"]) == 0
+    assert len(calls["parse"]) == 2
+
+
+def test_changed_chunk_texts_are_embedded_again_with_the_cache_on(corpus, calls, client, monkeypatch):
+    ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025"])
+    # The parse cache still applies; only a different chunker (as CR-009) changes the texts.
+    real = chunking.chunk_pages
+    renamed = lambda pages: [{**c, "text": "Mới: " + c["text"]} for c in real(pages)]  # noqa: E731
+    monkeypatch.setattr(chunking, "chunk_pages", renamed)
+
+    ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025"])
+
+    assert len(calls["parse"]) == 1 and calls["embed"] == 2
+    assert all(p["text"].startswith("Mới: ") for p in payloads(client))
+
+
+def test_a_parser_change_parses_again(corpus, calls, client, monkeypatch):
+    ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025"])
+    monkeypatch.setattr(ingest, "_parser_version", lambda: "another parser")
 
     ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025"])
 
     assert len(calls["parse"]) == 2
+
+
+def test_a_renamed_file_is_cited_by_its_new_name(corpus, calls, client):
+    ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025"])
+    (corpus / "fee.pdf").rename(corpus / "bieu-phi.pdf")
+    manifest = (corpus / "manifest.csv").read_text(encoding="utf-8").replace(",fee.pdf,", ",bieu-phi.pdf,")
+    (corpus / "manifest.csv").write_text(manifest, encoding="utf-8")
+
+    ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025"])
+
+    assert len(calls["parse"]) == 1  # same bytes: served from the cache
+    assert {p["source"] for p in payloads(client)} == {"bieu-phi.pdf"}
+
+
+def test_summary_is_printed_when_every_document_fails(corpus, calls, client, monkeypatch, capsys):
+    monkeypatch.setattr(parse_docling, "parse", lambda path: (_ for _ in ()).throw(RuntimeError("boom")))
+
+    assert ingest.main(["--data", str(corpus), "--collection", COLLECTION]) == 1
+
+    out = capsys.readouterr().out
+    assert "FAIL  0/4 tài liệu" in out and "0 point" in out

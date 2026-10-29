@@ -235,3 +235,5 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261029-124421` | `2026-10-29` | `2026-10-29` | `trong-hung` | `T-010` | `completed` | `verify 'make check' passed` | `.agent/reports/implementation/T-010.md` | `none` |
 | `S-20261029-124533` | `2026-10-29` | `2026-10-29` | `claude-code-a` | `T-010` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-010.md` | `none` |
 | `S-20261029-124533-2` | `2026-10-29` | `2026-10-29` | `claude-code-a` | `T-010` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-010.md` | `none` |
+| `S-20261029-124841` | `2026-10-29` | `2026-10-29` | `claude-review-a` | `T-010` | `completed` | `review started` | `.agent/reports/review/T-010.md` | `none` |
+| `S-20261029-124950` | `2026-10-29` | `2026-10-29` | `claude-review-a` | `T-010` | `completed` | `review approved` | `.agent/reports/review/T-010.md` | `none` |

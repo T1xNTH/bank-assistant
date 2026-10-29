@@ -40,6 +40,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--only", nargs="+", metavar="DOC_ID", help="chỉ ingest các doc_id này")
     parser.add_argument("--no-cache", action="store_true", help="parse và embed lại, bỏ qua cache")
     args = parser.parse_args(argv)
+    try:  # Windows writes cp1252 to a redirected stdout; the progress lines are Vietnamese
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
     from qdrant_client import QdrantClient
 
@@ -87,7 +91,8 @@ def _run(rows: list[dict], data: Path, collection: str, cache: Path | None, clie
             f" ({stats['cached']}), {time.time() - began:.0f}s",
             flush=True,
         )
-    total = client.count(collection, exact=True).count
+    # Every document may have failed before the collection was created.
+    total = client.count(collection, exact=True).count if client.collection_exists(collection) else 0
     print(
         f"{'FAIL' if failed else 'OK'}  {len(rows) - len(failed)}/{len(rows)} tài liệu, {pages} trang,"
         f" {chunks} chunk; collection {collection}: {total} point; {(time.time() - start) / 60:.1f} phút"
@@ -104,6 +109,7 @@ def ingest_document(row: dict, data: Path, collection: str, cache: Path | None, 
 
     pdf = data / row["file"]
     pages, parse_hit = _parsed(pdf, row["doc_id"], cache)
+    pages = [{**p, "source": pdf.name} for p in pages]  # cached pages keep the name the file had when parsed
     chunks = chunk_pages(pages)
     dense, sparse, embed_hit = _embedded([c["text"] for c in chunks], row["doc_id"], cache)
     meta = {k: row[k] for k in META_FIELDS} | {"doc_id": row["doc_id"]}
@@ -151,6 +157,8 @@ def _load(cache: Path | None, kind: str, doc_id: str, key: str):
         stored = json.loads(file.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None  # a corrupt cache entry is recomputed, not trusted
+    if not isinstance(stored, dict) or "value" not in stored:
+        return None
     return stored["value"] if stored.get("key") == key else None
 
 
