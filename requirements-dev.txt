@@ -1,5 +1,4 @@
 -r requirements.txt
 pytest>=8
-httpx2>=2.14  # starlette TestClient backend (httpx is deprecated there)
 ruff>=0.6
 reportlab==5.1.0  # builds Vietnamese PDF fixtures for parser tests
