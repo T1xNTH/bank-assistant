@@ -19,7 +19,7 @@ Track independent T-014 review findings T014-F01 and T014-F02.
 - **Title**: `Deployed API registry unavailable and sample provisioning incompatible`
 - **Owner**: `teammate-b`
 - **Reporter**: `codex-review-t014`
-- **Status**: `open`
+- **Status**: `resolved`
 - **Issue Type**: `defect`
 - **Priority**: `2`
 - **Created Date**: `2026-10-29`
@@ -59,23 +59,23 @@ digest map. Provisioning into a copy succeeds but produces an unusable registry.
 ## Acceptance Criteria
 
 - [x] Root causes and proposed corrections are recorded in independent review.
-- [ ] Provide the registry through a read-only directory mount without baking keys into the image.
-- [ ] Verify deployed valid/missing/invalid keys and atomic-registry replacement or revocation.
-- [ ] Align sample schema and verify sample-to-provision-to-authenticate workflow.
+- [x] Provide the registry through a read-only directory mount without baking keys into the image.
+- [x] Verify deployed valid/missing/invalid keys and atomic-registry replacement or revocation.
+- [x] Align sample schema and verify sample-to-provision-to-authenticate workflow.
 
 ## Resolution
 
-- **Resolution Type**: `not-applicable`
-- **Resolution Summary**: Open; executor correction and independent follow-up review pending.
-- **Verification Evidence**: `.agent/reports/review/T-014.md`
-- **Resolved By**: `none`
-- **Resolved Date**: `none`
+- **Resolution Type**: `fixed`
+- **Resolution Summary**: Source correction 7f0fa00 independently verified by codex-review-t014: readonly directory mount, valid sample schema, shared provisioning/auth validation, and regression coverage. First-round observations above remain historical evidence.
+- **Verification Evidence**: `.agent/reports/review/T-014-round-2.md`; WSL make check 183 passed/11 deselected in 63.25s, Ruff/framework pass; actual Docker Compose smoke valid 200, missing/invalid 401, atomic replacement revocation 401 without restart. Existing image with current readonly source bind used; no fresh image build claimed.
+- **Resolved By**: `codex-review-t014`
+- **Resolved Date**: `2026-10-29`
 
 ## Completion Criteria
 
-- [ ] Acceptance criteria pass or a disposition is formally accepted.
-- [ ] Resolution evidence is linked.
-- [ ] Task and review records reflect the result.
+- [x] Acceptance criteria pass or a disposition is formally accepted.
+- [x] Resolution evidence is linked.
+- [x] Task and review records reflect the result.
 
 ## Forbidden Actions
 
