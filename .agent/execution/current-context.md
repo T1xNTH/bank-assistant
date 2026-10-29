@@ -22,21 +22,21 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `17`
+- **Context Revision**: `24`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-29`
-- **Updated By**: `claude-code-a`
-- **Update Trigger**: `merge main (T-006 PR #30) vào nhánh T-009 (PR #38); gộp revision 15 của main và revision 16 của nhánh`
+- **Updated By**: `codex-b`
+- **Update Trigger**: `PR #49 re-review: synchronize E-006/T-014 state and board evidence`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 review); E-003 (EPIC_IN_PROGRESS; T-005 review); E-004..E-009 (EPIC_READY)`
-- **Active Task IDs**: `T-002, T-004, T-009`
+- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005 review); E-005 (EPIC_IN_PROGRESS); E-006 (EPIC_IN_PROGRESS; T-014 review); E-004, E-007..E-009 (EPIC_READY)`
+- **Active Task IDs**: `T-002, T-009, T-011, T-014`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261029-t006-final-fixes`
+- **Current Session ID**: `S-20261029-t014-pr49-review-fixes`
 
 ## Revision Provenance
 
@@ -53,3 +53,21 @@ T-006 follow-up is implemented and verified (101 unit tests, 3 real OCR integrat
 Revision 15 starts T009 from main3d83f4f; T005 closure is recorded by PR36, and T004 PR34 is merged b51d544 (its board closure is separate from this task). User explicitly authorized implementation of issue10; accountable owner A is retained.
 
 Revision16 records independent Codex T009 review APPROVED (WSL makecheck77passed/4deselected71.81s; real integration4passed11.11s), followed by native Windows QA24passed10.00s. Revision15 is committed in d1b30eb. Task remains review and E003 remains active; other human owner approval pending PR38.
+
+Revision 18 starts T-011 (issue #12) on feat/T-011-litellm-ollama from main fc06249. E-005 transitioned via lifecycle CLI to EPIC_IN_PROGRESS; dependency T-003 is done. Owner teammate-b retained. Scope: gateway services, aliases, credential isolation and verification. No independent review or completion is claimed.
+
+T-011 implementation dec03dd is verified by WSL make check (138 passed) and the final 9 focused checks. LiteLLM/Ollama healthy, real local-chat ping and gateway auth passed. Cloud acceptance remains blocked by empty GEMINI_API_KEY (BLOCKER-002); task/report are blocked/draft, independent reviewer claude-review-a is not yet requested. No done or approval claim.
+
+Revision 19 records the user credential follow-up: BLOCKER-002 resolved after both cloud-chat and local-chat passed real gateway smoke at host port 4000. Follow-up source df1fe4a adapts only smoke reasoning/token settings. Final focused verification 9 passed in 1.68s, Ruff and framework validation passed. Implementation report finalized; lifecycle CLI requested claude-review-a and moved T-011 to review. No independent review approval or done/merge is claimed.
+
+Revision 20: user requested latest code and OpenAI migration. Main 3ad1cb9 (approved CR-008) merged into T-011 with both session/commit histories retained. The user explicitly resumes T-011 implementation for the provider follow-up; prior Gemini final report remains immutable and does not validate OpenAI. New evidence belongs to T-011-openai.md. OPENAI_API_KEY is currently empty; no exposed chat key is reused. Root workspace branch feat/T-011-openai will receive the tested implementation by fast-forward.
+
+OpenAI follow-up e81fddf: make check 167 passed/17 deselected; controlled gateway tests 15 passed (real LiteLLM, fake OpenAI, strict output and single upstream call on 429). BLOCKER-003 records missing local OPENAI_API_KEY; task is blocked, new report remains draft and no new independent review is claimed.
+
+Revision 21: user explicitly supplied the OpenAI credential for verification. Model access and real cloud-chat plain + strict structured smoke both passed via :4000 (56 input/15 output tokens total, estimated USD 0.00001310). BLOCKER-003 resolved, OpenAI implementation report finalized, task/board agree on review. Supplement handoff to claude-review-a recorded locally; no actual independent review, approval or merge is claimed. Root legacy untracked review reports still cause validator errors; tested clean worktree validation passes.
+
+Revision 22: PR #48 review follow-up synchronizes T-004 done with the task board and removes it from active tasks. Owner A approved PR #34 and CI follow-up PR #39, merged on 2026-10-28 as `b51d544` and `3d66a1e`; task closure was recorded on 2026-10-29. Existing evidence is `.agent/reports/review/T-004-followup.md` and `.agent/reports/qa/T-004-followup.md`; no new independent review is claimed. ISSUE-011 remains triaged, and E-002 remains EPIC_IN_PROGRESS because branch protection is still pending.
+
+Revision 23 merges main `603c80a` into PR #48: retain main's approved CR-009 state and T-010 records alongside the T-004 closure from revision 22. Preserve both branches' session and commit histories; no new task completion or approval is claimed.
+
+Revision 24 addresses PR #49 re-review at `ea1519b`: synchronize E-006 EPIC_IN_PROGRESS and T-014 review with the existing epic/task/board records, and add the archived Claude review and resolution report to the T-014 board evidence. PR #48 merged as `c882f55`; PR #49 is based on main. T-014 remains review pending counterpart approval and merge; no new approval or task completion is claimed.

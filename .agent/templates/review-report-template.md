@@ -20,7 +20,7 @@ Dùng template này để ghi lại đánh giá của một Reviewer Agent độ
 - **Owner**: `<required-person-or-agent-id>`
 - **Reviewer**: `<required-person-or-agent-id>`
 - **Executor**: `<executor-id>`
-- **Status**: `draft | changes-requested | approved | blocked | superseded`
+- **Status**: `draft | changes-required | approved | rejected | superseded`
 - **Decision**: `APPROVED | CHANGES_REQUESTED | BLOCKED`
 - **Review Type**: `code | architecture | documentation | security | performance | governance | release`
 - **Task ID**: `TASK-ID`
