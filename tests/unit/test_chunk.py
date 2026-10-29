@@ -302,3 +302,25 @@ def test_a_long_heading_path_keeps_the_innermost_heading_within_a_quarter_of_siz
     header = chunk["text"].split("\n")[0]
     assert len(header) <= 100 and header.startswith("Điều 12.") and header.endswith("…")
     assert chunk["text"].endswith("\nNội dung.")
+
+
+def test_an_untitled_fee_schedule_takes_its_first_line_as_the_title_of_every_chunk():
+    title = "Biểu phí thẻ Ghi nợ nội địa (doanh nghiệp)"
+    pages = [
+        _page(1, f"{title}\n\n(Hiệu lực từ ngày 22/4/2026)", ["\n".join([HEADER, ROWS[0]])]),
+        _page(2, "Phí cấp lại PIN.", ["\n".join([HEADER, ROWS[1]])]),
+        _page(3, "## Tệp đính kèm\n\nMẫu đề nghị."),
+    ]
+
+    assert _texts(chunk_pages(pages)) == [
+        f"{title}\n(Hiệu lực từ ngày 22/4/2026)\nPhí cấp lại PIN.",
+        f"{title}\n{HEADER}\n{ROWS[0]}",
+        f"{title}\n{HEADER}\n{ROWS[1]}",
+        f"{title} › Tệp đính kèm\nMẫu đề nghị.",
+    ]
+
+
+def test_a_document_of_plain_text_keeps_its_first_line_as_text_only():
+    [chunk] = chunk_pages([_page(1, f"{SENTENCE}\n\nCâu thứ hai.")])
+
+    assert chunk["text"] == f"{SENTENCE}\nCâu thứ hai."

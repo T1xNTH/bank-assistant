@@ -51,18 +51,34 @@ def chunk_pages(pages: list[dict], size: int = 800, overlap: int = 100) -> list[
     # An appendix heading alone does not make a fee schedule a legal text.
     lines = [line.strip().removeprefix("## ") for p in pages for line in p["text"].splitlines()]
     legal = any(pattern.match(line) for line in lines for pattern in _LEGAL)
+    # A fee schedule (tables, no legal headings) whose first line docling did not mark as a heading
+    # is named by that line; it heads every chunk, above later headings, so that its tables are not
+    # confused with another schedule's.
+    raw = [line.strip() for p in pages for line in p["text"].splitlines() if line.strip()]
+    title = (
+        not legal
+        and raw
+        and _level(raw[0], legal) is None
+        and any(p["tables"] for p in pages)
+        and len(raw[0]) <= size // 4
+    )
     out: list[tuple[int, int, int, str]] = []  # (page, text 0 / table 1, order, text): sorted into reading order
     levels: dict[int, str] = {}  # heading level -> heading text of the open section
     section: list[tuple[int, str]] = []  # (page, line) of the open section
 
     def close() -> None:
-        for page, text in _section_chunks(_header(levels, size), section, size, overlap):
+        header = _header(levels, size)
+        for page, text in _section_chunks(header, section, size, overlap):
+            if header and text.startswith(f"{header}\n{header}\n"):
+                text = text[len(header) + 1 :]  # the title line heading its own section
             out.append((page, 0, len(out), text))
         section.clear()
 
     for page in pages:
         for line in (line.strip() for line in page["text"].splitlines()):
             level = _level(line, legal)
+            if title and line:
+                levels[-1], title = _clean(line), False  # also kept as text: it may be the only mention
             if level is None:
                 if line:
                     section.append((page["page"], _clean(line)))  # a non-heading "## " line keeps its words only
