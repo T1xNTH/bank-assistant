@@ -24,3 +24,4 @@ priority: 3
 | `T-006` | `804438c (squash)` | `#30` | `.agent/reports/implementation/T-006.md, .agent/reports/implementation/T-006-PR30-final-fixes.md` | `squash merge 804438c vào main (PR #30), teammate-b approve a715f34 ngày 2026-10-29; task done ghi trong PR #35` |
 | `T-008` | `71e53b1 (executor)` | `#37` | `.agent/reports/implementation/T-008.md` | `embed bge-m3; hash squash bổ sung sau khi merge` |
 | `T-007` | `7b9e530, 86d011d (executor); 1c286f4 (review)` | `#35` | `.agent/reports/implementation/T-007.md` | `chunk_pages; hash squash bổ sung sau khi merge` |
+| `T-007` | `e749541e783dd5dc30b5704bc6c0a30ed665c054` | `#35` | `.agent/reports/implementation/T-007-PR35-F01.md` | `PR35-F01: retain oversized single-row tables; real PDF56 fixture and 7 regression cases; Codex implementation follows user request, independent review pending` |
