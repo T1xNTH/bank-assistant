@@ -36,6 +36,16 @@ Trên Windows, tiến độ được in ra theo UTF-8, kể cả khi chuyển h�
 - Chạy lại luôn hội tụ về cùng một tập point. Nếu một tài liệu ra ít chunk hơn lần trước, các chunk thừa bị xóa (`replace_document`). Đây là bước cần làm sau khi sửa `superseded_by` trong manifest, ví dụ ISSUE-010.
 - Tài liệu bị xóa khỏi manifest **không** tự bị xóa khỏi Qdrant. Muốn xóa thì xóa collection rồi ingest lại.
 
+## Cách chia chunk
+
+`chunk_pages` (`src/app/rag/chunk.py`, CR-009) chia theo cấu trúc văn bản, không theo trang:
+- Văn bản pháp luật được cắt ở Phần, Chương, Mục, Điều và Phụ lục, kể cả trang OCR không có `## ` và số La Mã bị OCR đọc sai (IH, VH, VỊ, H, EV). Dòng bắt đầu như tiêu đề nhưng tiếp theo là chữ thường ("Phụ lục II ban hành kèm theo…") vẫn là nội dung. Văn bản không có các đầu mục này (biểu phí, điều khoản ngân hàng) được cắt ở tiêu đề `## ` của docling; biểu phí không có tiêu đề lấy dòng đầu làm tiêu đề.
+- Mỗi chunk mở đầu bằng một dòng đường dẫn tiêu đề, ví dụ `Chương III … › Mục 1 … › Điều 13. Mức lương hưu hằng tháng`, tối đa `size // 4` ký tự. Phần mở đầu văn bản (quốc hiệu, căn cứ) không có dòng này.
+- Không mất chữ của tiêu đề nào: tiêu đề không vừa đường dẫn thì nằm ở đầu nội dung; Điều không có nội dung (ví dụ "Điều 6. (được bãi bỏ)") thành một chunk riêng.
+- Một Điều vắt qua hai trang là một khối liền; `page` là trang bắt đầu của chunk. Bảng vẫn chia giữa các hàng, lặp lại header, thêm dòng tiêu đề của đầu mục chứa bảng.
+
+Đổi cách chia thì chạy lại `scripts/ingest.py`: chỉ phải embed lại, kết quả parse lấy từ cache.
+
 ## Cache
 
 Parse cả bộ 30 PDF mất khoảng 1 giờ trên CPU, nên kết quả được cache theo từng tài liệu trong `<data>/cache/` (git bỏ qua vì nằm trong `data/`):

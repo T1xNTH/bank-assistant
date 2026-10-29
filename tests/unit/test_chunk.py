@@ -297,11 +297,14 @@ def test_a_long_heading_path_keeps_the_innermost_heading_within_a_quarter_of_siz
     chapter = "## Chương III " + "QUY ĐỊNH VỀ QUẢN LÝ " * 10
     article = "## Điều 12. " + "Trách nhiệm của tổ chức tín dụng " * 5
 
-    [chunk] = chunk_pages([_page(1, f"{chapter}\n\n{article}\n\nNội dung.")], size=400)
+    first, chunk = chunk_pages([_page(1, f"{chapter}\n\n{article}\n\nNội dung.")], size=400)
 
     header = chunk["text"].split("\n")[0]
     assert len(header) <= 100 and header.startswith("Điều 12.") and header.endswith("…")
     assert chunk["text"].endswith("\nNội dung.")
+    # Neither heading survives whole in a path, so each one's words start the text of a chunk.
+    assert " ".join(chunk["text"].split("\n")[1:-1]) == article.removeprefix("## ").strip()
+    assert " ".join(first["text"].split("\n")[1:]) == chapter.removeprefix("## ").strip()
 
 
 def test_an_untitled_fee_schedule_takes_its_first_line_as_the_title_of_every_chunk():
@@ -324,3 +327,103 @@ def test_a_document_of_plain_text_keeps_its_first_line_as_text_only():
     [chunk] = chunk_pages([_page(1, f"{SENTENCE}\n\nCâu thứ hai.")])
 
     assert chunk["text"] == f"{SENTENCE}\nCâu thứ hai."
+
+
+def test_a_heading_without_text_is_kept_as_a_chunk_of_its_own():
+    text = (
+        "## Điều 8. Bãi bỏ Điều 32c và Điều 32h\n\n"
+        "## Điều 9. Hiệu lực thi hành\n\nThông tư có hiệu lực từ 01/7/2026."
+    )
+
+    assert _texts(chunk_pages([_page(1, text)])) == [
+        "Điều 8. Bãi bỏ Điều 32c và Điều 32h",
+        "Điều 9. Hiệu lực thi hành\nThông tư có hiệu lực từ 01/7/2026.",
+    ]
+
+
+def test_a_heading_carried_by_the_next_path_is_not_repeated_on_its_own():
+    text = "## Chương I NHỮNG QUY ĐỊNH CHUNG\n\n## Điều 1. Phạm vi điều chỉnh\n\nNghị định này quy định chi tiết."
+
+    assert _texts(chunk_pages([_page(1, text)])) == [
+        "Chương I NHỮNG QUY ĐỊNH CHUNG › Điều 1. Phạm vi điều chỉnh\nNghị định này quy định chi tiết."
+    ]
+
+
+def test_a_repealed_article_at_the_end_of_the_document_is_kept():
+    text = "## Điều 5. Phạm vi\n\nNội dung.\n\n## Điều 6. (được bãi bỏ)"
+
+    assert _texts(chunk_pages([_page(1, text)]))[-1] == "Điều 6. (được bãi bỏ)"
+
+
+def test_consecutive_headings_of_a_fee_schedule_nest():
+    text = (
+        "## Dịch vụ ngân hàng điện tử\n\n## BIỂU PHÍ DỊCH VỤ ÁP DỤNG CHO KHÁCH HÀNG TỔ CHỨC\n\n"
+        "## DỊCH VỤ NGÂN HÀNG ĐIỆN TỬ\n\nPhí duy trì.\n\n## Phí khác\n\nPhí in sao kê."
+    )
+
+    assert _texts(chunk_pages([_page(1, text)])) == [
+        "Dịch vụ ngân hàng điện tử › BIỂU PHÍ DỊCH VỤ ÁP DỤNG CHO KHÁCH HÀNG TỔ CHỨC › DỊCH VỤ NGÂN HÀNG ĐIỆN TỬ\n"
+        "Phí duy trì.",
+        "Phí khác\nPhí in sao kê.",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("line", "path"),
+    [
+        ("Chương IH CHẾ ĐỘ BẢO HIỂM XÃ HỘI", "Chương IH CHẾ ĐỘ BẢO HIỂM XÃ HỘI"),
+        ("Chương VỊ. - QUY ĐỊNH CHUYỂN TIẾP", "Chương VỊ. - QUY ĐỊNH CHUYỂN TIẾP"),
+        ("Chương H QUẢN LÝ LAO ĐỘNG", "Chương H QUẢN LÝ LAO ĐỘNG"),
+        ("Phụ lục EV", "Phụ lục EV"),
+        ("## - Chương X - - NHỮNG QUY ĐỊNH RIÊNG", "Chương X - - NHỮNG QUY ĐỊNH RIÊNG"),
+    ],
+)
+def test_ocr_misread_roman_numerals_still_open_a_chapter(line, path):
+    text = f"## Chương I NHỮNG QUY ĐỊNH CHUNG\n\n## Điều 1. Phạm vi\n\nA.\n\n{line}\n\n## Điều 13. Mức đóng\n\nB."
+
+    assert _texts(chunk_pages([_page(1, text)]))[-1] == f"{path} › Điều 13. Mức đóng\nB."
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "Phụ lục II ban hành kèm theo Nghị định số 135/2020/NĐ-CP",
+        "Chương II của Nghị định này được sửa đổi",
+        "Mục 1: Số dư tiền mặt tại thời điểm cuối ngày",
+        "Mục 1.1: Tiền gửi không kỳ hạn",
+        "- Chương II quy định về hợp đồng",  # a list item, not a marked heading
+    ],
+)
+def test_body_lines_that_start_like_headings_stay_text(line):
+    text = f"## Chương I NHỮNG QUY ĐỊNH CHUNG\n\n## Điều 1. Phạm vi\n\n{line}\n\nCâu tiếp theo."
+
+    assert _texts(chunk_pages([_page(1, text)])) == [
+        f"Chương I NHỮNG QUY ĐỊNH CHUNG › Điều 1. Phạm vi\n{line}\nCâu tiếp theo."
+    ]
+
+
+def test_a_short_first_line_without_tables_is_not_a_title():
+    assert _texts(chunk_pages([_page(1, "Lưu ý chung\n\nNội dung.\n\n## Phí khác\n\nPhí in sao kê.")])) == [
+        "Lưu ý chung\nNội dung.",
+        "Phí khác\nPhí in sao kê.",
+    ]
+
+
+def test_a_first_line_longer_than_a_quarter_of_size_is_not_a_title():
+    first = "Biểu phí áp dụng cho khách hàng " * 3  # > 200 // 4
+    chunks = chunk_pages([_page(1, f"{first}\n\nNội dung.", ["\n".join([HEADER, ROWS[0]])])], size=200, overlap=0)
+
+    assert chunks[-1]["text"] == f"{HEADER}\n{ROWS[0]}"
+
+
+def test_the_national_motto_is_not_a_heading_of_a_fee_schedule():
+    text = "## Biểu phí thẻ\n\nA.\n\n## CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\n\nB."
+
+    assert _texts(chunk_pages([_page(1, text)])) == ["Biểu phí thẻ\nA.\nCỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nB."]
+
+
+def test_a_marked_line_longer_than_300_characters_is_text():
+    long = "Phí dịch vụ " * 30  # > 300 characters
+    text = f"## Biểu phí thẻ\n\nA.\n\n## {long}"
+
+    assert _texts(chunk_pages([_page(1, text)], size=2000)) == [f"Biểu phí thẻ\nA.\n{long.strip()}"]

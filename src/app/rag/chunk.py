@@ -9,12 +9,18 @@ characters.
 
 - The text of all pages is read as one document and cut into sections at legal
   headings (Phần, Chương, Mục, Điều, Phụ lục; with or without docling's ``## ``).
-  A document without them is cut at docling's other ``## `` headings instead.
+  A heading must not continue in lower case ("Chương II của Nghị định này" is
+  body text); OCR misreadings of Roman numerals (IH, VH, VỊ, H, EV) are accepted.
+  A document without them is cut at docling's other ``## `` headings instead; a
+  ``## `` heading straight after another with no text between is its child.
   Text before the first heading is a section of its own. A section runs across
   page breaks; a chunk's ``page`` is the page its first new line comes from.
 - Every chunk of a section starts with one line naming its heading path, e.g.
   ``Chương II. ... › Điều 5. Mức tham chiếu``, capped at a quarter of ``size``
-  (outer levels are dropped first). The line counts towards ``size``.
+  (outer levels are dropped first). The line counts towards ``size``. A heading
+  that does not survive whole in that line starts its section's text, and one
+  with no text of its own that is not carried by the next section's path is a
+  chunk of its own, so no heading's words are lost.
 - Inside a section, paragraphs and list items (khoản, điểm) are packed greedily,
   one per line; longer ones are split recursively (lines, sentences, words), and
   each chunk after the first starts with up to ``overlap`` characters (whole
@@ -34,15 +40,17 @@ import re
 _SEPARATORS = ["\n\n", "\n", ". ", " "]
 _TABLE_SEPARATOR = re.compile(r"^\|?(\s*:?-{3,}:?\s*\|)*\s*:?-{3,}:?\s*\|?$")  # only |, -, : and spaces
 _SPACES = re.compile(r" {2,}")
+_ROMAN = r"[IVXLCHỊE]+"  # OCR reads II as H, III as IH, VI as VỊ, IV as EV
 _LEGAL = [  # outermost first; a heading clears the levels below it
-    re.compile(r"(PHẦN|Phần)\s+(THỨ\s+\S+|Thứ\s+\S+|[IVXLC]+|\d+)\b"),
-    re.compile(r"(CHƯƠNG|Chương)\s+[IVXLC\d]+\b"),
-    re.compile(r"(MỤC|Mục)\s+\d+\b"),
+    re.compile(rf"(PHẦN|Phần)\s+(THỨ\s+\S+|Thứ\s+\S+|{_ROMAN}|\d+)\b"),
+    re.compile(rf"(CHƯƠNG|Chương)\s+({_ROMAN}|\d+)\b"),
+    re.compile(r"(MỤC|Mục)\s+\d+\b(?![:.]\d|:)"),  # not form items such as "Mục 1:" or "Mục 1.1"
     re.compile(r"Điều\s+\d+[a-zđ]?\s*[.:]"),
 ]
-_APPENDIX = re.compile(r"(PHỤ LỤC|Phụ lục)\b")
+_APPENDIX = re.compile(rf"(PHỤ LỤC|Phụ lục)(\s+({_ROMAN}|\d+)\b)?")
 _BOILERPLATE = re.compile(r"CỘNG H[ÒO]A XÃ HỘI|Độc lập\s*-\s*Tự do", re.IGNORECASE)
 _PATH_SEPARATOR = " › "
+_NOISE = "-–•`' "  # OCR noise before a marked heading: "## - Chương X ..."
 
 
 def chunk_pages(pages: list[dict], size: int = 800, overlap: int = 100) -> list[dict]:
@@ -65,10 +73,18 @@ def chunk_pages(pages: list[dict], size: int = 800, overlap: int = 100) -> list[
     out: list[tuple[int, int, int, str]] = []  # (page, text 0 / table 1, order, text): sorted into reading order
     levels: dict[int, str] = {}  # heading level -> heading text of the open section
     section: list[tuple[int, str]] = []  # (page, line) of the open section
+    opened: tuple[int, str] | None = None  # (page, heading) that opened the section
 
-    def close() -> None:
+    def close(following: str | None) -> None:
+        """Emit the open section; ``following`` is the next section's heading path (None at the end)."""
         header = _header(levels, size)
-        for page, text in _section_chunks(header, section, size, overlap):
+        body = list(section)
+        if opened and opened[1] not in header:
+            body.insert(0, opened)  # the path was cut: the heading's own words go into the text
+        if not body and opened and (following is None or opened[1] not in following):
+            body = [opened]  # a heading with no text that the next path does not repeat
+            header = _header({k: v for k, v in levels.items() if v != opened[1]}, size)
+        for page, text in _section_chunks(header, body, size, overlap):
             if header and text.startswith(f"{header}\n{header}\n"):
                 text = text[len(header) + 1 :]  # the title line heading its own section
             out.append((page, 0, len(out), text))
@@ -83,15 +99,17 @@ def chunk_pages(pages: list[dict], size: int = 800, overlap: int = 100) -> list[
                 if line:
                     section.append((page["page"], _clean(line)))  # a non-heading "## " line keeps its words only
                 continue
-            close()
-            for deeper in [k for k in levels if k >= level]:
-                del levels[deeper]
-            levels[level] = _clean(line)
+            if not legal and opened and not section:
+                level = max(levels) + 1  # a "## " heading right under another one is its subheading
+            heading = _clean(line).lstrip(_NOISE) if line.startswith("## ") else _clean(line)
+            following = {k: v for k, v in levels.items() if k < level} | {level: heading}
+            close(_header(following, size))
+            levels, opened = following, (page["page"], heading)
         header = _header(levels, size)
         for table in page["tables"]:
             for text in _table_chunks(table, size - len(header) - 1 if header else size):
                 out.append((page["page"], 1, len(out), f"{header}\n{text}" if header else text))
-    close()
+    close(None)
     out.sort()
     return [
         {"source": pages[0]["source"], "page": page, "chunk_index": i, "text": text}
@@ -102,12 +120,13 @@ def chunk_pages(pages: list[dict], size: int = 800, overlap: int = 100) -> list[
 def _level(line: str, legal: bool) -> int | None:
     """Heading level of a line, or None for body text."""
     text = line.removeprefix("## ").strip()
+    if line.startswith("## "):
+        text = text.lstrip(_NOISE)
     if not text or len(text) > 300:
         return None
-    if _APPENDIX.match(text):
-        return 0
-    for level, pattern in enumerate(_LEGAL):
-        if pattern.match(text):
+    for level, pattern in [(0, _APPENDIX), *enumerate(_LEGAL)]:
+        match = pattern.match(text)
+        if match and not text[match.end() :].lstrip()[:1].islower():  # "Phụ lục II ban hành kèm theo ..." is text
             return level
     if line.startswith("## ") and not legal and not _BOILERPLATE.search(text):
         return 0  # documents without legal structure (fee schedules, bank terms)
