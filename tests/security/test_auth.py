@@ -126,12 +126,27 @@ def test_generated_keys_store_only_hashes(auth):
     assert len(json.loads(path.read_text())) == 3
 
 
-def test_key_generator_preserves_invalid_file(tmp_path):
+@pytest.mark.parametrize("content", ["invalid", '{"_comment": "legacy", "keys": {}}', json.dumps({
+    hashlib.sha256(KEY.encode()).hexdigest(): {**IDENTITY, "role": "admin"}
+})])
+def test_key_generator_preserves_invalid_file(tmp_path, content):
     path = tmp_path / "keys.json"
-    path.write_text("invalid")
+    path.write_text(content)
     result = subprocess.run([
         sys.executable, "scripts/make_key.py", "--user-id", "test", "--department", "public", "--file", str(path),
     ], capture_output=True, text=True)
     assert result.returncode != 0
     assert not result.stdout
-    assert path.read_text() == "invalid"
+    assert path.read_text() == content
+
+
+def test_example_provision_authenticate(auth):
+    client, path = auth
+    path.write_bytes(Path("config/api_keys.example.json").read_bytes())
+    result = subprocess.run([
+        sys.executable, "scripts/make_key.py", "--user-id", "from-example", "--department", "public",
+        "--file", str(path),
+    ], capture_output=True, text=True, check=True)
+    response = client.get("/identity", headers={"X-API-Key": result.stdout.strip()})
+    assert response.status_code == 200
+    assert response.json()["user_id"] == "from-example"

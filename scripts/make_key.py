@@ -7,8 +7,14 @@ import hashlib
 import json
 import os
 import secrets
+import sys
 import tempfile
+from dataclasses import asdict
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from app.security.keys import load_api_keys  # noqa: E402
 
 
 def main() -> None:
@@ -21,9 +27,8 @@ def main() -> None:
     if not args.user_id.strip():
         parser.error("user-id must not be blank")
     try:
-        records = json.loads(args.file.read_text(encoding="utf-8")) if args.file.exists() else {}
-        if not isinstance(records, dict):
-            raise ValueError
+        users = load_api_keys(args.file) if args.file.exists() else {}
+        records = {digest: asdict(user) for digest, user in users.items()}
     except (OSError, ValueError):
         parser.error("Cannot read API key registry")
     key = secrets.token_urlsafe(32)

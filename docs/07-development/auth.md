@@ -14,6 +14,13 @@ Run from the repository root. Select `AUTH_BACKEND=apikey` and set
 returns the development user `dev/public/staff`; use it only for development.
 Unknown backends and unreadable or invalid registries return 503.
 
+The Compose API mounts the host `config/` directory read-only at `/app/config`.
+Keep `API_KEYS_FILE=config/api_keys.json` for this setup. For a custom registry
+outside `config/`, add a read-only directory mount and set the container path.
+Mount the directory so atomic file replacements remain visible after provisioning
+or revocation; mounting an individual file can leave the container on its old inode.
+You may copy `config/api_keys.example.json` to `config/api_keys.json` to start empty.
+
 Generate a key in a private terminal:
 
 ```bash
