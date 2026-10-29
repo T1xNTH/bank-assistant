@@ -56,4 +56,3 @@ Previous review reports remain immutable. T-014 remains in review.
 1. **Thứ tự merge:** base đang là `docs/T-004-closure`. Merge #48 trước (đang chờ review), rồi retarget PR này sang `main`.
 2. **DEC-004:** cần review report từ phiên Claude riêng; report hiện tại (`T-014-round-2.md`) là từ Codex. Có thể dùng chính review này làm evidence (mình có thể ghi thành `.agent/reports/review/` nếu cần), hoặc thêm governance record cho phép ngoại lệ.
 3. **Conflict với #50 (T-011)** ở service `api` trong `infrastructure/compose.yaml`: #50 bỏ `env_file` và thêm `environment:`, PR này thêm `volumes:` ngay cạnh. Ai merge sau thì giữ cả hai phần; #50 đã có sẵn `API_KEYS_FILE`, khớp với PR này.
-
