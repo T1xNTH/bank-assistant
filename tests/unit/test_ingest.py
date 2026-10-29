@@ -209,3 +209,51 @@ def test_summary_is_printed_when_every_document_fails(corpus, calls, client, mon
 
     out = capsys.readouterr().out
     assert "FAIL  0/4 tài liệu" in out and "0 point" in out
+
+
+def _replace_cached_value(entry, value):
+    stored = json.loads(entry.read_text(encoding="utf-8"))
+    entry.write_text(json.dumps({"key": stored["key"], "value": value}), encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        [],  # PR47-F01: an empty parse would replace the document with no points
+        {"page": 1},
+        [{"source": "fee.pdf", "page": 1, "text": "x"}],  # no tables
+        [{"source": "fee.pdf", "page": "1", "text": "x", "tables": []}],
+        [{"source": "fee.pdf", "page": 1, "text": "x", "tables": [None]}],
+        [{"source": "fee.pdf", "page": 1, "text": "x", "tables": []}] * 2,  # duplicate page
+    ],
+)
+def test_malformed_cached_pages_are_parsed_again(corpus, calls, client, value):
+    ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025"])
+    _replace_cached_value(corpus / "cache/parsed/fee-2025.json", value)
+
+    assert ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025"]) == 0
+
+    assert len(calls["parse"]) == 2
+    assert len(payloads(client)) == 4  # the indexed document is kept, not emptied
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        {"dense": [], "sparse": []},  # PR47-F01: fewer vectors than chunks
+        {"dense": [[1.0] * 3] * 4, "sparse": [{"indices": [7], "values": [0.5]}] * 4},  # wrong dimension
+        {"dense": [[1.0] * 1024] * 4, "sparse": [{"indices": [7]}] * 4},
+        {"dense": [[1.0] * 1024] * 4, "sparse": [{"indices": [7, 8], "values": [0.5]}] * 4},
+        {"dense": [[1.0] * 1024] * 4},
+        [[1.0] * 1024] * 4,
+    ],
+)
+def test_malformed_cached_embeddings_are_embedded_again(corpus, calls, client, value):
+    ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025"])
+    _replace_cached_value(corpus / "cache/embedded/fee-2025.json", value)
+
+    assert ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025"]) == 0
+    assert ingest.main(["--data", str(corpus), "--collection", COLLECTION, "--only", "fee-2025"]) == 0
+
+    assert calls["embed"] == 2  # recomputed once, then the repaired entry is a hit
+    assert len(payloads(client)) == 4

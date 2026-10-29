@@ -122,7 +122,7 @@ def ingest_document(row: dict, data: Path, collection: str, cache: Path | None, 
 def _parsed(pdf: Path, doc_id: str, cache: Path | None) -> tuple[list[dict], bool]:
     key = _digest(_sha256(pdf), _parser_version())
     cached = _load(cache, "parsed", doc_id, key)
-    if cached is not None:
+    if _valid_pages(cached):
         return cached, True
     from app.rag.parse_docling import parse
 
@@ -136,11 +136,59 @@ def _embedded(texts: list[str], doc_id: str, cache: Path | None) -> tuple[list, 
 
     key = _digest(embed.MODEL, str(embed.MAX_LENGTH), json.dumps(texts, ensure_ascii=False))
     cached = _load(cache, "embedded", doc_id, key)
-    if cached is not None:
+    if _valid_embedding(cached, len(texts), embed.DIM):
         return cached["dense"], cached["sparse"], True
     dense, sparse = embed.embed(texts)
     _save(cache, "embedded", doc_id, key, {"dense": dense, "sparse": sparse})
     return dense, sparse, False
+
+
+def _valid_pages(value) -> bool:
+    """A cached parse is used only if it has the shape parse() returns: an empty list would
+    replace the document with no points."""
+    return (
+        isinstance(value, list)
+        and len(value) > 0
+        and all(
+            isinstance(p, dict)
+            and _is_int(p.get("page"))
+            and isinstance(p.get("text"), str)
+            and isinstance(p.get("tables"), list)
+            and all(isinstance(t, str) for t in p["tables"])
+            for p in value
+        )
+        and len({p["page"] for p in value}) == len(value)
+    )
+
+
+def _valid_embedding(value, count: int, dim: int) -> bool:
+    """A cached embedding is used only if it has one dense and one sparse vector per chunk."""
+    if not isinstance(value, dict):
+        return False
+    dense, sparse = value.get("dense"), value.get("sparse")
+    return (
+        isinstance(dense, list)
+        and isinstance(sparse, list)
+        and len(dense) == len(sparse) == count
+        and all(isinstance(d, list) and len(d) == dim and all(_is_number(x) for x in d) for d in dense)
+        and all(
+            isinstance(s, dict)
+            and isinstance(s.get("indices"), list)
+            and isinstance(s.get("values"), list)
+            and len(s["indices"]) == len(s["values"])
+            and all(_is_int(i) for i in s["indices"])
+            and all(_is_number(v) for v in s["values"])
+            for s in sparse
+        )
+    )
+
+
+def _is_int(x) -> bool:
+    return isinstance(x, int) and not isinstance(x, bool)
+
+
+def _is_number(x) -> bool:
+    return isinstance(x, (int, float)) and not isinstance(x, bool)
 
 
 def _parser_version() -> str:
