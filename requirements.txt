@@ -6,6 +6,8 @@ uvicorn[standard]>=0.30
 pydantic>=2.7
 # E-003 ingest. OCR needs the Tesseract CLI with Vietnamese data (tesseract-ocr, tesseract-ocr-vie); see docs/07-development.
 docling==2.143.0
+# E-003 embeddings (bge-m3).
+FlagEmbedding==1.4.2
 # Pinned so the CPU index above resolves the same +cpu build everywhere.
 torch==2.14.1
 torchvision==0.29.1
