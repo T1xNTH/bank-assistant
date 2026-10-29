@@ -22,21 +22,21 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `23`
+- **Context Revision**: `24`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-29`
 - **Updated By**: `codex-b`
-- **Update Trigger**: `Resolve PR #48 conflict with main 603c80a; preserve T-004 closure and CR-009 state`
+- **Update Trigger**: `PR #49 re-review: synchronize E-006/T-014 state and board evidence`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005 review); E-005 (EPIC_IN_PROGRESS); E-004, E-006..E-009 (EPIC_READY)`
-- **Active Task IDs**: `T-002, T-009, T-011`
+- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005 review); E-005 (EPIC_IN_PROGRESS); E-006 (EPIC_IN_PROGRESS; T-014 review); E-004, E-007..E-009 (EPIC_READY)`
+- **Active Task IDs**: `T-002, T-009, T-011, T-014`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261029-t004-pr48-resolve`
+- **Current Session ID**: `S-20261029-t014-pr49-review-fixes`
 
 ## Revision Provenance
 
@@ -69,3 +69,5 @@ Revision 21: user explicitly supplied the OpenAI credential for verification. Mo
 Revision 22: PR #48 review follow-up synchronizes T-004 done with the task board and removes it from active tasks. Owner A approved PR #34 and CI follow-up PR #39, merged on 2026-10-28 as `b51d544` and `3d66a1e`; task closure was recorded on 2026-10-29. Existing evidence is `.agent/reports/review/T-004-followup.md` and `.agent/reports/qa/T-004-followup.md`; no new independent review is claimed. ISSUE-011 remains triaged, and E-002 remains EPIC_IN_PROGRESS because branch protection is still pending.
 
 Revision 23 merges main `603c80a` into PR #48: retain main's approved CR-009 state and T-010 records alongside the T-004 closure from revision 22. Preserve both branches' session and commit histories; no new task completion or approval is claimed.
+
+Revision 24 addresses PR #49 re-review at `ea1519b`: synchronize E-006 EPIC_IN_PROGRESS and T-014 review with the existing epic/task/board records, and add the archived Claude review and resolution report to the T-014 board evidence. PR #48 merged as `c882f55`; PR #49 is based on main. T-014 remains review pending counterpart approval and merge; no new approval or task completion is claimed.

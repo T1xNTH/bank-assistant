@@ -18,6 +18,8 @@ services:
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
       LANGFUSE_BASE_URL: http://langfuse:3000
+    volumes:
+      - ../config:/app/config:ro
     ports: ["127.0.0.1:8000:8000"]
     depends_on: [qdrant, redis, litellm]
     healthcheck:

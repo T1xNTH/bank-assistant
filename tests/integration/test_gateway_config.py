@@ -29,6 +29,7 @@ def config(*extra):
 def test_core_excludes_ollama_and_isolates_provider_key(monkeypatch):
     # Host-side tracing URLs must not override the API container's service DNS.
     monkeypatch.setenv("LANGFUSE_BASE_URL", "http://127.0.0.1:3000")
+    monkeypatch.setenv("AUTH_BACKEND", "apikey")
     services = config()
     assert "litellm" in services
     assert "ollama" not in services
@@ -38,6 +39,11 @@ def test_core_excludes_ollama_and_isolates_provider_key(monkeypatch):
     assert all("GEMINI_API_KEY" not in service.get("environment", {}) for service in services.values())
     assert services["api"]["environment"]["LLM_BASE_URL"] == "http://litellm:4000"
     assert services["api"]["environment"]["LANGFUSE_BASE_URL"] == "http://langfuse:3000"
+    assert services["api"]["environment"]["AUTH_BACKEND"] == "apikey"
+    assert services["api"]["environment"]["API_KEYS_FILE"] == "config/api_keys.json"
+    registry_mount = next(mount for mount in services["api"]["volumes"] if mount["target"] == "/app/config")
+    assert registry_mount["type"] == "bind" and registry_mount["read_only"]
+    assert Path(registry_mount["source"]) == ROOT / "config"
     assert all(port["host_ip"] == "127.0.0.1" for service in services.values()
                for port in service.get("ports", []))
 
