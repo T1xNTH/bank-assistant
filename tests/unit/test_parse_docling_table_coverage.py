@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.rag.parse_docling import choose_pages
+from app.rag.parse_docling import _figures, choose_pages
 
 NARRATIVE = "Điều khoản của ngân hàng quy định về dịch vụ thanh toán. " * 12
 WAGES = (
@@ -122,3 +122,23 @@ def test_decimal_rate_is_not_covered_by_a_tenfold_rate(rate):
     [chosen] = choose_pages([_page(tables=[original])], [copy])
 
     assert chosen["tables"] == [read, original]
+
+
+@pytest.mark.parametrize("space", [" ", "\u00a0", "\u202f"])
+def test_spaced_percentage_table_is_kept_when_the_image_copy_loses_it(space):
+    table = RATES.replace("%", space + "%")
+
+    [chosen] = choose_pages([_page(tables=[table])], [_page()])
+
+    assert chosen["tables"] == [table]
+
+
+@pytest.mark.parametrize("rate", ["4 %", "0,5\u00a0%", "1.5\u202f%"])
+def test_spaced_and_compact_rates_match_without_losing_the_unit(rate):
+    compact = "".join(rate.split())
+    assert _figures(rate) == _figures(compact)
+    assert _figures(rate) != _figures(compact.removesuffix("%"))
+
+
+def test_markdown_escaped_pipe_is_not_a_financial_figure():
+    assert not _figures("| Mẫu số 01 | &#124; Tên mẫu |")

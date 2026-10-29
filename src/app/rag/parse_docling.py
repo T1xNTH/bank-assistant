@@ -16,10 +16,12 @@ Vietnamese diacritics), is OCR'd page by page instead, with a PDF backend whose
 text-layer lookup returns nothing: docling's table model otherwise falls back to
 the garbage text layer for cells without an OCR match. A page whose OCR output
 has almost no common Vietnamese words was likely scanned rotated; it is retried
-at 90/180/270 degrees (PDF /Rotate, lossless) and the most readable orientation
-is kept. A page that
+at 90/180/270 degrees (PDF /Rotate, lossless). A better orientation is kept only
+when its common-word ratio reaches the readability threshold; otherwise the
+original structure is retained. A page that
 comes back nearly empty (e.g. TableFormer found a table but no cells) falls back
-to plain Tesseract text of the page image when that reads more. A table that
+to plain Tesseract text of the page image when that reads more, retaining any
+structured numerical tables because plain text cannot establish cell coverage. A table that
 TableFormer detects but cannot split into cells is OCR'd as a region instead,
 so its rows survive as text lines.
 
@@ -35,6 +37,7 @@ import tempfile
 import unicodedata
 from collections import Counter
 from functools import lru_cache
+from html import unescape
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -65,7 +68,7 @@ _TOKEN = re.compile(r"\w+")
 _WORD = re.compile(r"[^\W\d_]{2,}")
 _NUMBER = re.compile(r"[\d.,%/()-]+")
 # Amounts, rates, dates (22.700.000, 0,5%, 4%, 2025); not the stray one- or two-digit noise of an OCR'd form grid.
-_FIGURE = re.compile(r"\d+(?:[.,]\d+)+%?|\d+%|\d{3,}")
+_FIGURE = re.compile(r"\d+(?:[.,]\d+)+(?:[^\S\r\n]*%)?|\d+[^\S\r\n]*%|\d{3,}")
 
 _VI_DIACRITICS = re.compile(
     "[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]", re.IGNORECASE
@@ -213,7 +216,8 @@ def _score(page: dict) -> float:
 
 def _figures(text: str) -> Counter[str]:
     # Preserve decimal places: 1.5% must not match 15%. Accept either decimal separator.
-    return Counter(f.replace(",", ".") for f in _FIGURE.findall(text))
+    # Markdown can contain escaped pipes (&#124;), which are not numerical values.
+    return Counter(re.sub(r"\s+", "", f).replace(",", ".") for f in _FIGURE.findall(unescape(text)))
 
 
 def _reads_as_words(table: str) -> bool:
@@ -323,7 +327,9 @@ def _repair(path: str, page: dict, tmp: Path) -> dict:
     if _letters(page) < MIN_GARBLED_LETTERS:
         text = _tesseract(_render(path, page["page"]), tmp / f"plain{page['page']}.png")
         if sum(c.isalpha() for c in text) > _letters(page):
-            return {**page, "text": text, "tables": []}  # the page OCR already includes any table text
+            # Plain OCR cannot establish row/column coverage. Keep structured
+            # numerical tables even if this duplicates part of the plain text.
+            return {**page, "text": text, "tables": [t for t in page["tables"] if _figures(t)]}
     return page
 
 
@@ -339,6 +345,7 @@ def _render(path: str, page_no: int):
 
 
 def _best_rotation(path: str, page: dict, tmp: Path) -> dict:
+    """Keep the original unless a rotation is both more readable and above the noise floor."""
     best, best_score = page, common_word_ratio(_all_text(page))
     for rotate in (90, 180, 270):
         one = _rotated_page_pdf(path, page["page"], rotate, tmp / f"rot{page['page']}-{rotate}.pdf")
@@ -347,7 +354,10 @@ def _best_rotation(path: str, page: dict, tmp: Path) -> dict:
             continue
         cand = cands[0]
         score = common_word_ratio(_all_text(cand))
-        if score > best_score:
+        # Code/name tables can score poorly even when upright. A tiny increase
+        # among equally noisy candidates is not evidence of a correct rotation
+        # and can transpose their rows into columns (145.signed.pdf, page 109).
+        if score >= MIN_COMMON_WORD_RATIO and score > best_score:
             best, best_score = {**cand, "page": page["page"]}, score
     return best
 
