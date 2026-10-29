@@ -22,7 +22,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `18`
+- **Context Revision**: `19`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-29`
 - **Updated By**: `codex-b`
@@ -32,7 +32,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 review); E-003 (EPIC_IN_PROGRESS; T-005 review); E-005 (EPIC_IN_PROGRESS); E-004, E-006..E-009 (EPIC_READY)`
 - **Active Task IDs**: `T-002, T-004, T-009, T-011`
-- **Active Blocker IDs**: `BLOCKER-002`
+- **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; task review hoàn tất không phê duyệt các CR)`
@@ -57,3 +57,5 @@ Revision16 records independent Codex T009 review APPROVED (WSL makecheck77passed
 Revision 18 starts T-011 (issue #12) on feat/T-011-litellm-ollama from main fc06249. E-005 transitioned via lifecycle CLI to EPIC_IN_PROGRESS; dependency T-003 is done. Owner teammate-b retained. Scope: gateway services, aliases, credential isolation and verification. No independent review or completion is claimed.
 
 T-011 implementation dec03dd is verified by WSL make check (138 passed) and the final 9 focused checks. LiteLLM/Ollama healthy, real local-chat ping and gateway auth passed. Cloud acceptance remains blocked by empty GEMINI_API_KEY (BLOCKER-002); task/report are blocked/draft, independent reviewer claude-review-a is not yet requested. No done or approval claim.
+
+Revision 19 records the user credential follow-up: BLOCKER-002 resolved after both cloud-chat and local-chat passed real gateway smoke at host port 4000. Follow-up source df1fe4a adapts only smoke reasoning/token settings. Final focused verification 9 passed in 1.68s, Ruff and framework validation passed. Implementation report finalized; lifecycle CLI requested claude-review-a and moved T-011 to review. No independent review approval or done/merge is claimed.

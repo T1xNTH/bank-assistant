@@ -19,7 +19,7 @@ Dùng template này khi một epic hoặc task không thể tiếp tục vì m�
 - **Title**: `Cloud-chat real-provider acceptance pending`
 - **Owner**: `teammate-b`
 - **Reporter**: `codex-b`
-- **Status**: `open`
+- **Status**: `resolved`
 - **Blocker Type**: `access`
 - **Priority**: `2`
 - **Created Date**: `2026-10-29`
@@ -27,7 +27,7 @@ Dùng template này khi một epic hoặc task không thể tiếp tục vì m�
 
 ## Blocking Condition
 
-Nêu chính xác điều kiện đang cản trở tiến độ và bằng chứng xác nhận điều đó.
+Initially GEMINI_API_KEY was empty, preventing real cloud acceptance. The user supplied a credential, which was stored only in git-ignored root `.env.local`. On 2026-10-29 both cloud-chat and local-chat returned nonempty real completions through host port 4000 (exit 0). No credential values are recorded here. Evidence: `.agent/reports/implementation/T-011.md`; local log `output/t011-key-smoke-low.log`.
 
 ## Impact
 
@@ -53,10 +53,10 @@ Nêu chính xác điều kiện đang cản trở tiến độ và bằng chứn
 
 ## Completion Criteria
 
-- [ ] Điều kiện chặn không còn cản trở các công việc bị ảnh hưởng.
-- [ ] Bằng chứng giải quyết đã được liên kết.
-- [ ] Trạng thái các epic và task bị ảnh hưởng đã được cập nhật.
-- [ ] Việc gỡ bỏ workaround được theo dõi khi có.
+- [x] Điều kiện chặn không còn cản trở các công việc bị ảnh hưởng.
+- [x] Bằng chứng giải quyết đã được liên kết.
+- [x] Trạng thái các epic và task bị ảnh hưởng đã được cập nhật.
+- [x] Việc gỡ bỏ workaround được theo dõi khi có.
 
 ## Forbidden Actions
 
@@ -70,3 +70,7 @@ Nêu chính xác điều kiện đang cản trở tiến độ và bằng chứn
 - Lưu thành `.agent/governance/blockers/BLOCKER-002.md`.
 - Giữ nguyên mọi heading trong template này.
 - Dùng link tương đối theo repo và đúng giá trị enum.
+
+## Resolution Evidence
+
+Resolved 2026-10-29 by codex-b: both real aliases passed the synthetic ping via LiteLLM. Source fix df1fe4a sets cloud smoke reasoning_effort=low with 2048 tokens; none/minimal is unsupported by the current Flash alias. No gateway bypass or model mock was used. Independent review remains required.
