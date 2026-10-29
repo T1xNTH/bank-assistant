@@ -3,16 +3,8 @@
 from __future__ import annotations
 
 from app.config import get_settings
-from app.contracts import Answerer, User
-
-
-def get_current_user() -> User:
-    """Replaced by app.security.auth.get_current_user in E-006 (owner B)."""
-    if get_settings().auth_backend == "fake":
-        return User(user_id="dev", department="public")
-    from app.security.auth import get_current_user as real
-
-    return real()
+from app.contracts import Answerer
+from app.security.auth import get_current_user as get_current_user
 
 
 def get_answerer() -> Answerer:
