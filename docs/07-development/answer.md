@@ -44,7 +44,7 @@ Chống chèn thẻ: trong nội dung chunk, tên nguồn và câu hỏi, mọi 
 | `retrieve` không trả chunk nào (dưới ngưỡng rerank, hoặc không có chunk user được đọc) | không |
 | Model trả câu `REFUSAL`, kể cả khi kèm `[n]` | có |
 | Câu trả lời không có trích dẫn hợp lệ nào (không có `[n]`, hoặc chỉ có số ngoài khoảng) | có |
-| Câu trả lời chứa `CANARY` (không phân biệt hoa thường, kể cả bị chèn khoảng trắng) | có |
+| Câu trả lời cuối (sau khi xóa marker sai) chứa `CANARY`, không phân biệt hoa thường, kể cả bị chèn khoảng trắng hay marker `[n]` vào giữa | có |
 
 Trường hợp thứ ba là lựa chọn có chủ đích: NFR-04 yêu cầu 100% câu trả lời có trích dẫn, và một câu trả lời không trích dẫn thì không kiểm chứng được là lấy từ tài liệu. Đổi lại, nếu model trả lời đúng nhưng quên ghi `[n]`, người dùng sẽ nhận câu từ chối. Tỉ lệ này cần đo ở E-008 với model thật.
 

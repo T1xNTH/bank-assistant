@@ -120,6 +120,15 @@ def test_canary_in_answer_is_refused():
         assert (result.answer, result.found, result.citations) == (REFUSAL, False, []), leak
 
 
+@pytest.mark.parametrize("marker", ["[9]", "[0]", " [99]", "[4, 7]", "[" + "9" * 50 + "]", "[1]", "[2] [3]"])
+def test_canary_split_by_a_marker_is_refused(marker):
+    # PR #62 review: dropping an invalid marker used to join the canary back together.
+    reply = prompts.CANARY[:10] + marker + prompts.CANARY[10:] + " [1]"
+    result, _, _ = run(reply)
+    assert (result.answer, result.found, result.citations) == (REFUSAL, False, [])
+    assert prompts.CANARY not in result.answer
+
+
 def test_refusal_that_cites_is_still_a_refusal():
     for reply in [f"{REFUSAL} [1]", f"{REFUSAL[:-1]} [1][2].", f"  {REFUSAL}\n[1]"]:
         result, _, _ = run(reply)

@@ -76,10 +76,13 @@ class RagAnswerer:
         return AskResult(text, bool(citations), citations, mode, "cloud", latency_ms)
 
 
+def _leaks_canary(text: str) -> bool:
+    """Whether ``text`` holds CANARY, ignoring case, whitespace and citation markers split into it."""
+    return CANARY.lower() in re.sub(r"\s+", "", _MARKER.sub("", text)).lower()
+
+
 def cite(reply: str, hits: list[Hit]) -> tuple[str, list[Citation]]:
     """Map ``[n]`` markers in ``reply`` to citations; ``(REFUSAL, [])`` when nothing valid is cited."""
-    if CANARY.lower() in re.sub(r"\s+", "", reply).lower():
-        return REFUSAL, []
     cited: set[int] = set()
 
     def keep_valid(match: re.Match[str]) -> str:
@@ -91,6 +94,7 @@ def cite(reply: str, hits: list[Hit]) -> tuple[str, list[Citation]]:
 
     text = _MARKER.sub(keep_valid, reply).strip()
     # A refusal that still cites a passage is a refusal: the contract pairs found=false with REFUSAL.
-    if not cited or text.startswith(REFUSAL.rstrip(".")):
+    # The canary is checked on the final text, after invalid markers are dropped (PR #62 review).
+    if not cited or text.startswith(REFUSAL.rstrip(".")) or _leaks_canary(text):
         return REFUSAL, []
     return text, [Citation(n, hits[n - 1].source, hits[n - 1].page, hits[n - 1].score) for n in sorted(cited)]
