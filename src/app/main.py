@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 
 from app.chat import structured_chat
 from app.contracts import LLM, Answerer, User
@@ -13,6 +13,7 @@ from app.errors import install_error_handlers
 from app.log_config import configure_logging
 from app.middleware import RequestContextMiddleware
 from app.schemas import AskRequest, AskResponse, ChatRequest, ChatResponse, ErrorResponse
+from app.security import audit
 
 
 def create_app() -> FastAPI:
@@ -43,11 +44,16 @@ def chat(
 
 def ask(
     req: AskRequest,
+    request: Request,
     user: User = Depends(get_current_user),
     answerer: Answerer = Depends(get_answerer),
 ) -> AskResponse:
+    request.state.audit_user = user
+    request.state.audit_question = audit.mask_question(req.question)
     result = answerer.answer(req.question, user, req.mode)
-    return AskResponse(**asdict(result))
+    response = AskResponse(**asdict(result))
+    request.state.audit_result = result
+    return response
 
 
 app = create_app()

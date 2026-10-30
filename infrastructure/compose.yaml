@@ -15,11 +15,13 @@ services:
       LLM_BASE_URL: http://litellm:4000
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?Set a random sk- prefixed gateway key in .env.local}
       API_KEYS_FILE: ${API_KEYS_FILE:-config/api_keys.json}
+      AUDIT_DB_PATH: /app/data/audit.db
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
       LANGFUSE_BASE_URL: http://langfuse:3000
     volumes:
       - ../config:/app/config:ro
+      - audit_data:/app/data
     ports: ["127.0.0.1:8000:8000"]
     depends_on: [qdrant, redis, litellm]
     healthcheck:
@@ -65,5 +67,6 @@ services:
       timeout: 3s
       retries: 10
 volumes:
+  audit_data:
   qdrant_data:
   ollama_data:
