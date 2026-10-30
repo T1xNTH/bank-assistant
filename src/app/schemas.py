@@ -2,9 +2,32 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from typing import Annotated, Literal
+
+from pydantic import BaseModel, Field, StringConstraints
 
 from app.contracts import RetrievalMode, Route
+
+
+class ChatRequest(BaseModel):
+    message: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=4000)]
+
+
+class ErrorDetail(BaseModel):
+    code: str
+    message: str
+
+
+class ErrorResponse(BaseModel):
+    error: ErrorDetail
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    intent: Literal["question", "complaint", "request", "other"]
+    needs_human: bool
+    model: str
+    latency_ms: int
 
 
 class AskRequest(BaseModel):

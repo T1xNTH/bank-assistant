@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import time
 
@@ -14,6 +15,14 @@ class FakeLLM:
     """Deterministic runtime backend requiring no network or credentials."""
 
     def chat(self, messages: list[dict], alias: str, temperature: float = 0.0) -> LLMResult:
+        # Keep the generic fake reply while supporting the /chat JSON instruction.
+        from app.chat import CHAT_SYSTEM
+
+        if messages and messages[0] == {"role": "system", "content": CHAT_SYSTEM}:
+            return LLMResult(
+                text=json.dumps({"answer": "Câu trả lời mẫu.", "intent": "question", "needs_human": False}),
+                model=f"fake/{alias}",
+            )
         return LLMResult(text="Câu trả lời [1].", model=f"fake/{alias}")
 
 
