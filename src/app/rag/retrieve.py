@@ -1,28 +1,34 @@
-"""Dense and hybrid (RRF) retrieval with RBAC and superseded filters.
+"""Dense, hybrid (RRF) and hybrid + rerank retrieval with RBAC and superseded filters.
 
 ``retrieve(question, user, k, mode)`` embeds the question with bge-m3 and queries Qdrant:
 ``dense`` ranks by cosine on the dense vector; ``hybrid`` fuses the dense and sparse rankings
 with reciprocal rank fusion inside Qdrant (query API, ``Fusion.RRF``). Both apply the access
 filter in the query itself, never afterwards (docs/02-architecture/architecture.md):
 ``department`` in {user's department, "public"} and ``superseded_by`` is null. ``hybrid_rerank``
-is ``hybrid`` followed by ``rerank.rerank`` (T-017).
+fetches ``rerank_candidates()`` hybrid results (``RERANK_CANDIDATES``, default 5) and keeps the
+``k`` that ``rerank.rerank`` scores best at or above the refusal threshold, so it may return fewer
+than ``k`` hits, or none.
 
 Owner: A — Epic E-004 / E-010. See docs/00-project/product-plan.md.
 """
 
 from __future__ import annotations
 
+import os
 from typing import get_args
 
 from qdrant_client import QdrantClient, models
 
 from app.contracts import Department, Hit, RetrievalMode, User
-from app.rag import embed
+from app.rag import embed, rerank
 from app.rag.store import _collection_name, _connection
 
 # Candidates each of dense and sparse contributes to the fusion; RRF needs more than k from
 # each branch so that a chunk ranked well by only one of them can still reach the top k.
 PREFETCH = 20
+# Hybrid results the cross-encoder rescores. Each costs ~0.8 s on CPU and NFR-08 allows 10 s for the
+# whole /ask: 5 measured 4.0 s median (7.4 s max), 10 measured 9.1 s, with the same 12/12 sample recall.
+DEFAULT_RERANK_CANDIDATES = 5
 _DEPARTMENTS = set(get_args(Department))
 
 
@@ -38,10 +44,12 @@ def retrieve(
     """Return the top ``k`` chunks ``user`` may read, best first."""
     if k < 1:
         raise ValueError(f"k must be at least 1, got {k}")
-    if mode == "hybrid_rerank":
-        raise NotImplementedError("hybrid_rerank: hybrid + rerank.rerank, T-017")
-    if mode not in ("dense", "hybrid"):
+    if mode not in ("dense", "hybrid", "hybrid_rerank"):
         raise ValueError(f"Unknown retrieval mode {mode!r}")
+    if mode == "hybrid_rerank":
+        limit = max(rerank_candidates(), k)
+        candidates = retrieve(question, user, limit, "hybrid", client=client, collection=collection)
+        return rerank.rerank(question, candidates, k)
     flt = access_filter(user)
     [dense], [sparse] = embed.embed([question])
     with _connection(client) as connection:
@@ -62,6 +70,16 @@ def retrieve(
                 with_payload=True,
             )
     return [_hit(point) for point in response.points]
+
+
+def rerank_candidates() -> int:
+    """``RERANK_CANDIDATES`` as a positive integer; blank or unset is the default."""
+    raw = os.getenv("RERANK_CANDIDATES", "").strip()
+    if not raw:
+        return DEFAULT_RERANK_CANDIDATES
+    if not raw.isdigit() or int(raw) < 1:
+        raise ValueError(f"RERANK_CANDIDATES must be a positive integer, got {raw!r}")
+    return int(raw)
 
 
 def access_filter(user: User) -> models.Filter:

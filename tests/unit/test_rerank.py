@@ -1,0 +1,184 @@
+"""rerank(): ordering, scores and the refusal threshold with a fake cross-encoder (CI)."""
+
+import threading
+import time
+
+import pytest
+
+from app.contracts import Hit, User
+from app.rag import rerank as rr
+from app.rag import retrieve as rag
+
+QUESTION = "Mức lương tối thiểu vùng I là bao nhiêu?"
+
+
+def hit(doc_id, text, score=0.03):
+    return Hit(doc_id=doc_id, source=f"{doc_id}.pdf", page=2, text=text, score=score, department="hr")
+
+
+class FakeModel:
+    """Scores a pair by the first number in a "score=" marker in the chunk text."""
+
+    def __init__(self):
+        self.calls = []
+
+    def compute_score(self, pairs, **kwargs):
+        self.calls.append((pairs, kwargs))
+        scores = [float(text.split("score=")[1].split()[0]) for _, text in pairs]
+        return scores[0] if len(scores) == 1 else scores  # as FlagEmbedding does
+
+
+@pytest.fixture
+def fake(monkeypatch):
+    model = FakeModel()
+    monkeypatch.setattr(rr, "_model", lambda: model)
+    monkeypatch.delenv("REFUSAL_THRESHOLD", raising=False)
+    monkeypatch.setattr(rr, "DEFAULT_THRESHOLD", 0.3)
+    return model
+
+
+HITS = [
+    hit("fusion-1st", "score=0.2 phí thẻ"),
+    hit("fusion-2nd", "score=0.9 lương"),
+    hit("fusion-3rd", "score=0.6 bảo hiểm"),
+]
+
+
+def test_hits_are_reordered_by_the_cross_encoder_and_carry_its_score(fake):
+    out = rr.rerank(QUESTION, HITS, k=5)
+
+    assert [(h.doc_id, h.score) for h in out] == [("fusion-2nd", 0.9), ("fusion-3rd", 0.6)]
+    assert out[0] == HITS[1].__class__(**{**HITS[1].__dict__, "score": 0.9})  # only the score changes
+
+
+def test_pairs_are_question_and_chunk_text_with_normalised_scores(fake):
+    rr.rerank(QUESTION, HITS, k=5)
+
+    [(pairs, kwargs)] = fake.calls
+    assert pairs == [[QUESTION, h.text] for h in HITS]
+    assert kwargs["normalize"] is True  # sigmoid: the threshold is a probability
+    assert kwargs["max_length"] == rr.MAX_LENGTH
+
+
+def test_k_limits_the_result_after_ranking(fake):
+    assert [h.doc_id for h in rr.rerank(QUESTION, HITS, k=1)] == ["fusion-2nd"]
+
+
+def test_an_out_of_scope_question_returns_nothing(fake):
+    unrelated = [hit("a", "score=0.01 phí thẻ"), hit("b", "score=0.29 lãi suất")]
+
+    assert rr.rerank("Thời tiết Hà Nội hôm nay thế nào?", unrelated, k=5) == []
+
+
+def test_a_score_equal_to_the_threshold_is_kept(fake):
+    assert [h.doc_id for h in rr.rerank(QUESTION, [hit("edge", "score=0.3 x")], k=5)] == ["edge"]
+
+
+def test_a_single_pair_is_scored(fake):
+    assert [h.score for h in rr.rerank(QUESTION, [hit("one", "score=0.7 x")], k=5)] == [0.7]
+
+
+def test_ties_keep_the_fusion_order(fake):
+    tied = [hit("first", "score=0.5 a"), hit("second", "score=0.5 b")]
+    assert [h.doc_id for h in rr.rerank(QUESTION, tied, k=5)] == ["first", "second"]
+
+
+def test_no_hits_does_not_load_the_model(monkeypatch):
+    monkeypatch.setattr(rr, "_model", lambda: pytest.fail("model loaded"))
+    assert rr.rerank(QUESTION, [], k=5) == []
+
+
+@pytest.mark.parametrize(("env", "expected"), [("0.75", 0.75), (" 0 ", 0.0), ("1", 1.0), ("", 0.3)])
+def test_threshold_comes_from_the_environment(fake, monkeypatch, env, expected):
+    monkeypatch.setenv("REFUSAL_THRESHOLD", env)
+    assert rr.refusal_threshold() == expected
+
+
+def test_the_environment_threshold_applies(fake, monkeypatch):
+    monkeypatch.setenv("REFUSAL_THRESHOLD", "0.7")
+    assert [h.doc_id for h in rr.rerank(QUESTION, HITS, k=5)] == ["fusion-2nd"]
+
+
+def test_an_explicit_threshold_overrides_the_environment(fake, monkeypatch):
+    monkeypatch.setenv("REFUSAL_THRESHOLD", "0.95")
+    assert len(rr.rerank(QUESTION, HITS, k=5, threshold=0.0)) == 3
+
+
+@pytest.mark.parametrize("env", ["abc", "-0.1", "1.5", "nan", "50%"])
+def test_a_malformed_threshold_is_an_error(fake, monkeypatch, env):
+    monkeypatch.setenv("REFUSAL_THRESHOLD", env)
+    with pytest.raises(ValueError, match="REFUSAL_THRESHOLD"):
+        rr.rerank(QUESTION, HITS, k=5)
+
+
+def test_k_must_be_positive(fake):
+    with pytest.raises(ValueError):
+        rr.rerank(QUESTION, HITS, k=0)
+
+
+def test_concurrent_first_calls_load_the_model_once(monkeypatch):
+    loads = []
+
+    def slow_load():
+        loads.append(1)
+        time.sleep(0.05)
+        return FakeModel()
+
+    monkeypatch.setattr(rr, "_instance", None)
+    monkeypatch.setattr(rr, "_load", slow_load)
+    threads = [threading.Thread(target=rr._model) for _ in range(4)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert len(loads) == 1
+
+
+@pytest.fixture
+def hybrid(monkeypatch):
+    monkeypatch.delenv("RERANK_CANDIDATES", raising=False)
+    """Stub the hybrid stage of retrieve(): hybrid_rerank looks retrieve up in its module."""
+    real, calls = rag.retrieve, []
+
+    def stub(question, user, k, mode, **kwargs):
+        calls.append((k, mode, kwargs))
+        return HITS
+
+    monkeypatch.setattr(rag, "retrieve", stub)
+    return real, calls
+
+
+def test_hybrid_rerank_rescores_more_hybrid_candidates_than_k(fake, hybrid):
+    real, calls = hybrid
+
+    out = real(QUESTION, User("u", "hr"), 1, "hybrid_rerank", collection="c")
+
+    assert calls == [(rag.DEFAULT_RERANK_CANDIDATES, "hybrid", {"client": None, "collection": "c"})]
+    assert [(h.doc_id, h.score) for h in out] == [("fusion-2nd", 0.9)]
+
+
+def test_hybrid_rerank_asks_for_at_least_k_candidates(fake, hybrid):
+    real, calls = hybrid
+    real(QUESTION, User("u", "hr"), rag.DEFAULT_RERANK_CANDIDATES + 5, "hybrid_rerank")
+    assert calls[0][0] == rag.DEFAULT_RERANK_CANDIDATES + 5
+
+
+def test_hybrid_rerank_returns_nothing_for_an_out_of_scope_question(fake, hybrid, monkeypatch):
+    real, _ = hybrid
+    monkeypatch.setenv("REFUSAL_THRESHOLD", "0.95")
+    assert real("Thời tiết Hà Nội hôm nay thế nào?", User("u", "hr"), 5, "hybrid_rerank") == []
+
+
+def test_the_number_of_candidates_comes_from_the_environment(fake, hybrid, monkeypatch):
+    real, calls = hybrid
+    monkeypatch.setenv("RERANK_CANDIDATES", "12")
+    real(QUESTION, User("u", "hr"), 5, "hybrid_rerank")
+    assert calls[0][0] == 12
+
+
+@pytest.mark.parametrize("env", ["0", "-3", "five", "2.5"])
+def test_a_malformed_candidate_count_is_an_error(fake, hybrid, monkeypatch, env):
+    real, _ = hybrid
+    monkeypatch.setenv("RERANK_CANDIDATES", env)
+    with pytest.raises(ValueError, match="RERANK_CANDIDATES"):
+        real(QUESTION, User("u", "hr"), 5, "hybrid_rerank")

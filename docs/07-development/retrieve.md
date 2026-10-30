@@ -15,7 +15,7 @@ priority: 2
 
 - `dense`: xếp hạng theo cosine trên vector dense. `score` là cosine.
 - `hybrid` (mặc định): Qdrant tự gộp hai danh sách dense và sparse, mỗi danh sách `max(PREFETCH, k)` ứng viên (`PREFETCH = 20`), bằng reciprocal rank fusion (`Fusion.RRF`). `score` là điểm RRF, chỉ dùng để so thứ tự, không so được với cosine.
-- `hybrid_rerank`: là `hybrid` rồi đến `rerank.rerank`. Mode này thuộc T-017; hiện tại gọi sẽ báo `NotImplementedError`.
+- `hybrid_rerank`: lấy `RERANK_CANDIDATES` (mặc định 5) kết quả `hybrid` rồi `rerank.rerank` giữ tối đa `k` kết quả đạt `REFUSAL_THRESHOLD`; có thể trả rỗng. `score` là điểm rerank trong (0, 1). Xem `rerank.md`.
 
 Mode lạ hoặc `k < 1` báo `ValueError`.
 
