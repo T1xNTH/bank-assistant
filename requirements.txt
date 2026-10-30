@@ -4,6 +4,7 @@
 fastapi>=0.115
 uvicorn[standard]>=0.30
 pydantic>=2.7
+httpx2>=2.14  # synchronous LLM gateway client
 # E-003 ingest. OCR needs the Tesseract CLI with Vietnamese data (tesseract-ocr, tesseract-ocr-vie); see docs/07-development.
 docling==2.143.0
 # E-003 embeddings (bge-m3).

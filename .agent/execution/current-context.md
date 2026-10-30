@@ -22,21 +22,21 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `25`
+- **Context Revision**: `27`
 - **Context Status**: `current`
-- **Last Updated**: `2026-10-29`
-- **Updated By**: `claude-code-a`
-- **Update Trigger**: `T-016 implementation and review; T-010 closed (squash 603c80a, PR #47); E-004 started`
+- **Last Updated**: `2026-10-30`
+- **Updated By**: `codex`
+- **Update Trigger**: `PR #52 conflict resolution: merge main 7efee34 and retain both task histories`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 chờ PR); E-005 (EPIC_IN_PROGRESS); E-006 (EPIC_IN_PROGRESS; T-014 review); E-004 (EPIC_IN_PROGRESS; T-016 review); E-007..E-009 (EPIC_READY)`
-- **Active Task IDs**: `T-002, T-011, T-014, T-016`
+- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 merged in main); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 review); E-006 (EPIC_IN_PROGRESS; T-014 review); E-004 (EPIC_IN_PROGRESS; T-016 review); E-007..E-009 (EPIC_READY)`
+- **Active Task IDs**: `T-002, T-012, T-014, T-016`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261029-t014-pr49-review-fixes`
+- **Current Session ID**: `S-20261030-pr52-resolve`
 
 ## Revision Provenance
 
@@ -71,3 +71,9 @@ Revision 22: PR #48 review follow-up synchronizes T-004 done with the task board
 Revision 23 merges main `603c80a` into PR #48: retain main's approved CR-009 state and T-010 records alongside the T-004 closure from revision 22. Preserve both branches' session and commit histories; no new task completion or approval is claimed.
 
 Revision 24 addresses PR #49 re-review at `ea1519b`: synchronize E-006 EPIC_IN_PROGRESS and T-014 review with the existing epic/task/board records, and add the archived Claude review and resolution report to the T-014 board evidence. PR #48 merged as `c882f55`; PR #49 is based on main. T-014 remains review pending counterpart approval and merge; no new approval or task completion is claimed.
+
+Revision 25 closes T-011: owner A approved PR #50 at `f718825` and it merged as `3e9907b` on 2026-10-29; issue #12 is closed. The existing GitHub review and approval are archived in `.agent/reports/review/T-011.md`; no new review is claimed. T-011 leaves Active Task IDs; E-005 stays EPIC_IN_PROGRESS for T-012 and T-013. PR #49 (T-014) merged as `da40246`; T-014 remains review on the board.
+
+Revision 26 merges main `2c5526e` (PR #53, T-011 done) into PR #51: keep T-011 done from main and T-012 review from the branch, preserve both session and commit-map histories, and add T-012 to Active Task IDs. No new review or approval is claimed.
+
+Revision 27 merges main `7efee34` into PR #52: retain T-010 done and E-004/T-016 review from PR52 alongside main T-011 done and T-012 review. Both session histories and commit-map updates are preserved. Revision 25 on the PR52 branch recorded T-016 implementation and T-010 closure; main independently used revision 25 for T-011 closure. T-010 and T-016 task metadata now match the board. This resolution records no new review, approval or task closure.
