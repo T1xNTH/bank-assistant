@@ -93,6 +93,18 @@ def test_rejects_bad_rows(tmp_path, bad, fragment):
     assert any(e.startswith("dòng 1") and fragment in e for e in errors), errors
 
 
+
+@pytest.mark.parametrize("bad, fragment", [
+    ({"category": []}, "category"),
+    ({"difficulty": {}}, "difficulty"),
+    ({"sources": [{"file": [], "page": 1}]}, "file"),
+    ({"sources": [{"file": "fee.pdf", "page": []}]}, "page"),
+    ({"sources": [{"file": {}, "page": {}}]}, "file"),
+])
+def test_unhashable_values_are_reported_not_raised(tmp_path, bad, fragment):
+    errors = errors_for(tmp_path, [row(**bad), *ROWS[1:]])
+    assert any(e.startswith("dòng 1") and fragment in e for e in errors), errors
+
 @pytest.mark.parametrize("bad, fragment", [
     (row(category="out_of_scope", in_scope=True), "out_of_scope"),
     (row(category="fact", in_scope=False, reference=REFUSAL, sources=[]), "out_of_scope"),

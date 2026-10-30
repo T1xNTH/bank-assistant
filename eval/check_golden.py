@@ -87,9 +87,9 @@ def _row_errors(r: dict, docs: dict[str, dict], replacements: set[str], pages: d
     for name in ("user_input", "reference"):
         if not isinstance(r[name], str) or not r[name].strip():
             errors.append(f"{name} phải là chuỗi không rỗng")
-    if r["category"] not in CATEGORIES:
+    if not _one_of(r["category"], CATEGORIES):
         errors.append(f"category phải thuộc {sorted(CATEGORIES)}")
-    if r["difficulty"] not in DIFFICULTIES:
+    if not _one_of(r["difficulty"], DIFFICULTIES):
         errors.append(f"difficulty phải thuộc {sorted(DIFFICULTIES)}")
     if not isinstance(r["in_scope"], bool):
         errors.append("in_scope phải là true/false")
@@ -103,6 +103,9 @@ def _row_errors(r: dict, docs: dict[str, dict], replacements: set[str], pages: d
             continue
         if type(s["page"]) is not int or s["page"] < 1:
             errors.append(f"sources[{i}]: page phải là số nguyên ≥ 1")
+        if not isinstance(s["file"], str):
+            errors.append(f"sources[{i}]: file phải là tên file (chuỗi)")
+            continue
         doc = docs.get(s["file"])
         if doc is None:
             errors.append(f"sources[{i}]: {s['file']} không có trong manifest")
@@ -112,7 +115,7 @@ def _row_errors(r: dict, docs: dict[str, dict], replacements: set[str], pages: d
         if s["file"] in pages and type(s["page"]) is int and s["page"] > pages[s["file"]]:
             errors.append(f"sources[{i}]: {s['file']} chỉ có {pages[s['file']]} trang")
         cited.append(doc)
-    pairs = [(s.get("file"), s.get("page")) for s in r["sources"] if isinstance(s, dict)]
+    pairs = [repr((s.get("file"), s.get("page"))) for s in r["sources"] if isinstance(s, dict)]
     if len(set(pairs)) < len(pairs):
         errors.append("sources có nguồn trùng")
 
@@ -134,6 +137,10 @@ def _row_errors(r: dict, docs: dict[str, dict], replacements: set[str], pages: d
     if r["category"] == "superseded" and not any(d["doc_id"] in replacements for d in cited):
         errors.append("câu superseded phải trích văn bản thay thế (doc là superseded_by của văn bản cũ)")
     return errors
+
+
+def _one_of(value: object, allowed: set[str]) -> bool:
+    return isinstance(value, str) and value in allowed  # a list or dict is unhashable: report it, do not raise
 
 
 def _page_counts(parsed: Path, docs: dict[str, dict]) -> dict[str, int]:
