@@ -115,3 +115,5 @@ Merged-tree verification for revision37 passed: 564 tests passed, 29 deselected 
 Revision 38 records user-authorized issue #25 / T-024 on feat/T-024-ask-jobs from main 8267cd6 in an isolated worktree. PR61 owner approval and merge reconcile T-021 done (T-024-dependency-closure.md); no approval is performed under another identity. E-009 started through lifecycle CLI; T-024 implementation and verification are in progress. T-025 worker policy is outside this task.
 
 T-024 handoff: source 6656369; full WSL make check 583 passed/29 deselected, Ruff and framework passed; final focused API rerun 19 passed without warnings. Complete implementation report recorded and lifecycle CLI requested claude-review-a, moving task/board to review. Independent review, counterpart PR approval and merge remain pending.
+
+Draft PR: https://github.com/caitoithap/bank-assistant/pull/63 (feat/T-024-ask-jobs). Independent review and counterpart approval pending; issue #25 remains open.

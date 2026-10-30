@@ -64,4 +64,4 @@ priority: 3
 
 | `T-021` | `d29a50f` | `#61` | `.agent/reports/implementation/T-021-PR61-merge-main.md` | `Merge main 780169e (T-022 PR60); resolve four metadata conflicts preserving both histories and combined task state; 564 passed/29 deselected, Ruff/framework and golden validation passed` |
 
-| `T-024` | `6656369` | `local feat/T-024-ask-jobs; issue #25` | `.agent/reports/implementation/T-024.md` | `Bounded Redis/RQ API with masked JSON payload/results, exact owner isolation, 1h TTL and 19 fakeredis API tests; full make check 583 passed/29 deselected; independent review pending` |
+| `T-024` | `6656369` | `#63 (draft); issue #25` | `.agent/reports/implementation/T-024.md` | `Bounded Redis/RQ API with masked JSON payload/results, exact owner isolation, 1h TTL and 19 fakeredis API tests; full make check 583 passed/29 deselected; independent review pending` |
