@@ -56,3 +56,5 @@ priority: 3
 | `T-021` | `5300758` | `local feat/T-021-mask-boundaries; issue22` | `.agent/reports/implementation/T-021.md` | `API/LLM input-output masking, managed log filtering, defensive SQLite masking and leak-scan regressions; independent Claude review pending` |
 
 | `T-021` | `0bac953` | `#61` | `.agent/reports/implementation/T-021-PR61-followup.md` | `Preliminary Claude comment corrections: once-per-record log masking, generated timestamp regression and no-backend 503 on input-mask failure; 531 passed/29 deselected; independent full review pending` |
+
+| `T-021` | `5666fe9` | `#61` | `.agent/reports/implementation/T-021-PR61-cleanup.md` | `Two minor re-review cleanups: remove unused audit helper and explain audit fallback; 531 passed/29 deselected, Ruff/framework pass; no new-head approval claimed` |

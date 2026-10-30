@@ -22,11 +22,11 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `35`
+- **Context Revision**: `36`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-30`
 - **Updated By**: `codex-b`
-- **Update Trigger**: `User-authorized PR61 preliminary review follow-up after pulling d4c875d`
+- **Update Trigger**: `User-authorized minor PR61 cleanup after external re-review at 9d93ed1`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
@@ -36,7 +36,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261030-t021-pr61-followup-verify`
+- **Current Session ID**: `S-20261030-t021-pr61-cleanup-verify`
 
 ## Revision Provenance
 
@@ -101,3 +101,7 @@ Revision 34 is the coordinator A merge of origin/main 4bd3236 (T-017 PR #59) int
 Revision 35 resumes T-021 at user request after pulling coordinator merge d4c875d. Preliminary external comment https://github.com/caitoithap/bank-assistant/pull/61#issuecomment-6518800474 is not a full DEC-004 review. Scope: eliminate repeated log masking of standard metadata, protect generated timestamps with regressions, and return safe 503 without backend calls on input-mask failure. Prior complete implementation report remains immutable; new evidence goes in T-021-PR61-followup.md. T-017/main coordinator state is preserved.
 
 T-021 PR61 follow-up 0bac953 verified with final WSL make check: 531 passed, 29 deselected in 109.71s, Ruff and framework validation pass. Report T-021-PR61-followup.md records each preliminary observation and its correction; original final reports remain intact. Task returns to review for independent claude-review-a assessment; no independent review/owner approval, task completion or merge is claimed.
+
+Revision 36 starts the user-requested two minor PR61 cleanup items after external re-review at 9d93ed1: remove unused audit.mask_question and explain the safe audit fallback assignment. Source https://github.com/caitoithap/bank-assistant/pull/61#issuecomment-6519324221 states the previous three fixes pass and no merge blockers remain at that reviewed head. That source assessment is not transferred to new code. Evidence belongs to T-021-PR61-cleanup.md; prior final reports and main/T-017 state remain intact.
+
+T-021 minor cleanup 5666fe9 passes WSL make check: 531 passed, 29 deselected in 119.79s, Ruff/framework pass. New report T-021-PR61-cleanup.md records the two resolved minor observations. Task returns to review. Prior full external assessment remains scoped to 9d93ed1; no new-head approval, done or merge is claimed.
