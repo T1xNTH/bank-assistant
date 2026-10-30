@@ -23,4 +23,6 @@ Only validated, authenticated `/ask` requests supply question text to auditing. 
 
 If SQLite cannot commit, the request returns the existing safe `503 SERVICE_UNAVAILABLE` error envelope rather than an unaudited success. The failed write is logged without exception text or paths and is not retried in the error path. The upstream answer may already have been generated; this is not a distributed transaction with model execution. A failed audit write cannot itself be recorded in the unavailable database.
 
+With the T-020 masker available, `question_masked` redacts only the supported CCCD, account and Vietnamese phone formats; names, email addresses and other unsupported personal information can remain in the stored question. The whole-question `[REDACTED]` fallback applies when masking fails or returns an invalid value.
+
 Run `pytest tests/security/test_audit.py` for audit behavior, privacy, error paths and concurrent requests. The default suite also checks existing auth/API/error envelopes. Tests use temporary database files and synthetic input; they do not modify the deployment audit database.
