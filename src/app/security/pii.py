@@ -20,7 +20,9 @@ def _analyzer() -> AnalyzerEngine:
     phone = rf"(?:0|\+84[ .-]?|0084[ .-]?)(?:[35789](?:{digit}){{8}}|2(?:{digit}){{9}})"
     patterns = {
         "CCCD": r"(?<!\w)[0-9]{12}(?!\w)",
-        "PHONE_NUMBER": rf"(?<![\w+]){phone}(?!\w|[ .-]?[0-9])",
+        # A numeric word after whitespace/punctuation may be an independent
+        # amount/account. Redact the complete candidate even if ambiguous.
+        "PHONE_NUMBER": rf"(?<![\w+]){phone}(?!\w)",
         "ACCOUNT_NUMBER": r"(?<![\w+])[0-9]{8,19}(?!\w)",
     }
     registry = RecognizerRegistry(supported_languages=["vi"])

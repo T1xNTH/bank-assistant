@@ -50,7 +50,6 @@ def test_masks_complete_entity(text, entity):
         ("PHONE_NUMBER", "09000000001"),
         ("PHONE_NUMBER", "+840900000001"),
         ("PHONE_NUMBER", "+19000000001"),
-        ("PHONE_NUMBER", "0900 000 001 2"),
         ("PHONE_NUMBER", "0900\n000\n001"),
         ("PHONE_NUMBER", "ref0900000001"),
         ("PHONE_NUMBER", "0900000001A"),
@@ -59,6 +58,30 @@ def test_masks_complete_entity(text, entity):
 def test_recognizer_rejects_non_entity(entity, text):
     # Another recognizer may conservatively mask a numeric candidate as account.
     assert _analyzer().analyze(text=text, language="vi", entities=[entity]) == []
+
+
+@pytest.mark.parametrize(
+    "phone", ["0900000001", "+84900000001", "0084900000001", "0900 000 001", "+84 24 0000 0001"]
+)
+@pytest.mark.parametrize(
+    ("following", "masked_following", "following_types"),
+    [
+        ("100 VND", "100 VND", []),
+        ("10000001", "<ACCOUNT_NUMBER>", ["ACCOUNT_NUMBER"]),
+        ("000000000001", "<CCCD>", ["CCCD"]),
+        ("0900000001", "<PHONE_NUMBER>", []),
+    ],
+)
+def test_phone_before_independent_numeric_word(phone, following, masked_following, following_types):
+    assert mask_text(f"{phone} {following}") == (
+        f"<PHONE_NUMBER> {masked_following}", ["PHONE_NUMBER", *following_types]
+    )
+
+
+@pytest.mark.parametrize("separator", [" ", "\t", "\n", ",", ".", "-"])
+def test_ambiguous_formatted_extension_still_masks_complete_phone(separator):
+    # Prefer masking a complete candidate over leaking it due to a numeric suffix.
+    assert mask_text(f"0900 000 001{separator}2") == (f"<PHONE_NUMBER>{separator}2", ["PHONE_NUMBER"])
 
 
 @pytest.mark.parametrize("text", ["", "Xin chào Việt Nam!", "100.000 VND, 30/10/2026", "abc10000001"])

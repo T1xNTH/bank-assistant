@@ -39,6 +39,10 @@ xuất hiện trong văn bản. Gọi lại trên văn bản đã che không tha
 - Điện thoại: di động bắt đầu bằng `03/05/07/08/09` (10 số), cố định `02`
   (11 số); hỗ trợ `+84` và `0084` thay cho số `0` đầu, dấu cách, chấm hoặc gạch
   ngang giữa các chữ số. Không xác minh thuê bao hoặc đầu số nhà mạng cụ thể.
+  Khi đã đủ độ dài, khoảng trắng hoặc dấu câu kết thúc ứng viên điện thoại,
+  kể cả khi phần sau là số tiền, tài khoản hoặc một số khác. Trường hợp mơ hồ
+  (ví dụ số có định dạng quá dài) vẫn che ứng viên đủ độ dài để tránh lộ PII;
+  dãy chữ số liền nhau sai độ dài vẫn bị loại.
 - Khi kết quả chồng lấn, giữ span dài nhất; cùng span ưu tiên CCCD, điện thoại,
   rồi tài khoản. Vì vậy tài khoản 12 số có thể mang nhãn CCCD nhưng vẫn được che hết.
 
