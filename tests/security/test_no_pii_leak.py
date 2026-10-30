@@ -129,10 +129,14 @@ def test_masker_failure_never_passes_raw_input_to_backend(monkeypatch, invalid, 
     app.dependency_overrides[get_answerer] = Answerer
     app.dependency_overrides[get_llm] = ChatLLM
     response = TestClient(app).post(endpoint, json={"question" if endpoint == "/ask" else "message": RAW})
-    assert response.status_code == 200
-    assert calls == [audit.REDACTED]
+    assert response.status_code == 503
+    assert response.json() == {"error": {"code": "SERVICE_UNAVAILABLE", "message": "Service Unavailable"}}
+    assert calls == []
     assert_clean(response.text + caplog.text)
     assert_clean(Path(os.environ["AUDIT_DB_PATH"]).read_bytes().decode("latin1"))
+    with sqlite3.connect(os.environ["AUDIT_DB_PATH"]) as connection:
+        rows = connection.execute("SELECT question_masked, route, refused FROM audit_log").fetchall()
+    assert rows == [(audit.REDACTED if endpoint == "/ask" else None, None, None)]
 
 
 def test_uuid_trace_matches_response_audit_and_logs(caplog):

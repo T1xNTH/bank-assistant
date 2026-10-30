@@ -26,19 +26,33 @@ def mask_identifier(value: str) -> str:
     return mask_text(value)
 
 
-def mask_text(text: str) -> str:
+class MaskingError(RuntimeError):
+    """The masker could not produce safe text; never includes original input."""
+
+
+def require_mask_text(text: str) -> str:
     # Presidio itself emits logs. Never recursively invoke its analyzer from
     # the logging filter, including while the analyzer is being initialized.
     if _MASKING.get():
-        return REDACTED
+        raise MaskingError("Masking unavailable")
     token = _MASKING.set(True)
     try:
         masked, _ = pii.mask_text(text)
-        return masked if isinstance(masked, str) else REDACTED
+        if not isinstance(masked, str):
+            raise MaskingError("Masking unavailable")
+        return masked
     except Exception:
-        return REDACTED
+        raise MaskingError("Masking unavailable") from None
     finally:
         _MASKING.reset(token)
+
+
+def mask_text(text: str) -> str:
+    """Best-effort fail-closed redaction for output, log and audit sinks."""
+    try:
+        return require_mask_text(text)
+    except MaskingError:
+        return REDACTED
 
 
 def mask_data(value):

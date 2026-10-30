@@ -67,7 +67,7 @@ def test_masker_failure_never_persists_raw_input(monkeypatch, mode):
 
     monkeypatch.setattr(pii, "mask_text", mask)
     secret = "synthetic-private-question"
-    assert TestClient(create_app()).post("/ask", json={"question": secret}).status_code == 200
+    assert TestClient(create_app()).post("/ask", json={"question": secret}).status_code == 503
     [row] = rows()
     assert row["question_masked"] == audit.REDACTED
     assert secret not in json.dumps(row)
