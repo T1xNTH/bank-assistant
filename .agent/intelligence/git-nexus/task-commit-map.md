@@ -13,6 +13,7 @@ priority: 3
 
 | Task ID | Commit | PR | Report | Ghi chú |
 |---|---|---|---|---|
+| `T-020` | `a9ec873; 53008c6; b48ef3f` | `#58` | `.agent/reports/implementation/T-020-PR58-resolution.md` | `Merge PR56 audit, preserve sessions, compatible Presidio pin and real-mask audit error regression; Python3.10 PII68/full426 tests pass; review gates pending` |
 | `T-020` | `9e7947c` | `none; local feat/T-020-vn-pii` | `.agent/reports/implementation/T-020-F01.md` | `Correct F-T020-01 phone numeric-suffix leak; 68 PII / 406 total tests passed, 24 deselected; independent follow-up pending` |
 | `T-020` | `d783a36` | `none; local feat/T-020-vn-pii` | `.agent/reports/implementation/T-020.md` | `Presidio VN regex masking with NoOp NLP; PII 43 passed; WSL make check 381 passed, 24 deselected. Independent review pending; Windows Python 3.13 debug-log capture crashes.` |
 | `T-001` | `54c212e, b42dc6f, 6cd249d, 71193a8, ca1f2d4, b1fd81e (executor); 18d490d, 87fcf99, 6a9bfcd (review); c9a8ce6, 3915ee0, 9129079 (follow-up)` | `#29` | `.agent/reports/implementation/T-001.md, .agent/reports/qa/T-001.md` | `commit bằng chứng trên PR #29; commit tích hợp được truy vết qua mergeCommit của https://github.com/caitoithap/bank-assistant/pull/29; QA/closure nằm trong cùng PR` |
