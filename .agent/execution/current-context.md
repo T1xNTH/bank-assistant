@@ -30,7 +30,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 merged in main); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 done, T-013 review); E-006 (EPIC_IN_PROGRESS; T-014 done, T-015 done); E-004 (EPIC_IN_PROGRESS; T-016 done, T-017 review); E-007 (EPIC_IN_PROGRESS; T-020 done, T-021 done); E-008 (EPIC_IN_PROGRESS; T-022 review); E-009 (EPIC_IN_PROGRESS; T-024 in-progress)`
+- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 merged in main); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 done, T-013 review); E-006 (EPIC_IN_PROGRESS; T-014 done, T-015 done); E-004 (EPIC_IN_PROGRESS; T-016 done, T-017 review); E-007 (EPIC_IN_PROGRESS; T-020 done, T-021 done); E-008 (EPIC_IN_PROGRESS; T-022 review); E-009 (EPIC_IN_PROGRESS; T-024 review)`
 - **Active Task IDs**: `T-002, T-013, T-017, T-022, T-024`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
@@ -113,3 +113,5 @@ Revision 37 merges main 780169e (T-022 PR60) into PR61 at explicit user request.
 Merged-tree verification for revision37 passed: 564 tests passed, 29 deselected in 109.34s; Ruff/framework validation passed. Golden dataset validation reports zero errors. Both parent session-history and commit-map row sets are preserved exactly; no unmerged index entries or conflict markers remain.
 
 Revision 38 records user-authorized issue #25 / T-024 on feat/T-024-ask-jobs from main 8267cd6 in an isolated worktree. PR61 owner approval and merge reconcile T-021 done (T-024-dependency-closure.md); no approval is performed under another identity. E-009 started through lifecycle CLI; T-024 implementation and verification are in progress. T-025 worker policy is outside this task.
+
+T-024 handoff: source 6656369; full WSL make check 583 passed/29 deselected, Ruff and framework passed; final focused API rerun 19 passed without warnings. Complete implementation report recorded and lifecycle CLI requested claude-review-a, moving task/board to review. Independent review, counterpart PR approval and merge remain pending.
