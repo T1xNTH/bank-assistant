@@ -44,7 +44,8 @@ def test_chat_returns_contract_shape(application, intent, needs_human):
 
 
 @pytest.mark.parametrize("payload", [{}, {"message": ""}, {"message": "x" * 4001}, {"message": 42},
-                                     {"message": None}, {"message": ["hello"]}])
+                                     {"message": None}, {"message": ["hello"]},
+                                     {"message": "   \n "}, {"message": "\t\r\n"}, {"message": "\u2003"}])
 def test_invalid_request_is_rejected_before_llm(application, payload):
     fake = install_fake(application, {})
     response = TestClient(application).post("/chat", json=payload)
@@ -60,12 +61,23 @@ def test_message_at_length_limit_is_preserved(application):
     assert fake.calls[0][0][1]["content"] == message
 
 
+def test_surrounding_whitespace_is_trimmed(application):
+    fake = install_fake(application, {"answer": " \n ok\t ", "intent": "other", "needs_human": False})
+    response = TestClient(application).post("/chat", json={"message": "  hello\n "})
+    assert response.status_code == 200
+    assert response.json()["answer"] == "ok"
+    assert fake.calls[0][0][1]["content"] == "hello"
+
+
 @pytest.mark.parametrize("output", [
     {}, [], None,
     {"answer": "ok", "intent": "unknown", "needs_human": False},
     {"answer": "ok", "intent": "question", "needs_human": "false"},
     {"answer": "ok", "intent": "question", "needs_human": 1},
     {"answer": 42, "intent": "question", "needs_human": False},
+    {"answer": "", "intent": "question", "needs_human": False},
+    {"answer": "   \n ", "intent": "question", "needs_human": False},
+    {"answer": "\u2003", "intent": "question", "needs_human": False},
     {"answer": "ok", "intent": "question", "needs_human": False, "model": "spoofed"},
 ])
 def test_invalid_output_returns_safe_service_error(application, output):
@@ -173,3 +185,17 @@ def test_chat_schema_matches_authoritative_openapi(application):
         assert set(actual["properties"]) == set(expected["properties"])
         for field, schema in expected["properties"].items():
             assert {key: actual["properties"][field][key] for key in schema} == schema
+
+    expected_response = contract["paths"]["/chat"]["post"]["responses"]["503"]
+    assert expected_response == {"$ref": "#/components/responses/Unavailable"}
+    expected_error_ref = contract["components"]["responses"]["Unavailable"]["content"]["application/json"]["schema"]
+    actual_error_ref = generated["paths"]["/chat"]["post"]["responses"]["503"]["content"]["application/json"]["schema"]
+    expected_error = contract["components"]["schemas"][expected_error_ref["$ref"].split("/")[-1]]
+    actual_error = generated["components"]["schemas"][actual_error_ref["$ref"].split("/")[-1]]
+    assert actual_error["required"] == expected_error["required"] == ["error"]
+    actual_detail_ref = actual_error["properties"]["error"]["$ref"]
+    actual_detail = generated["components"]["schemas"][actual_detail_ref.split("/")[-1]]
+    expected_detail = expected_error["properties"]["error"]
+    assert set(actual_detail["required"]) == set(expected_detail["required"]) == {"code", "message"}
+    for name in expected_detail["properties"]:
+        assert actual_detail["properties"][name]["type"] == expected_detail["properties"][name]["type"]

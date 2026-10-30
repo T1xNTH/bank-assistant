@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from time import perf_counter
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastapi import HTTPException
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict, StringConstraints, ValidationError
 
 from app.contracts import LLM
 from app.llm import LLMError
@@ -26,7 +26,7 @@ Do not include Markdown fences or any text outside the JSON object."""
 class _ChatOutput(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
 
-    answer: str
+    answer: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
     intent: Literal["question", "complaint", "request", "other"]
     needs_human: bool
 
