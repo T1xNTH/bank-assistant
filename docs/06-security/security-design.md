@@ -32,22 +32,33 @@ Prompt injection (LLM01), lộ thông tin nhạy cảm (LLM02), agent có quyề
 `<ACCOUNT_NUMBER>` hoặc `<PHONE_NUMBER>`. Danh sách loại không lặp, theo thứ tự
 xuất hiện trong văn bản. Gọi lại trên văn bản đã che không thay đổi kết quả.
 
-- CCCD: đúng 12 chữ số ASCII liên tiếp, không nằm trong một mã chữ/số dài hơn.
-- Số tài khoản: ứng viên gồm 8–19 chữ số ASCII liên tiếp. Không có checksum chung
+- CCCD: đúng 12 chữ số ASCII, có thể có một dấu cách, chấm hoặc gạch ngang giữa
+  các chữ số; không nằm trong một mã chữ/số dài hơn.
+- Số tài khoản: ứng viên gồm 8–19 chữ số ASCII, hỗ trợ dấu phân cách như CCCD. Không có checksum chung
   để xác thực tài khoản VN; cách che thận trọng này có thể che cả số tiền hoặc mã
-  định danh dài. Số tài khoản ngoài khoảng này hoặc có dấu phân cách chưa được nhận diện.
+  định danh dài. Số tài khoản ngoài khoảng này chưa được nhận diện.
 - Điện thoại: di động bắt đầu bằng `03/05/07/08/09` (10 số), cố định `02`
-  (11 số); hỗ trợ `+84` và `0084` thay cho số `0` đầu, dấu cách, chấm hoặc gạch
+  (11 số); hỗ trợ `+84`, `(+84)` và `0084` thay cho số `0` đầu, dấu cách, chấm hoặc gạch
   ngang giữa các chữ số. Không xác minh thuê bao hoặc đầu số nhà mạng cụ thể.
   Khi đã đủ độ dài, khoảng trắng hoặc dấu câu kết thúc ứng viên điện thoại,
   kể cả khi phần sau là số tiền, tài khoản hoặc một số khác. Trường hợp mơ hồ
   (ví dụ số có định dạng quá dài) vẫn che ứng viên đủ độ dài để tránh lộ PII;
   dãy chữ số liền nhau sai độ dài vẫn bị loại.
-- Khi kết quả chồng lấn, giữ span dài nhất; cùng span ưu tiên CCCD, điện thoại,
-  rồi tài khoản. Vì vậy tài khoản 12 số có thể mang nhãn CCCD nhưng vẫn được che hết.
+  Nhãn dính liền như `SĐT0912…`, `sdt0912…` được giữ và số được che. Ranh giới trái
+  chỉ chặn chữ số hoặc `+`, nên `ref0900000001` cũng bị che thừa có chủ ý.
+- Nhãn tường minh `CCCD`, `STK`, `số tài khoản` hoặc bản không dấu được ưu tiên
+  khi một dãy số nhóm có thể bắt đầu giống điện thoại. Các điện thoại còn lại
+  chia văn bản thành những đoạn nhận diện CCCD/tài khoản riêng, tránh gộp điện thoại
+  với khoản tiền hoặc tài khoản liền sau. Trong mỗi đoạn, giữ span dài nhất;
+  cùng span ưu tiên CCCD rồi tài khoản. Tài khoản 12 số không nhãn có thể mang nhãn CCCD.
+  Nhãn CCCD/tài khoản cần tách khỏi số bằng khoảng trắng hoặc dấu câu. Với dãy
+  không nhãn có tiền tố là một điện thoại hoàn chỉnh, bộ che ưu tiên điện thoại
+  và xét phần sau riêng: `0900 000 001 23` thành `<PHONE_NUMBER> 23`. Không thể
+  phân biệt chắc chắn đây là CCCD/tài khoản nhóm hay điện thoại kèm một số khác;
+  dùng nhãn tường minh để che toàn bộ dãy thuộc CCCD/tài khoản trong trường hợp này.
 
 Test: `pytest tests/security/test_pii.py`. Việc nối bộ che vào input, output,
-log và audit được thực hiện ở T-021.
+log và các luồng còn lại được thực hiện ở T-021; T-015 đã gọi bộ che tại audit của `/ask`.
 
 ## Ngoài phạm vi MVP
 SSO/OIDC, secret manager, TLS, pentest (xem phần loại trừ trong SRS).

@@ -41,23 +41,56 @@ def test_masks_complete_entity(text, entity):
         ("CCCD", "mã000000000001"),
         ("CCCD", "000000000001A"),
         ("CCCD", "０００００００００００１"),
+        ("CCCD", "000 000 000 01"),
+        ("CCCD", "000 000 000 0001"),
         ("ACCOUNT_NUMBER", "1000001"),
         ("ACCOUNT_NUMBER", "10000000000000000001"),
         ("ACCOUNT_NUMBER", "ref10000001"),
         ("ACCOUNT_NUMBER", "10000001_id"),
+        ("ACCOUNT_NUMBER", "100 0001"),
+        ("ACCOUNT_NUMBER", "1000\n0001"),
         ("PHONE_NUMBER", "0100000001"),
         ("PHONE_NUMBER", "090000001"),
         ("PHONE_NUMBER", "09000000001"),
         ("PHONE_NUMBER", "+840900000001"),
         ("PHONE_NUMBER", "+19000000001"),
         ("PHONE_NUMBER", "0900\n000\n001"),
-        ("PHONE_NUMBER", "ref0900000001"),
         ("PHONE_NUMBER", "0900000001A"),
     ],
 )
 def test_recognizer_rejects_non_entity(entity, text):
     # Another recognizer may conservatively mask a numeric candidate as account.
     assert _analyzer().analyze(text=text, language="vi", entities=[entity]) == []
+
+
+@pytest.mark.parametrize(
+    ("text", "masked", "types"),
+    [
+        ("CCCD: 001 204 012 345", "CCCD: <CCCD>", ["CCCD"]),
+        ("001.204.012.345", "<CCCD>", ["CCCD"]),
+        ("001-204-012-345", "<CCCD>", ["CCCD"]),
+        ("STK 1903 6789 0123", "STK <ACCOUNT_NUMBER>", ["ACCOUNT_NUMBER"]),
+        ("STK: 0011-0049-12345", "STK: <ACCOUNT_NUMBER>", ["ACCOUNT_NUMBER"]),
+        ("1000 0001", "<ACCOUNT_NUMBER>", ["ACCOUNT_NUMBER"]),
+        ("1000.0000.0000.0000.001", "<ACCOUNT_NUMBER>", ["ACCOUNT_NUMBER"]),
+        ("(+84) 912 345 678", "<PHONE_NUMBER>", ["PHONE_NUMBER"]),
+        ("(+84)-912-345-678", "<PHONE_NUMBER>", ["PHONE_NUMBER"]),
+        ("SĐT0912345678", "SĐT<PHONE_NUMBER>", ["PHONE_NUMBER"]),
+        ("sdt0912345678", "sdt<PHONE_NUMBER>", ["PHONE_NUMBER"]),
+        ("ref0900000001", "ref<PHONE_NUMBER>", ["PHONE_NUMBER"]),
+        ("gọi 090.123.4567 nhé", "gọi <PHONE_NUMBER> nhé", ["PHONE_NUMBER"]),
+        ("+84-912-345-678", "<PHONE_NUMBER>", ["PHONE_NUMBER"]),
+        ("0912 345 678 và 0987654321", "<PHONE_NUMBER> và <PHONE_NUMBER>", ["PHONE_NUMBER"]),
+        ("CCCD 0900 000 001 23", "CCCD <CCCD>", ["CCCD"]),
+        ("STK 0900 000 001 234", "STK <ACCOUNT_NUMBER>", ["ACCOUNT_NUMBER"]),
+        ("0900 000 001 100 VND", "<PHONE_NUMBER> 100 VND", ["PHONE_NUMBER"]),
+        ("0900 000 001 1000 0001", "<PHONE_NUMBER> <ACCOUNT_NUMBER>", ["PHONE_NUMBER", "ACCOUNT_NUMBER"]),
+        ("1000 0001 0900 000 001", "<ACCOUNT_NUMBER> <PHONE_NUMBER>", ["ACCOUNT_NUMBER", "PHONE_NUMBER"]),
+    ],
+)
+def test_review_grouped_and_labelled_entities(text, masked, types):
+    assert mask_text(text) == (masked, types)
+    assert mask_text(masked) == (masked, [])
 
 
 @pytest.mark.parametrize(

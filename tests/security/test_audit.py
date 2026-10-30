@@ -117,23 +117,31 @@ def test_forbidden_request_records_authenticated_identity():
     assert row["endpoint"] == "/approval" and row["refused"] is None
 
 
-def test_answerer_failure_creates_one_row_without_inventing_a_route(caplog):
+@pytest.mark.parametrize(
+    ("question", "masked", "raw_pii"),
+    [
+        ("+84900000001 100 VND", "<PHONE_NUMBER> 100 VND", "+84900000001"),
+        ("CCCD: 001 204 012 345", "CCCD: <CCCD>", "001 204 012 345"),
+        ("STK: 0011-0049-12345", "STK: <ACCOUNT_NUMBER>", "0011-0049-12345"),
+        ("SĐT0912345678", "SĐT<PHONE_NUMBER>", "0912345678"),
+    ],
+)
+def test_answerer_failure_creates_one_row_without_inventing_a_route(caplog, question, masked, raw_pii):
     app = create_app()
-    phone = "+84900000001"  # Synthetic PII; exercise the real T-020 masker.
 
     class Broken:
         def answer(self, *args):
             raise RuntimeError("private-provider-detail")
 
     app.dependency_overrides[get_answerer] = Broken
-    response = TestClient(app).post("/ask", json={"question": f"{phone} 100 VND"})
+    response = TestClient(app).post("/ask", json={"question": question})
     assert response.status_code == 500
     [row] = rows()
-    assert row["question_masked"] == "<PHONE_NUMBER> 100 VND"
+    assert row["question_masked"] == masked
     assert row["route"] is None and row["refused"] is None
     assert row["trace_id"] == response.headers["x-request-id"]
     assert "private-provider-detail" not in json.dumps(row) + response.text + caplog.text
-    assert phone not in json.dumps(row) + response.text + caplog.text
+    assert raw_pii not in json.dumps(row) + response.text + caplog.text
 
 
 @pytest.mark.parametrize("broken_answerer", [False, True])

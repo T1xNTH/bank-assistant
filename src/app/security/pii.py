@@ -1,15 +1,16 @@
 """Regex-only Vietnamese PII masking. Owner: B, Epic E-007.
 
-Bare account candidates are conservatively defined as 8-19 ASCII digits.
+Account candidates are conservatively defined as 8-19 ASCII digits, optionally grouped.
 These can also be amounts or identifiers: masking favors privacy over precision.
-CCCD (12 digits) and Vietnamese phone patterns take precedence over accounts.
+Explicit labels and complete phones delimit generic numeric candidates.
 """
 
 from __future__ import annotations
 
+import re
 from functools import lru_cache
 
-from presidio_analyzer import AnalyzerEngine, Pattern, PatternRecognizer, RecognizerRegistry
+from presidio_analyzer import AnalyzerEngine, Pattern, PatternRecognizer, RecognizerRegistry, RecognizerResult
 from presidio_analyzer.nlp_engine import NoOpNlpEngine
 
 
@@ -17,13 +18,13 @@ from presidio_analyzer.nlp_engine import NoOpNlpEngine
 def _analyzer() -> AnalyzerEngine:
     # Explicit registry prevents loading Presidio's default NLP recognizers.
     digit = r"[ .-]?[0-9]"
-    phone = rf"(?:0|\+84[ .-]?|0084[ .-]?)(?:[35789](?:{digit}){{8}}|2(?:{digit}){{9}})"
+    phone = rf"(?:0|\+84[ .-]?|0084[ .-]?|\(\+84\)[ .-]?)(?:[35789](?:{digit}){{8}}|2(?:{digit}){{9}})"
     patterns = {
-        "CCCD": r"(?<!\w)[0-9]{12}(?!\w)",
+        "CCCD": rf"(?<!\w)[0-9](?:{digit}){{11}}(?!\w)",
         # A numeric word after whitespace/punctuation may be an independent
         # amount/account. Redact the complete candidate even if ambiguous.
-        "PHONE_NUMBER": rf"(?<![\w+]){phone}(?!\w)",
-        "ACCOUNT_NUMBER": r"(?<![\w+])[0-9]{8,19}(?!\w)",
+        "PHONE_NUMBER": rf"(?<![0-9+]){phone}(?!\w)",
+        "ACCOUNT_NUMBER": rf"(?<![\w+])[0-9](?:{digit}){{7,18}}(?!\w)",
     }
     registry = RecognizerRegistry(supported_languages=["vi"])
     for entity, regex in patterns.items():
@@ -41,23 +42,57 @@ def _analyzer() -> AnalyzerEngine:
     )
 
 
-def mask_text(text: str) -> tuple[str, list[str]]:
-    """Replace PII with ``<TYPE>`` and return unique types in textual order.
-
-    Resolve overlaps by keeping the longest span, then CCCD/phone over account.
-    Already masked text is unchanged. No original text is logged or retained.
-    """
-    if not text:
-        return text, []
-    results = _analyzer().analyze(text=text, language="vi")
+def _non_overlapping(results: list[RecognizerResult]) -> list[RecognizerResult]:
     priority = {"CCCD": 0, "PHONE_NUMBER": 1, "ACCOUNT_NUMBER": 2}
-    # Account candidates may be contained in a formatted phone number. Prefer
-    # the complete span so no country code or phone segment survives masking.
     results.sort(key=lambda r: (-(r.end - r.start), priority[r.entity_type], r.start))
     selected = []
     for result in results:
         if not any(result.start < other.end and other.start < result.end for other in selected):
             selected.append(result)
+    selected.sort(key=lambda r: r.start)
+    return selected
+
+
+def mask_text(text: str) -> tuple[str, list[str]]:
+    """Replace PII with ``<TYPE>`` and return unique types in textual order.
+
+    Explicit numeric labels take precedence; otherwise complete phones delimit
+    grouped numbers, so a following amount/account is not swallowed by a match.
+    Already masked text is unchanged. No original text is logged or retained.
+    """
+    if not text:
+        return text, []
+    analyzer = _analyzer()
+    results = analyzer.analyze(text=text, language="vi")
+    labels = {
+        "CCCD": r"\bcccd[ \t]*[:=]?[ \t]*$",
+        "ACCOUNT_NUMBER": r"\b(?:stk|số tài khoản|so tai khoan|tài khoản|tai khoan)[ \t]*[:=]?[ \t]*$",
+    }
+    # An explicitly labelled grouped account/CCCD can itself start like a phone.
+    labelled = _non_overlapping([
+        r for r in results
+        if r.entity_type in labels
+        and re.search(labels[r.entity_type], text[max(0, r.start - 64) : r.start], re.IGNORECASE)
+    ])
+    phones = [
+        r for r in results if r.entity_type == "PHONE_NUMBER"
+        and not any(r.start < n.end and n.start < r.end for n in labelled)
+    ]
+    anchors = _non_overlapping(labelled + phones)
+    selected = list(anchors)
+    cursor = 0
+    # Analyze the gaps separately: generic grouped-number patterns must not
+    # bridge two phone spans or consume a phone and an independent numeric word.
+    for end, next_start in [(r.start, r.end) for r in anchors] + [(len(text), len(text))]:
+        if re.search(r"[0-9]", text[cursor:end]):
+            numeric = analyzer.analyze(
+                text=text[cursor:end], language="vi", entities=["CCCD", "ACCOUNT_NUMBER"]
+            )
+            for result in _non_overlapping(numeric):
+                result.start += cursor
+                result.end += cursor
+                selected.append(result)
+        cursor = next_start
     selected.sort(key=lambda r: r.start)
     pieces: list[str] = []
     types: list[str] = []
