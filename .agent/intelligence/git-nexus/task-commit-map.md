@@ -13,6 +13,7 @@ priority: 3
 
 | Task ID | Commit | PR | Report | Ghi chú |
 |---|---|---|---|---|
+| `T-020` | `dbdb0aa` | `#58` | `.agent/reports/implementation/T-020-PR58-round-3-fixes.md` | `Optional attached CCCD label correction after old-head no-blockers review; Python3.10 PII115/full479 tests pass; new-head verification pending` |
 | `T-020` | `58db49e` | `#58` | `.agent/reports/implementation/T-020-PR58-round-2-fixes.md` | `Second Claude re-review corrections: attached accounts, phone letter suffix, bounded fillers and EOF; Python3.10 PII106/full469 tests pass; external approval pending` |
 | `T-020` | `a8fa471` | `#58` | `.agent/reports/implementation/T-020-PR58-fixes.md` | `Resolve separate Claude format findings; 91 PII tests on Python3.10/full452 tests pass; archive review, preserve coordinator context; re-review pending` |
 | `T-020` | `a9ec873; 53008c6; b48ef3f` | `#58` | `.agent/reports/implementation/T-020-PR58-resolution.md` | `Merge PR56 audit, preserve sessions, compatible Presidio pin and real-mask audit error regression; Python3.10 PII68/full426 tests pass; review gates pending` |
