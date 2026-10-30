@@ -11,18 +11,13 @@ from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 
-from app.security import pii
-
-REDACTED = "[REDACTED]"
+from app.security.masking import REDACTED as REDACTED
+from app.security.masking import mask_identifier, mask_text
 
 
 def mask_question(question: str) -> str:
     """Never fall back to raw input when the E-007 masker is unavailable."""
-    try:
-        masked, _ = pii.mask_text(question)
-        return masked if isinstance(masked, str) else REDACTED
-    except Exception:
-        return REDACTED
+    return mask_text(question)
 
 
 def write(
@@ -37,7 +32,7 @@ def write(
     cost_usd: float | None = None,
     trace_id: str | None = None,
 ) -> None:
-    """Commit one append-only row, or raise; callers must pass already-masked text.
+    """Commit one append-only row, defensively masking every text field.
 
     A separate connection/transaction per call supports sync workers and concurrent
     requests. SQLite serializes writers and waits up to 10 seconds for a lock.
@@ -60,6 +55,8 @@ def write(
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
-                user_id, department, endpoint, question_masked, route, refused, latency_ms, cost_usd, trace_id,
+                *(mask_text(v) if v is not None else None for v in
+                  (user_id, department, endpoint, question_masked, route)),
+                refused, latency_ms, cost_usd, mask_identifier(trace_id) if trace_id is not None else None,
             ),
         )

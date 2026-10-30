@@ -28,7 +28,7 @@ def rows():
 def test_one_ask_row_contains_masked_question_and_result_metadata(monkeypatch):
     secret = "synthetic-private-input"
     masked = "[MASKED]"
-    monkeypatch.setattr(pii, "mask_text", lambda text: (masked, ["TEST"]))
+    monkeypatch.setattr(pii, "mask_text", lambda text: (text.replace(secret, masked), ["TEST"]))
     app = create_app()
     app.dependency_overrides[get_current_user] = lambda: User("staff-1", "hr")
 
@@ -179,7 +179,7 @@ def test_unwritable_database_path_fails_closed(monkeypatch, tmp_path):
 
 
 def test_concurrent_requests_are_not_lost_duplicated_or_mixed(monkeypatch):
-    monkeypatch.setattr(pii, "mask_text", lambda text: ("[MASKED]", []))
+    monkeypatch.setattr(pii, "mask_text", lambda text: (text.replace("test", "[MASKED]"), []))
     with TestClient(create_app()) as client, ThreadPoolExecutor(max_workers=8) as executor:
         responses = list(executor.map(lambda _: client.post("/ask", json={"question": "test"}), range(24)))
     recorded = rows()

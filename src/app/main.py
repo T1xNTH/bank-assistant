@@ -14,6 +14,7 @@ from app.log_config import configure_logging
 from app.middleware import RequestContextMiddleware
 from app.schemas import AskRequest, AskResponse, ChatRequest, ChatResponse, ErrorResponse
 from app.security import audit
+from app.security.masking import mask_identifier, mask_text
 
 
 def create_app() -> FastAPI:
@@ -39,7 +40,8 @@ def chat(
     user: User = Depends(get_current_user),
     llm: LLM = Depends(get_llm),
 ) -> ChatResponse:
-    return structured_chat(req.message, llm)
+    response = structured_chat(mask_text(req.message), llm)
+    return response.model_copy(update={"answer": mask_text(response.answer), "model": mask_text(response.model)})
 
 
 def ask(
@@ -50,8 +52,13 @@ def ask(
 ) -> AskResponse:
     request.state.audit_user = user
     request.state.audit_question = audit.mask_question(req.question)
-    result = answerer.answer(req.question, user, req.mode)
-    response = AskResponse(**asdict(result))
+    result = answerer.answer(request.state.audit_question, user, req.mode)
+    fields = asdict(result)
+    fields["answer"] = mask_text(result.answer)
+    fields["citations"] = [dict(c, source=mask_text(c["source"])) for c in fields["citations"]]
+    if result.trace_id is not None:
+        fields["trace_id"] = mask_identifier(result.trace_id)
+    response = AskResponse(**fields)
     request.state.audit_result = result
     return response
 
