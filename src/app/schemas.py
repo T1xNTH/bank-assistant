@@ -2,9 +2,23 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 from app.contracts import RetrievalMode, Route
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=4000)
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    intent: Literal["question", "complaint", "request", "other"]
+    needs_human: bool
+    model: str
+    latency_ms: int
 
 
 class AskRequest(BaseModel):
