@@ -188,3 +188,32 @@ def test_writer_appends_parameterized_values_without_modifying_earlier_rows(tmp_
     assert first == original and second["trace_id"] == "second"
     assert first["question_masked"] == fields["question_masked"]
     assert Path(path).is_file()
+
+
+@pytest.mark.parametrize("scenario,status", [("success", 200), ("auth", 401), ("validation", 400), ("backend", 503)])
+def test_chat_after_merge_is_audited_once_without_capturing_message(monkeypatch, scenario, status):
+    from app.deps import get_llm
+    from app.llm import LLMError
+    from tests.fakes import FakeLLM
+
+    secret = "synthetic-private-chat-message"
+    app = create_app()
+    app.dependency_overrides[get_llm] = lambda: FakeLLM(
+        reply=json.dumps({"answer": "ok", "intent": "question", "needs_human": False})
+    )
+    if scenario == "auth":
+        monkeypatch.setenv("AUTH_BACKEND", "apikey")
+    if scenario == "backend":
+        class BrokenLLM:
+            def chat(self, *args, **kwargs):
+                raise LLMError(secret)
+        app.dependency_overrides[get_llm] = BrokenLLM
+    body = {"message": 42} if scenario == "validation" else {"message": secret}
+    response = TestClient(app).post("/chat", json=body)
+    assert response.status_code == status
+    [row] = rows()
+    assert row["endpoint"] == "/chat"
+    assert row["trace_id"] == response.headers["x-request-id"]
+    assert all(row[field] is None for field in ("question_masked", "route", "refused", "cost_usd"))
+    assert row["user_id"] == (None if scenario == "auth" else "dev")
+    assert secret not in json.dumps(row)
