@@ -13,6 +13,7 @@ priority: 3
 
 | Task ID | Commit | PR | Report | Ghi chú |
 |---|---|---|---|---|
+| `T-020` | `9e7947c` | `none; local feat/T-020-vn-pii` | `.agent/reports/implementation/T-020-F01.md` | `Correct F-T020-01 phone numeric-suffix leak; 68 PII / 406 total tests passed, 24 deselected; independent follow-up pending` |
 | `T-020` | `d783a36` | `none; local feat/T-020-vn-pii` | `.agent/reports/implementation/T-020.md` | `Presidio VN regex masking with NoOp NLP; PII 43 passed; WSL make check 381 passed, 24 deselected. Independent review pending; Windows Python 3.13 debug-log capture crashes.` |
 | `T-001` | `54c212e, b42dc6f, 6cd249d, 71193a8, ca1f2d4, b1fd81e (executor); 18d490d, 87fcf99, 6a9bfcd (review); c9a8ce6, 3915ee0, 9129079 (follow-up)` | `#29` | `.agent/reports/implementation/T-001.md, .agent/reports/qa/T-001.md` | `commit bằng chứng trên PR #29; commit tích hợp được truy vết qua mergeCommit của https://github.com/caitoithap/bank-assistant/pull/29; QA/closure nằm trong cùng PR` |
 | `T-002` | `8aa3324512fdeb67cb527dbbe68aa29aed32ee9a, f4057399cab9d7759df7281c38b92d3760a7c864, 34e54e927fbbd1e31c2c0e1540a155a7d34db80c` | `#31` | `.agent/reports/implementation/T-002.md, .agent/reports/implementation/T-002-contract-assessment.md, .agent/reports/review/T-002.md, .agent/reports/review/T-002-followup.md, .agent/reports/qa/T-002.md` | `assessment, CR-005, verification và review/QA; commit follow-up/closure truy vết qua PR #31; không triển khai CR chưa duyệt` |
