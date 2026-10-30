@@ -42,8 +42,13 @@ _TAG = re.compile(r"<\s*/?\s*tai_lieu", re.IGNORECASE)
 
 
 def _defuse(text: str) -> str:
-    """Drop the ``<`` of anything resembling a ``<tai_lieu>`` tag so only build_context opens blocks."""
-    return _TAG.sub(lambda m: m.group()[1:], text)
+    """Drop the ``<`` of anything resembling a ``<tai_lieu>`` tag so only build_context opens blocks.
+
+    Repeated until nothing matches: one pass turns ``<</tai_lieu>`` back into ``</tai_lieu>``.
+    """
+    while _TAG.search(text):
+        text = _TAG.sub(lambda m: m.group()[1:], text)
+    return text
 
 
 def _attribute(value: str) -> str:

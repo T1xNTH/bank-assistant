@@ -28,7 +28,9 @@ ALIAS = "cloud-chat"
 DEFAULT_K = 5
 DEFAULT_MODE: RetrievalMode = "hybrid_rerank"
 # [1], [1, 2] and [1;2] all count: models write the grouped forms despite the prompt's example.
-_MARKER = re.compile(r"\[\s*\d+(?:\s*[,;]\s*\d+)*\s*\]")
+# The leading whitespace goes with the marker so dropping an invalid one leaves no double space.
+_MARKER = re.compile(r"(\s*)\[\s*\d+(?:\s*[,;]\s*\d+)*\s*\]")
+_MAX_DIGITS = 4  # int() refuses over 4300 digits; no context has 10 000 hits
 
 RetrieveFn = Callable[[str, User, int, RetrievalMode], list[Hit]]
 
@@ -76,16 +78,19 @@ class RagAnswerer:
 
 def cite(reply: str, hits: list[Hit]) -> tuple[str, list[Citation]]:
     """Map ``[n]`` markers in ``reply`` to citations; ``(REFUSAL, [])`` when nothing valid is cited."""
-    if CANARY in reply:
+    if CANARY.lower() in re.sub(r"\s+", "", reply).lower():
         return REFUSAL, []
     cited: set[int] = set()
 
     def keep_valid(match: re.Match[str]) -> str:
-        valid = [n for n in dict.fromkeys(int(d) for d in re.findall(r"\d+", match.group())) if 1 <= n <= len(hits)]
+        digits = (d.lstrip("0") or "0" for d in re.findall(r"\d+", match.group()))
+        numbers = (int(d) for d in digits if len(d) <= _MAX_DIGITS)
+        valid = [n for n in dict.fromkeys(numbers) if 1 <= n <= len(hits)]
         cited.update(valid)
-        return "".join(f"[{n}]" for n in valid)
+        return match.group(1) + "".join(f"[{n}]" for n in valid) if valid else ""
 
     text = _MARKER.sub(keep_valid, reply).strip()
-    if not cited:
+    # A refusal that still cites a passage is a refusal: the contract pairs found=false with REFUSAL.
+    if not cited or text.startswith(REFUSAL.rstrip(".")):
         return REFUSAL, []
     return text, [Citation(n, hits[n - 1].source, hits[n - 1].page, hits[n - 1].score) for n in sorted(cited)]

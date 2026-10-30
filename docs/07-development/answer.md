@@ -28,12 +28,12 @@ Mode: tham số `mode` (từ request) được ưu tiên. Nếu không có thì 
 - `CANARY`: chuỗi bí mật chỉ nằm trong `SYSTEM`. Câu trả lời chứa chuỗi này nghĩa là model đang làm lộ system prompt (OWASP LLM07).
 - `PROMPT_VERSION`: hiện là `"1"`. Tăng mỗi lần sửa `SYSTEM` hoặc `build_context` để trace và báo cáo eval ghi được prompt nào đã chạy.
 
-Chống chèn thẻ: trong nội dung chunk, tên nguồn và câu hỏi, mọi chuỗi giống thẻ `<tai_lieu` hoặc `</tai_lieu` (không phân biệt hoa thường, kể cả có khoảng trắng như `< / TAI_LIEU`) bị bỏ dấu `<`. Dấu `"` trong tên nguồn cũng bị bỏ. Nhờ vậy một chunk không thể tự đóng khối của nó rồi giả làm chỉ dẫn hay mở một khối số khác.
+Chống chèn thẻ: trong nội dung chunk, tên nguồn và câu hỏi, mọi chuỗi giống thẻ `<tai_lieu` hoặc `</tai_lieu` (không phân biệt hoa thường, kể cả có khoảng trắng như `< / TAI_LIEU`) bị bỏ dấu `<`. Việc này lặp lại đến khi không còn chuỗi nào khớp, nên `<</tai_lieu>` hay `<<<tai_lieu` cũng không dựng lại được thẻ. Dấu `"` trong tên nguồn cũng bị bỏ. Nhờ vậy một chunk không thể tự đóng khối của nó bằng thẻ ASCII rồi giả làm chỉ dẫn hay mở một khối số khác. Các ký tự trông giống (`＜` toàn khổ, chữ Kirin, ký tự độ rộng 0, `&lt;`) không bị chặn; model vẫn có thể bị đánh lừa bởi chúng, xem phần Giới hạn.
 
 ## Trích dẫn
 
-- Marker `[n]`, `[n, m]` và `[n; m]` đều được nhận; dạng nhóm được viết lại thành `[n][m]`.
-- Số ngoài khoảng 1..số hit (ví dụ `[0]`, `[7]` khi chỉ có 5 hit) bị xóa khỏi câu trả lời. Vì vậy mọi marker còn lại đều có `Citation` tương ứng, đúng quy tắc trong `docs/04-api/contract.md`.
+- Marker `[n]`, `[n, m]` và `[n; m]` đều được nhận; dạng nhóm được viết lại thành `[n][m]`. Số 0 đứng đầu được bỏ (`[01]` thành `[1]`).
+- Số ngoài khoảng 1..số hit (ví dụ `[0]`, `[7]` khi chỉ có 5 hit, hay số có hơn 4 chữ số sau khi bỏ số 0 đầu) bị xóa khỏi câu trả lời, cùng khoảng trắng đứng trước nó. Vì vậy mọi marker còn lại đều có `Citation` tương ứng, đúng quy tắc trong `docs/04-api/contract.md`.
 - Mỗi số chỉ có một `Citation(n, source, page, score)`, xếp theo `n` tăng dần. `score` là điểm của hit (ở `hybrid_rerank` là điểm rerank).
 - Ngoặc vuông không phải số, như `[a]` hay `[II]`, được giữ nguyên.
 
@@ -42,9 +42,9 @@ Chống chèn thẻ: trong nội dung chunk, tên nguồn và câu hỏi, mọi 
 | Trường hợp | Gọi LLM |
 |---|---|
 | `retrieve` không trả chunk nào (dưới ngưỡng rerank, hoặc không có chunk user được đọc) | không |
-| Model trả câu `REFUSAL` | có |
+| Model trả câu `REFUSAL`, kể cả khi kèm `[n]` | có |
 | Câu trả lời không có trích dẫn hợp lệ nào (không có `[n]`, hoặc chỉ có số ngoài khoảng) | có |
-| Câu trả lời chứa `CANARY` | có |
+| Câu trả lời chứa `CANARY` (không phân biệt hoa thường, kể cả bị chèn khoảng trắng) | có |
 
 Trường hợp thứ ba là lựa chọn có chủ đích: NFR-04 yêu cầu 100% câu trả lời có trích dẫn, và một câu trả lời không trích dẫn thì không kiểm chứng được là lấy từ tài liệu. Đổi lại, nếu model trả lời đúng nhưng quên ghi `[n]`, người dùng sẽ nhận câu từ chối. Tỉ lệ này cần đo ở E-008 với model thật.
 
@@ -57,4 +57,6 @@ Trường hợp thứ ba là lựa chọn có chủ đích: NFR-04 yêu cầu 10
 
 - Chưa chạy với model thật: máy dev chưa cấu hình `LITELLM_MASTER_KEY` và `OPENAI_API_KEY`. Việc model có tuân thủ `[n]` và câu `REFUSAL` hay không sẽ được đo ở T-019 (10 câu thủ công) và E-008 (golden set).
 - Chưa có bộ ≥ 10 test prompt injection với model thật theo `docs/06-security/security-design.md`. T-018 chỉ có phần kiểm soát cố định: canary, phân tách ngữ cảnh và chính sách từ chối.
+- Marker dạng `[1-3]`, `［1］` hay `[Tài liệu 1]` chưa được nhận; câu trả lời chỉ dùng các dạng này sẽ bị từ chối.
+- `RETRIEVAL_MODE` sai chỉ báo lỗi khi có request, không phải lúc khởi động; T-019 có thể kiểm tra lúc khởi động.
 - `CANARY` nằm trong repo public. Nó dùng để phát hiện rò system prompt, không phải để giữ bí mật với người đọc code.
