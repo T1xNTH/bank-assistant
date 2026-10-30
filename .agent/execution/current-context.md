@@ -22,21 +22,21 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `26`
+- **Context Revision**: `27`
 - **Context Status**: `current`
-- **Last Updated**: `2026-10-29`
-- **Updated By**: `claude-a`
-- **Update Trigger**: `Merge main 2c5526e into PR #51; T-012 enters review`
+- **Last Updated**: `2026-10-30`
+- **Updated By**: `codex`
+- **Update Trigger**: `T-015 verified and handed off for independent review; T-014 closure evidence retained`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005 review); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 review); E-006 (EPIC_IN_PROGRESS; T-014 review); E-004, E-007..E-009 (EPIC_READY)`
-- **Active Task IDs**: `T-002, T-009, T-012, T-014`
+- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005 review); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 review); E-006 (EPIC_IN_PROGRESS; T-014 done, T-015 review); E-004, E-007..E-009 (EPIC_READY)`
+- **Active Task IDs**: `T-002, T-009, T-012, T-015`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261029-t012-pr51-resolve`
+- **Current Session ID**: `S-20261030-t015-implementation`
 
 ## Revision Provenance
 
@@ -75,3 +75,7 @@ Revision 24 addresses PR #49 re-review at `ea1519b`: synchronize E-006 EPIC_IN_P
 Revision 25 closes T-011: owner A approved PR #50 at `f718825` and it merged as `3e9907b` on 2026-10-29; issue #12 is closed. The existing GitHub review and approval are archived in `.agent/reports/review/T-011.md`; no new review is claimed. T-011 leaves Active Task IDs; E-005 stays EPIC_IN_PROGRESS for T-012 and T-013. PR #49 (T-014) merged as `da40246`; T-014 remains review on the board.
 
 Revision 26 merges main `2c5526e` (PR #53, T-011 done) into PR #51: keep T-011 done from main and T-012 review from the branch, preserve both session and commit-map histories, and add T-012 to Active Task IDs. No new review or approval is claimed.
+
+Revision 27 on the T-015 branch records the user request to implement issue16 from main 7efee34. T-014 closure reflects existing PR49 approval/merge da40246 and issue15 CLOSED, with immutable earlier review records preserved and explained in implementation/T-014-closure.md. T-015 starts via lifecycle CLI; owner teammate-b retained. Audit changes and evidence belong to T-015; no new independent review or task completion is claimed.
+
+T-015 source 6d37ff4 is verified: make check 293 passed/20 deselected, Ruff and framework validation pass; disposable Docker API audit and volume persistence smoke pass. Implementation report is complete; lifecycle CLI requested claude-review-t015 and moved task to review. This records only a handoff, not participation or approval by an independent reviewer.
