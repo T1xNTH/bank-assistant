@@ -22,16 +22,16 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `32`
+- **Context Revision**: `33`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-30`
-- **Updated By**: `claude-a`
-- **Update Trigger**: `Coordinator A sync for PR #58: T-020 review, E-007 in progress`
+- **Updated By**: `codex-b`
+- **Update Trigger**: `Implement issue #22 / T-021 after approved prerequisite merges`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 merged in main); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 done, T-013 review); E-006 (EPIC_IN_PROGRESS; T-014 done, T-015 review); E-004 (EPIC_IN_PROGRESS; T-016 review); E-007 (EPIC_IN_PROGRESS; T-020 review); E-008, E-009 (EPIC_READY)`
-- **Active Task IDs**: `T-002, T-013, T-015, T-016, T-020`
+- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 merged in main); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 done, T-013 review); E-006 (EPIC_IN_PROGRESS; T-014 done, T-015 done); E-004 (EPIC_IN_PROGRESS; T-016 review); E-007 (EPIC_IN_PROGRESS; T-020 done, T-021 review); E-008, E-009 (EPIC_READY)`
+- **Active Task IDs**: `T-002, T-013, T-016, T-021`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
@@ -91,3 +91,7 @@ Revision 30 closes T-012: owner A approved PR #51 at `ee18256` and it merged as 
 Revision 31 resolves PR #56 against main `8993b98` (including PR #57): preserve both branches' histories, T-012 done, T-013/T-016 review, and T-014 closure/T-015 review. The T-015 branch used revision 27 independently; that provenance is retained above. Tick T-014 completion criteria from existing closure evidence and document the retained audit healthcheck policy. No new approval or task closure is claimed.
 
 Revision 32 is the coordinator A sync requested in PR #58: E-007 moves to EPIC_IN_PROGRESS as in `epics.md`, and T-020 enters Active Task IDs in review, matching the task file and board on this branch. T-013, T-015 and T-016 stay as recorded on main. No review, approval or task closure is claimed.
+
+Revision 33 implements user-requested issue #22 on feat/T-021-mask-boundaries from origin/main e264f5b in .worktrees/T-021, preserving root workspace edits. T-015 and T-020 closure is reconciled from existing owner-approved PR56/PR58 merges, recorded in T-021-dependency-closure.md. E-007 is already EPIC_IN_PROGRESS. T-021 is review after 494 passed, 24 deselected, Ruff and framework validation pass; independent Claude review and owner approval have not been performed.
+
+Final T-021 implementation commit 5300758 is verified through the lifecycle CLI (WSL make check: 494 passed, 24 deselected in 109.30s). Local handoff requests claude-review-a; this does not run a review. No approval or task done/PR merge is claimed. Native Windows Python 3.13 Presidio logging capture failed, consistent with the limitation already recorded by T-020.
