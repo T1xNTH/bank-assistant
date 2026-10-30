@@ -55,7 +55,7 @@ Trường hợp thứ ba là lựa chọn có chủ đích: NFR-04 yêu cầu 10
 
 ## Giới hạn
 
-- Chưa chạy với model thật: máy dev chưa cấu hình `LITELLM_MASTER_KEY` và `OPENAI_API_KEY`. Việc model có tuân thủ `[n]` và câu `REFUSAL` hay không sẽ được đo ở T-019 (10 câu thủ công) và E-008 (golden set).
+- Mới chạy 8 câu với model thật (gpt-6-luna qua LiteLLM): 5 câu trong phạm vi đều có trích dẫn đúng, câu ngoài phạm vi bị từ chối, câu đòi in system prompt không làm lộ prompt hay canary. Model vẫn làm theo yêu cầu "trả lời bằng tiếng Anh" trong câu hỏi (quy tắc 6 bị bỏ qua) nhưng vẫn ghi `[n]`. Tỉ lệ tuân thủ `[n]` và `REFUSAL` cần đo trên golden set ở E-008.
 - Chưa có bộ ≥ 10 test prompt injection với model thật theo `docs/06-security/security-design.md`. T-018 chỉ có phần kiểm soát cố định: canary, phân tách ngữ cảnh và chính sách từ chối.
 - Marker dạng `[1-3]`, `［1］` hay `[Tài liệu 1]` chưa được nhận; câu trả lời chỉ dùng các dạng này sẽ bị từ chối.
 - `RETRIEVAL_MODE` sai chỉ báo lỗi khi có request, không phải lúc khởi động; T-019 có thể kiểm tra lúc khởi động.
