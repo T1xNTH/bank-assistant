@@ -22,21 +22,21 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `37`
+- **Context Revision**: `38`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-30`
 - **Updated By**: `codex-b`
-- **Update Trigger**: `User-requested PR61 conflict resolution against main 780169e (T-022 PR60)`
+- **Update Trigger**: `User-requested issue #25 implementation from main 8267cd6`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 merged in main); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 done, T-013 review); E-006 (EPIC_IN_PROGRESS; T-014 done, T-015 done); E-004 (EPIC_IN_PROGRESS; T-016 done, T-017 review); E-007 (EPIC_IN_PROGRESS; T-020 done, T-021 review); E-008 (EPIC_IN_PROGRESS; T-022 review); E-009 (EPIC_READY)`
-- **Active Task IDs**: `T-002, T-013, T-017, T-021, T-022`
+- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 merged in main); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 done, T-013 review); E-006 (EPIC_IN_PROGRESS; T-014 done, T-015 done); E-004 (EPIC_IN_PROGRESS; T-016 done, T-017 review); E-007 (EPIC_IN_PROGRESS; T-020 done, T-021 done); E-008 (EPIC_IN_PROGRESS; T-022 review); E-009 (EPIC_IN_PROGRESS; T-024 in-progress)`
+- **Active Task IDs**: `T-002, T-013, T-017, T-022, T-024`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261030-t021-pr61-merge-main`
+- **Current Session ID**: `S-20261030-t024-implementation`
 
 ## Revision Provenance
 
@@ -111,3 +111,5 @@ Revision 33 merges main `e264f5b` (PR #58) into PR #60. It keeps main's revision
 Revision 37 merges main 780169e (T-022 PR60) into PR61 at explicit user request. Resolve only execution/intelligence metadata conflicts: retain branch T-015/T-020 done, T-016 done, T-017/T-021 review; incorporate main E-008 EPIC_IN_PROGRESS and T-022 review. Both session and commit-map histories and both revision-33 provenance records are preserved. Source merged without conflicts; no approval, task closure or PR merge is claimed. New verification evidence: T-021-PR61-merge-main.md.
 
 Merged-tree verification for revision37 passed: 564 tests passed, 29 deselected in 109.34s; Ruff/framework validation passed. Golden dataset validation reports zero errors. Both parent session-history and commit-map row sets are preserved exactly; no unmerged index entries or conflict markers remain.
+
+Revision 38 records user-authorized issue #25 / T-024 on feat/T-024-ask-jobs from main 8267cd6 in an isolated worktree. PR61 owner approval and merge reconcile T-021 done (T-024-dependency-closure.md); no approval is performed under another identity. E-009 started through lifecycle CLI; T-024 implementation and verification are in progress. T-025 worker policy is outside this task.

@@ -52,3 +52,16 @@ class AskResponse(BaseModel):
     route: Route
     latency_ms: int
     trace_id: str | None = None
+
+
+class JobAccepted(BaseModel):
+    job_id: str
+    position: int
+
+
+class JobStatusResponse(BaseModel):
+    job_id: str
+    status: Literal["queued", "running", "done", "failed"]
+    position: int | None = None
+    result: AskResponse | None = None
+    error: str | None = None

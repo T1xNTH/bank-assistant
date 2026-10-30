@@ -15,6 +15,17 @@ curl -s -X POST localhost:8000/ask -H 'content-type: application/json' -d '{"que
 ```
 With fake backends (`RAG_BACKEND=fake`) `/ask` returns a canned, contract-shaped answer so the platform side can be built in parallel with RAG.
 
+Authenticated clients can enqueue the same body at `POST /ask/jobs` and poll
+`GET /ask/jobs/{job_id}`. Queue positions start at 1; other users and expired jobs
+receive 404. Redis stores masked requests/results; completed and failed jobs expire
+after one hour. `REDIS_URL` selects Redis and `QUEUE_MAX_LENGTH` (default 100) limits
+waiting jobs; a full or unavailable queue returns 503.
+
+For a local worker smoke test, run from the repository root with `src` on the Python
+path: `PYTHONPATH=src .venv/bin/rq worker ask --serializer rq.serializers.JSONSerializer`.
+The worker must use the API's Redis URL and the same RAG/LLM settings. Deployment,
+rate limiting, priorities and retry policy are handled by T-025.
+
 ## Where things are
 | Path | What |
 |---|---|
