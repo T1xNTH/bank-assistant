@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 
 from app.chat import structured_chat
 from app.contracts import LLM, Answerer, User
@@ -13,7 +13,7 @@ from app.errors import install_error_handlers
 from app.log_config import configure_logging
 from app.middleware import RequestContextMiddleware
 from app.schemas import AskRequest, AskResponse, ChatRequest, ChatResponse, ErrorResponse
-from app.security import audit
+from app.security.masking import REDACTED, MaskingError, mask_identifier, mask_text, require_mask_text
 
 
 def create_app() -> FastAPI:
@@ -34,12 +34,20 @@ def health() -> dict:
     return {"status": "ok"}
 
 
+def _mask_input(text: str) -> str:
+    try:
+        return require_mask_text(text)
+    except MaskingError:
+        raise HTTPException(status_code=503, detail="Masking unavailable") from None
+
+
 def chat(
     req: ChatRequest,
     user: User = Depends(get_current_user),
     llm: LLM = Depends(get_llm),
 ) -> ChatResponse:
-    return structured_chat(req.message, llm)
+    response = structured_chat(_mask_input(req.message), llm)
+    return response.model_copy(update={"answer": mask_text(response.answer), "model": mask_text(response.model)})
 
 
 def ask(
@@ -49,9 +57,16 @@ def ask(
     answerer: Answerer = Depends(get_answerer),
 ) -> AskResponse:
     request.state.audit_user = user
-    request.state.audit_question = audit.mask_question(req.question)
-    result = answerer.answer(req.question, user, req.mode)
-    response = AskResponse(**asdict(result))
+    # Keep a safe audit value if input masking raises before the next assignment.
+    request.state.audit_question = REDACTED
+    request.state.audit_question = _mask_input(req.question)
+    result = answerer.answer(request.state.audit_question, user, req.mode)
+    fields = asdict(result)
+    fields["answer"] = mask_text(result.answer)
+    fields["citations"] = [dict(c, source=mask_text(c["source"])) for c in fields["citations"]]
+    if result.trace_id is not None:
+        fields["trace_id"] = mask_identifier(result.trace_id)
+    response = AskResponse(**fields)
     request.state.audit_result = result
     return response
 

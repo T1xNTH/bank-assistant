@@ -361,6 +361,21 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261030-154955-3` | `2026-10-30` | `2026-10-30` | `claude-code-a` | `T-018` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-018.md` | `none` |
 | `S-20261030-155534` | `2026-10-30` | `2026-10-30` | `claude-review-a` | `T-018` | `completed` | `review started` | `.agent/reports/review/T-018.md` | `none` |
 | `S-20261030-155656` | `2026-10-30` | `2026-10-30` | `claude-review-a` | `T-018` | `completed` | `review approved` | `.agent/reports/review/T-018.md` | `none` |
+| `S-20261030-145248` | `2026-10-30` | `2026-10-30` | `codex-b` | `T-021` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
+| `S-20261030-145248-2` | `2026-10-30` | `2026-10-30` | `codex-b` | `T-021` | `completed` | `implementation report draft` | `.agent/reports/implementation/T-021.md` | `none` |
+| `S-20261030-150048` | `2026-10-30` | `2026-10-30` | `teammate-b` | `T-021` | `completed` | `verify 'make check PY=/home/viet_anh/.venvs/bank-t011/bin/python' passed` | `.agent/reports/implementation/T-021.md` | `none` |
+| `S-20261030-150056` | `2026-10-30` | `2026-10-30` | `codex-b` | `T-021` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-021.md` | `none` |
+| `S-20261030-150121` | `2026-10-30` | `2026-10-30` | `codex-b` | `T-021` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-021.md` | `none` |
+| `S-20261030-t021-merge-main` | `2026-10-30` | `2026-10-30` | `claude-a` | `T-021` | `completed` | `merge origin/main (T-017 #59) into PR #61; resolve task-board conflict; sync current-context revision 34` | `.agent/execution/current-context.md` | `none` |
+
+| `S-20261030-t021-pr61-followup` | `2026-10-30` | `2026-10-30` | `codex-b` | `T-021` | `completed` | `User requests PR61 comment fixes; pull coordinator merge d4c875d; resume review -> in-progress for bounded preliminary feedback, no independent approval claimed.` | `.agent/reports/implementation/T-021-PR61-followup.md` | `none` |
+
+| `S-20261030-t021-pr61-followup-verify` | `2026-10-30` | `2026-10-30` | `codex-b` | `T-021` | `completed` | `Follow-up 0bac953: one-pass message/extra log sanitization; generated timestamps preserved; strict request masking returns safe 503 without backend calls. WSL make check 531 passed/29 deselected, Ruff/framework pass. Return in-progress -> review with new final supplement; separate review and owner approval pending.` | `.agent/reports/implementation/T-021-PR61-followup.md` | `none` |
+
+| `S-20261030-t021-pr61-cleanup` | `2026-10-30` | `2026-10-30` | `codex-b` | `T-021` | `completed` | `User requests two minor corrections after external Claude no-blockers re-review of 9d93ed1. Resume review -> in-progress; remove unused audit helper and explain audit fallback. No new-head approval claimed.` | `.agent/reports/implementation/T-021-PR61-cleanup.md` | `none` |
+
+| `S-20261030-t021-pr61-cleanup-verify` | `2026-10-30` | `2026-10-30` | `codex-b` | `T-021` | `completed` | `Cleanup 5666fe9 removes unused audit.mask_question and comments safe audit default. WSL make check 531 passed/29 deselected in 119.79s; Ruff/framework pass. Return in-progress -> review; prior external no-blockers assessment is scoped to 9d93ed1, no new-head approval or merge claimed.` | `.agent/reports/implementation/T-021-PR61-cleanup.md` | `none` |
+
 | `S-20261030-142608` | `2026-10-30` | `2026-10-30` | `claude-a` | `E-008` | `completed` | `epic EPIC_READY -> EPIC_IN_PROGRESS` | `.agent/planning/epics.md` | `none` |
 | `S-20261030-142608-2` | `2026-10-30` | `2026-10-30` | `claude-a` | `T-022` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
 | `S-20261030-143451` | `2026-10-30` | `2026-10-30` | `claude-a` | `T-022` | `completed` | `verify 'python3 eval/check_golden.py' passed` | `.agent/reports/implementation/T-022.md` | `none` |
@@ -373,3 +388,5 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261030-t022-pr60-fixes` | `2026-10-30` | `2026-10-30` | `claude-a` | `T-022` | `completed` | `User requested fixes for B's PR60 review at 87c6966. F02 fixed in 32bfa0b (5 new tests failed before, 33 pass after; full 512 passed). F01: A reports A and B agreed A authors all 50 questions; recorded as scope note in supplemental report, original report unchanged. Task stays review; no approval or done claimed.` | `.agent/reports/implementation/T-022-PR60-fixes.md` | `none` |
 | `S-20261030-163930` | `2026-10-30` | `2026-10-30` | `claude-review-a` | `T-018` | `completed` | `review started` | `.agent/reports/review/T-018.md` | `none` |
 | `S-20261030-164015` | `2026-10-30` | `2026-10-30` | `claude-review-a` | `T-018` | `completed` | `review approved` | `.agent/reports/review/T-018.md` | `none` |
+
+| `S-20261030-t021-pr61-merge-main` | `2026-10-30` | `2026-10-30` | `codex-b` | `T-021` | `completed` | `User-requested merge of main 780169e (T-022 PR60) into PR61; reconcile four metadata conflicts, keep both histories and existing T-021/T-022 review states, context revision37. No approval or closure claimed.` | `.agent/reports/implementation/T-021-PR61-merge-main.md` | `none` |

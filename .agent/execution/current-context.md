@@ -22,21 +22,21 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `33`
+- **Context Revision**: `37`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-30`
-- **Updated By**: `claude-a`
-- **Update Trigger**: `Merge main e264f5b (PR #58) into PR #60; T-022 review, E-008 in progress`
+- **Updated By**: `codex-b`
+- **Update Trigger**: `User-requested PR61 conflict resolution against main 780169e (T-022 PR60)`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 merged in main); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 done, T-013 review); E-006 (EPIC_IN_PROGRESS; T-014 done, T-015 review); E-004 (EPIC_IN_PROGRESS; T-016 review); E-007 (EPIC_IN_PROGRESS; T-020 review); E-008 (EPIC_IN_PROGRESS; T-022 review); E-009 (EPIC_READY)`
-- **Active Task IDs**: `T-002, T-013, T-015, T-016, T-020, T-022`
+- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 merged in main); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 done, T-013 review); E-006 (EPIC_IN_PROGRESS; T-014 done, T-015 done); E-004 (EPIC_IN_PROGRESS; T-016 done, T-017 review); E-007 (EPIC_IN_PROGRESS; T-020 done, T-021 review); E-008 (EPIC_IN_PROGRESS; T-022 review); E-009 (EPIC_READY)`
+- **Active Task IDs**: `T-002, T-013, T-017, T-021, T-022`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261030-pr60-resolve`
+- **Current Session ID**: `S-20261030-t021-pr61-merge-main`
 
 ## Revision Provenance
 
@@ -92,4 +92,22 @@ Revision 31 resolves PR #56 against main `8993b98` (including PR #57): preserve 
 
 Revision 32 is the coordinator A sync requested in PR #58: E-007 moves to EPIC_IN_PROGRESS as in `epics.md`, and T-020 enters Active Task IDs in review, matching the task file and board on this branch. T-013, T-015 and T-016 stay as recorded on main. No review, approval or task closure is claimed.
 
+Revision 33 implements user-requested issue #22 on feat/T-021-mask-boundaries from origin/main e264f5b in .worktrees/T-021, preserving root workspace edits. T-015 and T-020 closure is reconciled from existing owner-approved PR56/PR58 merges, recorded in T-021-dependency-closure.md. E-007 is already EPIC_IN_PROGRESS. T-021 is review after 494 passed, 24 deselected, Ruff and framework validation pass; independent Claude review and owner approval have not been performed.
+
+Final T-021 implementation commit 5300758 is verified through the lifecycle CLI (WSL make check: 494 passed, 24 deselected in 109.30s). Local handoff requests claude-review-a; this does not run a review. No approval or task done/PR merge is claimed. Native Windows Python 3.13 Presidio logging capture failed, consistent with the limitation already recorded by T-020.
+
+Revision 34 is the coordinator A merge of origin/main 4bd3236 (T-017 PR #59) into feat/T-021-mask-boundaries for PR #61. The task-board conflict keeps T-015 done from this branch and T-016 done / T-017 review from main; Active Task IDs and E-004 follow the board. No T-021 code changed in the merge, and no review, approval or task closure is claimed.
+
+Revision 35 resumes T-021 at user request after pulling coordinator merge d4c875d. Preliminary external comment https://github.com/caitoithap/bank-assistant/pull/61#issuecomment-6518800474 is not a full DEC-004 review. Scope: eliminate repeated log masking of standard metadata, protect generated timestamps with regressions, and return safe 503 without backend calls on input-mask failure. Prior complete implementation report remains immutable; new evidence goes in T-021-PR61-followup.md. T-017/main coordinator state is preserved.
+
+T-021 PR61 follow-up 0bac953 verified with final WSL make check: 531 passed, 29 deselected in 109.71s, Ruff and framework validation pass. Report T-021-PR61-followup.md records each preliminary observation and its correction; original final reports remain intact. Task returns to review for independent claude-review-a assessment; no independent review/owner approval, task completion or merge is claimed.
+
+Revision 36 starts the user-requested two minor PR61 cleanup items after external re-review at 9d93ed1: remove unused audit.mask_question and explain the safe audit fallback assignment. Source https://github.com/caitoithap/bank-assistant/pull/61#issuecomment-6519324221 states the previous three fixes pass and no merge blockers remain at that reviewed head. That source assessment is not transferred to new code. Evidence belongs to T-021-PR61-cleanup.md; prior final reports and main/T-017 state remain intact.
+
+T-021 minor cleanup 5666fe9 passes WSL make check: 531 passed, 29 deselected in 119.79s, Ruff/framework pass. New report T-021-PR61-cleanup.md records the two resolved minor observations. Task returns to review. Prior full external assessment remains scoped to 9d93ed1; no new-head approval, done or merge is claimed.
+
 Revision 33 merges main `e264f5b` (PR #58) into PR #60. It keeps main's revision 32 (E-007 in progress, T-020 review) and adds this branch's T-022 record, which was written as revision 32 on the branch: it starts E-008 (EPIC_READY -> EPIC_IN_PROGRESS) and records T-022: `eval/golden.jsonl` (50 questions) and `eval/check_golden.py` at `1456c6f`; implementation report complete, T-022 in review with reviewer claude-review-a. Both sides' session histories are kept; no review, approval or closure is claimed.
+
+Revision 37 merges main 780169e (T-022 PR60) into PR61 at explicit user request. Resolve only execution/intelligence metadata conflicts: retain branch T-015/T-020 done, T-016 done, T-017/T-021 review; incorporate main E-008 EPIC_IN_PROGRESS and T-022 review. Both session and commit-map histories and both revision-33 provenance records are preserved. Source merged without conflicts; no approval, task closure or PR merge is claimed. New verification evidence: T-021-PR61-merge-main.md.
+
+Merged-tree verification for revision37 passed: 564 tests passed, 29 deselected in 109.34s; Ruff/framework validation passed. Golden dataset validation reports zero errors. Both parent session-history and commit-map row sets are preserved exactly; no unmerged index entries or conflict markers remain.

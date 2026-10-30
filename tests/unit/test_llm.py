@@ -119,3 +119,21 @@ def test_transport_failure_is_safe(gateway, monkeypatch):
         llm.chat([], "local-chat")
     assert "stub-secret" not in str(error.value)
     assert gateway["sleeps"] == []
+
+
+@pytest.mark.parametrize("alias", ["local-chat", "cloud-chat"])
+def test_pii_is_masked_before_actual_gateway_request_and_on_output(gateway, alias):
+    secret = "001204012345"
+    escaped = "".join(f"\\u{ord(c):04x}" for c in secret)
+    messages = [{"role": "user", "content": f'{{"customer":"{escaped}"}}'},
+                {"role": "system", "content": f"CCCD: {secret}"}]
+    original = json.loads(json.dumps(messages))
+    gateway["body"]["choices"][0]["message"]["content"] = f'{{"answer":"{escaped}"}}'
+    result = llm.chat(messages, alias)
+    sent = gateway["requests"][0][2]["messages"]
+    assert secret not in json.dumps(sent) and escaped not in json.dumps(sent)
+    assert json.loads(sent[0]["content"])["customer"] == "<CCCD>"
+    assert sent[1]["content"] == "CCCD: <CCCD>"
+    assert json.loads(result.text) == {"answer": "<CCCD>"}
+    assert messages == original  # Do not mutate the caller's messages.
+    assert (result.input_tokens, result.output_tokens) == (12, 4)
