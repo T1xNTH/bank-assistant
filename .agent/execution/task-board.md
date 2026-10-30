@@ -48,7 +48,7 @@ Lưu registry chính thức các task thực thi được và trạng thái life
 | `T-019` | `E-004` | `Nối RAG thật vào /ask + integration test` | `trong-hung` | `pending` | `T-018, T-014` | `none` | `.agent/execution/tasks/T-019.md` | `2026-10-24` |
 | `T-020` | `E-007` | `pii.py: Presidio + regex recognizer cho VN` | `teammate-b` | `pending` | `none` | `none` | `.agent/execution/tasks/T-020.md` | `2026-10-24` |
 | `T-021` | `E-007` | `Che input, output, log, audit` | `teammate-b` | `pending` | `T-020, T-015` | `none` | `.agent/execution/tasks/T-021.md` | `2026-10-24` |
-| `T-022` | `E-008` | `golden.jsonl: 50 câu hỏi (A 25 + B 25)` | `trong-hung` | `pending` | `T-010` | `none` | `.agent/execution/tasks/T-022.md` | `2026-10-24` |
+| `T-022` | `E-008` | `golden.jsonl: 50 câu hỏi (A 25 + B 25)` | `trong-hung` | `in-progress` | `T-010` | `none` | `.agent/execution/tasks/T-022.md` | `2026-10-30` |
 | `T-023` | `E-008` | `Eval runner: RAGAS + hit@5 + từ chối, 3 mode, báo cáo` | `trong-hung` | `pending` | `T-022, T-019` | `none` | `.agent/execution/tasks/T-023.md` | `2026-10-24` |
 | `T-024` | `E-009` | `POST /ask/jobs + GET /ask/jobs/{id}` | `teammate-b` | `pending` | `T-021, T-003` | `none` | `.agent/execution/tasks/T-024.md` | `2026-10-24` |
 | `T-025` | `E-009` | `Worker: rate limit, retry/backoff, priority, giới hạn theo key` | `teammate-b` | `pending` | `T-024` | `none` | `.agent/execution/tasks/T-025.md` | `2026-10-24` |
