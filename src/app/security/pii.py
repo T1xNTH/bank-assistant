@@ -23,8 +23,8 @@ def _analyzer() -> AnalyzerEngine:
         "CCCD": rf"(?<!\w)[0-9](?:{digit}){{11}}(?!\w)",
         # A numeric word after whitespace/punctuation may be an independent
         # amount/account. Redact the complete candidate even if ambiguous.
-        "PHONE_NUMBER": rf"(?<![0-9+]){phone}(?!\w)",
-        "ACCOUNT_NUMBER": rf"(?<![\w+])[0-9](?:{digit}){{7,18}}(?!\w)",
+        "PHONE_NUMBER": rf"(?<![0-9+]){phone}(?![0-9])",
+        "ACCOUNT_NUMBER": rf"(?:(?<![\w+])|(?<=\b(?:stk|tk)))[0-9](?:{digit}){{7,18}}(?!\w)",
     }
     registry = RecognizerRegistry(supported_languages=["vi"])
     for entity, regex in patterns.items():
@@ -66,7 +66,10 @@ def mask_text(text: str) -> tuple[str, list[str]]:
     results = analyzer.analyze(text=text, language="vi")
     labels = {
         "CCCD": r"\bcccd[ \t]*[:=]?[ \t]*$",
-        "ACCOUNT_NUMBER": r"\b(?:stk|số tài khoản|so tai khoan|tài khoản|tai khoan)[ \t]*[:=]?[ \t]*$",
+        "ACCOUNT_NUMBER": (
+            r"\b(?:stk|tk|số tài khoản|so tai khoan|tài khoản|tai khoan)"
+            r"(?:[ \t]+(?:số|so|của[ \t]+tôi[ \t]+là|cua[ \t]+toi[ \t]+la))?[ \t]*[:=]?[ \t]*$"
+        ),
     }
     # An explicitly labelled grouped account/CCCD can itself start like a phone.
     labelled = _non_overlapping([

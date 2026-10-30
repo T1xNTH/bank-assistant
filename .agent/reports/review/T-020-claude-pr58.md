@@ -72,4 +72,3 @@ Mình chạy `mask_text` trên các chuỗi giả dưới đây. FR-06/NFR-05 y�
 ### Ghi chú (không chặn merge)
 7. Khi PR này merge, audit của T-015 sẽ chuyển từ `[REDACTED]` toàn bộ câu hỏi sang chỉ che 3 loại entity. Với FR-06 thì đúng phạm vi, nhưng những thông tin khác như tên hay email sẽ nằm trong `question_masked`. Nên ghi một dòng trong `docs/07-development/audit.md`.
 8. Chữ số full-width (`０９…`) đang được chủ ý bỏ qua. Ít gặp, chấp nhận được.
-

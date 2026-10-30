@@ -46,12 +46,18 @@ xuất hiện trong văn bản. Gọi lại trên văn bản đã che không tha
   dãy chữ số liền nhau sai độ dài vẫn bị loại.
   Nhãn dính liền như `SĐT0912…`, `sdt0912…` được giữ và số được che. Ranh giới trái
   chỉ chặn chữ số hoặc `+`, nên `ref0900000001` cũng bị che thừa có chủ ý.
-- Nhãn tường minh `CCCD`, `STK`, `số tài khoản` hoặc bản không dấu được ưu tiên
+  Ranh giới phải chỉ chặn chữ số, nên `0912345678abc` trở thành `<PHONE_NUMBER>abc`;
+  chữ dính sau không làm bỏ sót điện thoại, nhưng số liền nhau sai độ dài vẫn bị loại.
+- Nhãn tường minh `CCCD`, `STK`, `TK`, `số tài khoản` hoặc bản không dấu được ưu tiên
   khi một dãy số nhóm có thể bắt đầu giống điện thoại. Các điện thoại còn lại
   chia văn bản thành những đoạn nhận diện CCCD/tài khoản riêng, tránh gộp điện thoại
   với khoản tiền hoặc tài khoản liền sau. Trong mỗi đoạn, giữ span dài nhất;
   cùng span ưu tiên CCCD rồi tài khoản. Tài khoản 12 số không nhãn có thể mang nhãn CCCD.
-  Nhãn CCCD/tài khoản cần tách khỏi số bằng dấu cách/tab hoặc dấu `:`/`=`. Với dãy
+  `STK`/`TK` có thể dính liền số, không phân biệt hoa thường (`STK1903…`). Các nhãn
+  khác cần tách bằng dấu cách/tab hoặc dấu `:`/`=`. Nhãn tài khoản cho phép một cụm
+  từ đệm `số` hoặc `của tôi là` (và bản không dấu) trước số để giữ loại ACCOUNT_NUMBER.
+  Các từ đệm khác chưa được dùng để chọn loại, dù dãy số vẫn có thể được che.
+  Với dãy
   không nhãn có tiền tố là một điện thoại hoàn chỉnh, bộ che ưu tiên điện thoại
   và xét phần sau riêng: `0900 000 001 23` thành `<PHONE_NUMBER> 23`. Không thể
   phân biệt chắc chắn đây là CCCD/tài khoản nhóm hay điện thoại kèm một số khác;

@@ -49,13 +49,15 @@ def test_masks_complete_entity(text, entity):
         ("ACCOUNT_NUMBER", "10000001_id"),
         ("ACCOUNT_NUMBER", "100 0001"),
         ("ACCOUNT_NUMBER", "1000\n0001"),
+        ("ACCOUNT_NUMBER", "notstk1903678901234"),
+        ("ACCOUNT_NUMBER", "STK1000001"),
+        ("ACCOUNT_NUMBER", "TK10000000000000000001"),
         ("PHONE_NUMBER", "0100000001"),
         ("PHONE_NUMBER", "090000001"),
         ("PHONE_NUMBER", "09000000001"),
         ("PHONE_NUMBER", "+840900000001"),
         ("PHONE_NUMBER", "+19000000001"),
         ("PHONE_NUMBER", "0900\n000\n001"),
-        ("PHONE_NUMBER", "0900000001A"),
     ],
 )
 def test_recognizer_rejects_non_entity(entity, text):
@@ -89,6 +91,29 @@ def test_recognizer_rejects_non_entity(entity, text):
     ],
 )
 def test_review_grouped_and_labelled_entities(text, masked, types):
+    assert mask_text(text) == (masked, types)
+    assert mask_text(masked) == (masked, [])
+
+
+@pytest.mark.parametrize(
+    ("text", "masked", "types"),
+    [
+        ("STK1903678901234", "STK<ACCOUNT_NUMBER>", ["ACCOUNT_NUMBER"]),
+        ("stk1903678901234", "stk<ACCOUNT_NUMBER>", ["ACCOUNT_NUMBER"]),
+        ("TK1903678901234", "TK<ACCOUNT_NUMBER>", ["ACCOUNT_NUMBER"]),
+        ("tk0900 000 001 234", "tk<ACCOUNT_NUMBER>", ["ACCOUNT_NUMBER"]),
+        ("STK190367890123", "STK<ACCOUNT_NUMBER>", ["ACCOUNT_NUMBER"]),
+        ("0912345678abc", "<PHONE_NUMBER>abc", ["PHONE_NUMBER"]),
+        ("0900000001A", "<PHONE_NUMBER>A", ["PHONE_NUMBER"]),
+        ("ref0900000001abc", "ref<PHONE_NUMBER>abc", ["PHONE_NUMBER"]),
+        ("(+84) 912 345 678abc", "<PHONE_NUMBER>abc", ["PHONE_NUMBER"]),
+        ("tài khoản số 1903 6789 0123", "tài khoản số <ACCOUNT_NUMBER>", ["ACCOUNT_NUMBER"]),
+        ("STK của tôi là 1903 6789 0123", "STK của tôi là <ACCOUNT_NUMBER>", ["ACCOUNT_NUMBER"]),
+        ("tai khoan so 1903 6789 0123", "tai khoan so <ACCOUNT_NUMBER>", ["ACCOUNT_NUMBER"]),
+        ("TK cua toi la 0900 000 001 234", "TK cua toi la <ACCOUNT_NUMBER>", ["ACCOUNT_NUMBER"]),
+    ],
+)
+def test_pr58_rereview_account_labels_and_phone_suffixes(text, masked, types):
     assert mask_text(text) == (masked, types)
     assert mask_text(masked) == (masked, [])
 
