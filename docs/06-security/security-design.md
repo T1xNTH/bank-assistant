@@ -24,5 +24,26 @@ Prompt injection (LLM01), lộ thông tin nhạy cảm (LLM02), agent có quyề
 | Audit | mọi request được ghi log (đã che) kèm trace id | B | test audit |
 | Chuỗi cung ứng | trivy quét image trong CI | B | CI |
 
+## Bộ nhận diện PII (T-020)
+
+`src/app/security/pii.py::mask_text(text)` dùng Presidio với registry riêng và
+`NoOpNlpEngine` cho tiếng Việt; không tải model spaCy. Kết quả là
+`(masked_text, entity_types)`, thay toàn bộ giá trị bằng `<CCCD>`,
+`<ACCOUNT_NUMBER>` hoặc `<PHONE_NUMBER>`. Danh sách loại không lặp, theo thứ tự
+xuất hiện trong văn bản. Gọi lại trên văn bản đã che không thay đổi kết quả.
+
+- CCCD: đúng 12 chữ số ASCII liên tiếp, không nằm trong một mã chữ/số dài hơn.
+- Số tài khoản: ứng viên gồm 8–19 chữ số ASCII liên tiếp. Không có checksum chung
+  để xác thực tài khoản VN; cách che thận trọng này có thể che cả số tiền hoặc mã
+  định danh dài. Số tài khoản ngoài khoảng này hoặc có dấu phân cách chưa được nhận diện.
+- Điện thoại: di động bắt đầu bằng `03/05/07/08/09` (10 số), cố định `02`
+  (11 số); hỗ trợ `+84` và `0084` thay cho số `0` đầu, dấu cách, chấm hoặc gạch
+  ngang giữa các chữ số. Không xác minh thuê bao hoặc đầu số nhà mạng cụ thể.
+- Khi kết quả chồng lấn, giữ span dài nhất; cùng span ưu tiên CCCD, điện thoại,
+  rồi tài khoản. Vì vậy tài khoản 12 số có thể mang nhãn CCCD nhưng vẫn được che hết.
+
+Test: `pytest tests/security/test_pii.py`. Việc nối bộ che vào input, output,
+log và audit được thực hiện ở T-021.
+
 ## Ngoài phạm vi MVP
 SSO/OIDC, secret manager, TLS, pentest (xem phần loại trừ trong SRS).
