@@ -52,5 +52,14 @@ priority: 3
 | `T-013` | `ea39b25a66b508f4caec7afee6317e13c31f4616` | `none; local feat/T-013-structured-chat` | `.agent/reports/implementation/T-013.md` | `Authenticated POST /chat; strict JSON intent/needs_human output; shared LLM client and runtime fake. API 31 passed; full WSL make check 308 passed/20 deselected, Ruff and framework validation passed. Independent review pending.` |
 | `T-013` | `d91784f (approval evidence); 32130248af3329ffe873c0d8cc17641cd3b2813a (source)` | `#55` | `.agent/reports/implementation/T-013-PR55-fixes.md` | `PR55-F01/F02 fixes under CR-010: document 503, trim/reject blank chat text, response-schema regression. API38 and full315 passed/20 deselected; Ruff/framework passed. F03 tracked in ISSUE-019 as A permitted; follow-up re-review pending.` |
 | `T-012` | `ee18256; 3410e1e (squash)` | `#51` | `.agent/reports/review/T-012.md` | `Owner A approved ee18256 after review; merged 2026-10-29; issue #13 closed; T-012 closure recorded 2026-10-30.` |
+
+| `T-021` | `5300758` | `local feat/T-021-mask-boundaries; issue22` | `.agent/reports/implementation/T-021.md` | `API/LLM input-output masking, managed log filtering, defensive SQLite masking and leak-scan regressions; independent Claude review pending` |
+
+| `T-021` | `0bac953` | `#61` | `.agent/reports/implementation/T-021-PR61-followup.md` | `Preliminary Claude comment corrections: once-per-record log masking, generated timestamp regression and no-backend 503 on input-mask failure; 531 passed/29 deselected; independent full review pending` |
+
+| `T-021` | `5666fe9` | `#61` | `.agent/reports/implementation/T-021-PR61-cleanup.md` | `Two minor re-review cleanups: remove unused audit helper and explain audit fallback; 531 passed/29 deselected, Ruff/framework pass; no new-head approval claimed` |
+
 | `T-022` | `1456c6f` | `none; local feat/T-022-golden` | `.agent/reports/implementation/T-022.md` | `eval/golden.jsonl 50 questions (14 fact, 11 table, 5 multi_hop, 4 superseded, 6 cross_department, 10 out_of_scope) and eval/check_golden.py; 28 checker tests; make check passed. Independent review pending.` |
 | `T-022` | `32bfa0b` | `#60` | `.agent/reports/implementation/T-022-PR60-fixes.md` | `PR60-F02: check_golden reports list/dict values per line instead of raising; 5 regression tests (33 passed). PR60-F01 resolved by A/B agreement that A authors all 50 questions. Re-review pending.` |
+
+| `T-021` | `d29a50f` | `#61` | `.agent/reports/implementation/T-021-PR61-merge-main.md` | `Merge main 780169e (T-022 PR60); resolve four metadata conflicts preserving both histories and combined task state; 564 passed/29 deselected, Ruff/framework and golden validation passed` |

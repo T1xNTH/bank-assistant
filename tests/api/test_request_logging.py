@@ -3,12 +3,14 @@ import io
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi.testclient import TestClient
 
-from app.log_config import REQUEST_ID, JsonFormatter, configure_logging, get_logger
+from app.log_config import REQUEST_ID, JsonFormatter, RequestIdFilter, configure_logging, get_logger
 from app.main import create_app
+from app.security import pii
 
 
 def test_request_ids_are_generated_per_request_not_copied_from_input(caplog):
@@ -112,3 +114,49 @@ def test_access_info_suppressed_and_middleware_completion_retained(caplog):
     assert response.status_code == 200
     assert not any(record.name == "uvicorn.access" for record in caplog.records)
     assert sum(record.getMessage() == "http.request.complete" for record in caplog.records) == 1
+
+
+def test_multiple_handlers_and_formatter_only_mask_payload_once(monkeypatch):
+    calls = []
+    secret = "001204012345"
+
+    def mask(text):
+        calls.append(text)
+        return text.replace(secret, "<CCCD>"), []
+
+    monkeypatch.setattr(pii, "mask_text", mask)
+    record = logging.LogRecord("app.worker", logging.INFO, "/src/worker.py", 7, "customer %s", (secret,), None)
+    record.request_id = "d53895ab-7422-4102-a53a-8eed049fcfbd"
+    record.route = secret
+    record.customer = {"details": secret}
+    metadata = {name: getattr(record, name) for name in (
+        "name", "pathname", "filename", "module", "funcName", "threadName", "processName",
+    )}
+    for _ in range(3):  # JSON output, an external capture handler, then repeated formatting.
+        assert RequestIdFilter().filter(record)
+        assert secret not in JsonFormatter().format(record)
+    assert calls == [f"customer {secret}", secret, secret]
+    assert record.customer == {"details": "<CCCD>"}
+    assert metadata == {name: getattr(record, name) for name in metadata}
+
+
+def test_generated_iso_and_standard_asctime_survive_filtering_with_pii():
+    secret = "001204012345"
+    record = logging.LogRecord("app.worker", logging.INFO, "/src/worker.py", 7, "customer %s", (secret,), None)
+    record.created = datetime(2026, 10, 30, 15, 0, 56, 123000, tzinfo=timezone.utc).timestamp()
+    record.msecs = 123
+
+    class UtcFormatter(logging.Formatter):
+        def formatTime(self, record, datefmt=None):
+            return datetime.fromtimestamp(record.created, timezone.utc).strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
+
+    plain = UtcFormatter("%(asctime)s %(message)s")
+    # A handler may already have populated cached formatter fields before our filter.
+    record.asctime = plain.formatTime(record)
+    record.message = record.getMessage()
+    assert RequestIdFilter().filter(record)
+    output = JsonFormatter().format(record)
+    assert json.loads(output)["timestamp"] == "2026-10-30T15:00:56.123+00:00"
+    assert plain.format(record) == "2026-10-30 15:00:56,123 customer <CCCD>"
+    assert secret not in output
+    assert secret not in repr(vars(record))
