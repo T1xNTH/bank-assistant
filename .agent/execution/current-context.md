@@ -22,21 +22,21 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `32`
+- **Context Revision**: `33`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-30`
 - **Updated By**: `claude-a`
-- **Update Trigger**: `Coordinator A sync for PR #58: T-020 review, E-007 in progress`
+- **Update Trigger**: `Merge main e264f5b (PR #58) into PR #60; T-022 review, E-008 in progress`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 merged in main); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 done, T-013 review); E-006 (EPIC_IN_PROGRESS; T-014 done, T-015 review); E-004 (EPIC_IN_PROGRESS; T-016 review); E-007 (EPIC_IN_PROGRESS; T-020 review); E-008, E-009 (EPIC_READY)`
-- **Active Task IDs**: `T-002, T-013, T-015, T-016, T-020`
+- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 merged in main); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 done, T-013 review); E-006 (EPIC_IN_PROGRESS; T-014 done, T-015 review); E-004 (EPIC_IN_PROGRESS; T-016 review); E-007 (EPIC_IN_PROGRESS; T-020 review); E-008 (EPIC_IN_PROGRESS; T-022 review); E-009 (EPIC_READY)`
+- **Active Task IDs**: `T-002, T-013, T-015, T-016, T-020, T-022`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261030-t020-context-sync`
+- **Current Session ID**: `S-20261030-pr60-resolve`
 
 ## Revision Provenance
 
@@ -91,3 +91,5 @@ Revision 30 closes T-012: owner A approved PR #51 at `ee18256` and it merged as 
 Revision 31 resolves PR #56 against main `8993b98` (including PR #57): preserve both branches' histories, T-012 done, T-013/T-016 review, and T-014 closure/T-015 review. The T-015 branch used revision 27 independently; that provenance is retained above. Tick T-014 completion criteria from existing closure evidence and document the retained audit healthcheck policy. No new approval or task closure is claimed.
 
 Revision 32 is the coordinator A sync requested in PR #58: E-007 moves to EPIC_IN_PROGRESS as in `epics.md`, and T-020 enters Active Task IDs in review, matching the task file and board on this branch. T-013, T-015 and T-016 stay as recorded on main. No review, approval or task closure is claimed.
+
+Revision 33 merges main `e264f5b` (PR #58) into PR #60. It keeps main's revision 32 (E-007 in progress, T-020 review) and adds this branch's T-022 record, which was written as revision 32 on the branch: it starts E-008 (EPIC_READY -> EPIC_IN_PROGRESS) and records T-022: `eval/golden.jsonl` (50 questions) and `eval/check_golden.py` at `1456c6f`; implementation report complete, T-022 in review with reviewer claude-review-a. Both sides' session histories are kept; no review, approval or closure is claimed.
