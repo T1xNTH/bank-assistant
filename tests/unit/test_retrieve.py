@@ -182,7 +182,6 @@ def test_more_than_prefetch_results_can_be_requested(client):
     [
         ({"k": 0}, ValueError),
         ({"mode": "sparse"}, ValueError),
-        ({"mode": "hybrid_rerank"}, NotImplementedError),
     ],
 )
 def test_invalid_arguments(ranked, kwargs, error):
