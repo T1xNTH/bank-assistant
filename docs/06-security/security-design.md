@@ -53,7 +53,7 @@ xuất hiện trong văn bản. Gọi lại trên văn bản đã che không tha
   chia văn bản thành những đoạn nhận diện CCCD/tài khoản riêng, tránh gộp điện thoại
   với khoản tiền hoặc tài khoản liền sau. Trong mỗi đoạn, giữ span dài nhất;
   cùng span ưu tiên CCCD rồi tài khoản. Tài khoản 12 số không nhãn có thể mang nhãn CCCD.
-  `STK`/`TK` có thể dính liền số, không phân biệt hoa thường (`STK1903…`). Các nhãn
+  `CCCD`/`STK`/`TK` có thể dính liền số, không phân biệt hoa thường (`CCCD0012…`, `STK1903…`). Các nhãn
   khác cần tách bằng dấu cách/tab hoặc dấu `:`/`=`. Nhãn tài khoản cho phép một cụm
   từ đệm `số` hoặc `của tôi là` (và bản không dấu) trước số để giữ loại ACCOUNT_NUMBER.
   Các từ đệm khác chưa được dùng để chọn loại, dù dãy số vẫn có thể được che.

@@ -43,6 +43,9 @@ def test_masks_complete_entity(text, entity):
         ("CCCD", "０００００００００００１"),
         ("CCCD", "000 000 000 01"),
         ("CCCD", "000 000 000 0001"),
+        ("CCCD", "notCCCD001204012345"),
+        ("CCCD", "CCCD00120401234"),
+        ("CCCD", "CCCD0012040123456"),
         ("ACCOUNT_NUMBER", "1000001"),
         ("ACCOUNT_NUMBER", "10000000000000000001"),
         ("ACCOUNT_NUMBER", "ref10000001"),
@@ -115,6 +118,14 @@ def test_review_grouped_and_labelled_entities(text, masked, types):
 )
 def test_pr58_rereview_account_labels_and_phone_suffixes(text, masked, types):
     assert mask_text(text) == (masked, types)
+    assert mask_text(masked) == (masked, [])
+
+
+@pytest.mark.parametrize("label", ["CCCD", "cccd", "Cccd"])
+@pytest.mark.parametrize("number", ["001204012345", "0900 000 001 23"])
+def test_attached_cccd_label_masks_complete_identity(label, number):
+    masked = f"{label}<CCCD>"
+    assert mask_text(f"{label}{number}") == (masked, ["CCCD"])
     assert mask_text(masked) == (masked, [])
 
 

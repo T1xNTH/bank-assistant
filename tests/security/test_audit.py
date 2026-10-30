@@ -126,6 +126,7 @@ def test_forbidden_request_records_authenticated_identity():
         ("SĐT0912345678", "SĐT<PHONE_NUMBER>", "0912345678"),
         ("STK1903678901234", "STK<ACCOUNT_NUMBER>", "1903678901234"),
         ("0912345678abc", "<PHONE_NUMBER>abc", "0912345678"),
+        ("CCCD001204012345", "CCCD<CCCD>", "001204012345"),
     ],
 )
 def test_answerer_failure_creates_one_row_without_inventing_a_route(caplog, question, masked, raw_pii):
