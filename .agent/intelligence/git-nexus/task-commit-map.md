@@ -61,3 +61,5 @@ priority: 3
 
 | `T-022` | `1456c6f` | `none; local feat/T-022-golden` | `.agent/reports/implementation/T-022.md` | `eval/golden.jsonl 50 questions (14 fact, 11 table, 5 multi_hop, 4 superseded, 6 cross_department, 10 out_of_scope) and eval/check_golden.py; 28 checker tests; make check passed. Independent review pending.` |
 | `T-022` | `32bfa0b` | `#60` | `.agent/reports/implementation/T-022-PR60-fixes.md` | `PR60-F02: check_golden reports list/dict values per line instead of raising; 5 regression tests (33 passed). PR60-F01 resolved by A/B agreement that A authors all 50 questions. Re-review pending.` |
+
+| `T-021` | `d29a50f` | `#61` | `.agent/reports/implementation/T-021-PR61-merge-main.md` | `Merge main 780169e (T-022 PR60); resolve four metadata conflicts preserving both histories and combined task state; 564 passed/29 deselected, Ruff/framework and golden validation passed` |
