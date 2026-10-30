@@ -354,3 +354,7 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261030-150056` | `2026-10-30` | `2026-10-30` | `codex-b` | `T-021` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-021.md` | `none` |
 | `S-20261030-150121` | `2026-10-30` | `2026-10-30` | `codex-b` | `T-021` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-021.md` | `none` |
 | `S-20261030-t021-merge-main` | `2026-10-30` | `2026-10-30` | `claude-a` | `T-021` | `completed` | `merge origin/main (T-017 #59) into PR #61; resolve task-board conflict; sync current-context revision 34` | `.agent/execution/current-context.md` | `none` |
+
+| `S-20261030-t021-pr61-followup` | `2026-10-30` | `2026-10-30` | `codex-b` | `T-021` | `completed` | `User requests PR61 comment fixes; pull coordinator merge d4c875d; resume review -> in-progress for bounded preliminary feedback, no independent approval claimed.` | `.agent/reports/implementation/T-021-PR61-followup.md` | `none` |
+
+| `S-20261030-t021-pr61-followup-verify` | `2026-10-30` | `2026-10-30` | `codex-b` | `T-021` | `completed` | `Follow-up 0bac953: one-pass message/extra log sanitization; generated timestamps preserved; strict request masking returns safe 503 without backend calls. WSL make check 531 passed/29 deselected, Ruff/framework pass. Return in-progress -> review with new final supplement; separate review and owner approval pending.` | `.agent/reports/implementation/T-021-PR61-followup.md` | `none` |

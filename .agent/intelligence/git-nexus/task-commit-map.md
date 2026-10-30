@@ -54,3 +54,5 @@ priority: 3
 | `T-012` | `ee18256; 3410e1e (squash)` | `#51` | `.agent/reports/review/T-012.md` | `Owner A approved ee18256 after review; merged 2026-10-29; issue #13 closed; T-012 closure recorded 2026-10-30.` |
 
 | `T-021` | `5300758` | `local feat/T-021-mask-boundaries; issue22` | `.agent/reports/implementation/T-021.md` | `API/LLM input-output masking, managed log filtering, defensive SQLite masking and leak-scan regressions; independent Claude review pending` |
+
+| `T-021` | `0bac953` | `#61` | `.agent/reports/implementation/T-021-PR61-followup.md` | `Preliminary Claude comment corrections: once-per-record log masking, generated timestamp regression and no-backend 503 on input-mask failure; 531 passed/29 deselected; independent full review pending` |

@@ -22,11 +22,11 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `34`
+- **Context Revision**: `35`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-30`
-- **Updated By**: `claude-a`
-- **Update Trigger**: `Coordinator A merge of main (T-017 #59) into PR #61 / T-021`
+- **Updated By**: `codex-b`
+- **Update Trigger**: `User-authorized PR61 preliminary review follow-up after pulling d4c875d`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
@@ -36,7 +36,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261030-t021-merge-main`
+- **Current Session ID**: `S-20261030-t021-pr61-followup-verify`
 
 ## Revision Provenance
 
@@ -97,3 +97,7 @@ Revision 33 implements user-requested issue #22 on feat/T-021-mask-boundaries fr
 Final T-021 implementation commit 5300758 is verified through the lifecycle CLI (WSL make check: 494 passed, 24 deselected in 109.30s). Local handoff requests claude-review-a; this does not run a review. No approval or task done/PR merge is claimed. Native Windows Python 3.13 Presidio logging capture failed, consistent with the limitation already recorded by T-020.
 
 Revision 34 is the coordinator A merge of origin/main 4bd3236 (T-017 PR #59) into feat/T-021-mask-boundaries for PR #61. The task-board conflict keeps T-015 done from this branch and T-016 done / T-017 review from main; Active Task IDs and E-004 follow the board. No T-021 code changed in the merge, and no review, approval or task closure is claimed.
+
+Revision 35 resumes T-021 at user request after pulling coordinator merge d4c875d. Preliminary external comment https://github.com/caitoithap/bank-assistant/pull/61#issuecomment-6518800474 is not a full DEC-004 review. Scope: eliminate repeated log masking of standard metadata, protect generated timestamps with regressions, and return safe 503 without backend calls on input-mask failure. Prior complete implementation report remains immutable; new evidence goes in T-021-PR61-followup.md. T-017/main coordinator state is preserved.
+
+T-021 PR61 follow-up 0bac953 verified with final WSL make check: 531 passed, 29 deselected in 109.71s, Ruff and framework validation pass. Report T-021-PR61-followup.md records each preliminary observation and its correction; original final reports remain intact. Task returns to review for independent claude-review-a assessment; no independent review/owner approval, task completion or merge is claimed.
