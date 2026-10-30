@@ -11,6 +11,7 @@ services:
       QDRANT_COLLECTION: ${QDRANT_COLLECTION:-bank_docs}
       RETRIEVAL_MODE: ${RETRIEVAL_MODE:-hybrid_rerank}
       REFUSAL_THRESHOLD: ${REFUSAL_THRESHOLD:-}
+      RERANK_CANDIDATES: ${RERANK_CANDIDATES:-}
       REDIS_URL: redis://redis:6379/0
       LLM_BASE_URL: http://litellm:4000
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?Set a random sk- prefixed gateway key in .env.local}
