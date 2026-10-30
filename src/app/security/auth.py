@@ -9,17 +9,19 @@ import hashlib
 from collections.abc import Callable
 from pathlib import Path
 
-from fastapi import Depends, Header, HTTPException
+from fastapi import Depends, Header, HTTPException, Request
 
 from app.config import get_settings
 from app.contracts import User
 from app.security.keys import load_api_keys
 
 
-def get_current_user(x_api_key: str | None = Header(default=None, alias="X-API-Key")) -> User:
+def get_current_user(request: Request, x_api_key: str | None = Header(default=None, alias="X-API-Key")) -> User:
     settings = get_settings()
     if settings.auth_backend == "fake":
-        return User(user_id="dev", department="public")
+        user = User(user_id="dev", department="public")
+        request.state.audit_user = user
+        return user
     if settings.auth_backend != "apikey":
         raise HTTPException(status_code=503, detail="Authentication unavailable")
     if not x_api_key:
@@ -31,6 +33,7 @@ def get_current_user(x_api_key: str | None = Header(default=None, alias="X-API-K
     user = users.get(hashlib.sha256(x_api_key.encode("utf-8")).hexdigest())
     if user is None:
         raise HTTPException(status_code=401, detail="Unauthorized")
+    request.state.audit_user = user
     return user
 
 
