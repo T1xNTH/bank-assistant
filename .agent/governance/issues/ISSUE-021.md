@@ -19,7 +19,7 @@ Dùng template này để ghi lại một lỗi, khoảng trống, điểm khôn
 - **Title**: `Complete VN phone can remain unmasked before an independent number`
 - **Owner**: `teammate-b`
 - **Reporter**: `codex-review-a`
-- **Status**: `open`
+- **Status**: `resolved`
 - **Issue Type**: `defect`
 - **Priority**: `1`
 - **Created Date**: `2026-10-30`
@@ -54,22 +54,22 @@ F-T020-01: pii.py:23 rejects every phone span followed by a space and digit. A v
 ## Acceptance Criteria
 
 - [x] Root cause identified: suffix check conflates independent numeric words with phone extensions.
-- [ ] Fix: both reproduced inputs fully mask the phone and return PHONE_NUMBER.
-- [ ] Add public mask_text regressions for phones before amounts/accounts, retaining or conservatively justifying existing invalid-length and boundary cases.
+- [x] Fix: both reproduced inputs fully mask the phone and return PHONE_NUMBER.
+- [x] Add public mask_text regressions for phones before amounts/accounts, retaining or conservatively justifying existing invalid-length and boundary cases.
 
 ## Resolution
 
-- **Resolution Type**: `not-applicable`
-- **Resolution Summary**: `Open; contextual suffix check conflates independent numeric word with phone continuation. Fix segmentation/boundaries conservatively and add public mask_text regression cases.`
-- **Verification Evidence**: `Pending fix; independent reviewer reproduction in T-020 review report.`
-- **Resolved By**: `none`
-- **Resolved Date**: `none`
+- **Resolution Type**: `fixed`
+- **Resolution Summary**: `Fixed by codex-b in 9e7947c; suffix suppression removed and conservative ambiguity policy documented. Independently verified by codex-review-a. Original finding and pre-fix reproduction above remain historical evidence.`
+- **Verification Evidence**: `.agent/reports/review/T-020-F01.md: 68 focused tests passed; independent 216-case matrix plus six boundary negatives and exact original reproductions passed. Parent full make check 406 passed, 24 deselected. Implementation supplement T-020-F01.md.`
+- **Resolved By**: `codex-review-a (verification); codex-b (implementation)`
+- **Resolved Date**: `2026-10-30`
 
 ## Completion Criteria
 
-- [ ] Acceptance criteria đạt hoặc đã có hướng xử lý được duyệt.
-- [ ] Bằng chứng giải quyết đã được liên kết.
-- [ ] Các record task, risk, blocker và regression liên quan đã được cập nhật.
+- [x] Acceptance criteria đạt hoặc đã có hướng xử lý được duyệt.
+- [x] Bằng chứng giải quyết đã được liên kết.
+- [x] Các record task, risk, blocker và regression liên quan đã được cập nhật.
 
 ## Forbidden Actions
 
@@ -83,3 +83,8 @@ F-T020-01: pii.py:23 rejects every phone span followed by a space and digit. A v
 - Lưu thành `.agent/governance/issues/ISSUE-<number>.md`.
 - Giữ nguyên mọi heading trong template này.
 - Dùng link tương đối theo repo và đúng giá trị enum.
+
+## Resolution History
+
+- 2026-10-30: codex-review-a opened ISSUE-021 from F-T020-01 against original 2a7f7a4. Original disclosure evidence retained above.
+- 2026-10-30: user authorized correction; codex-b committed 9e7947c. Independent codex-review-a verified and resolved the defect with supplemental technical APPROVED report T-020-F01. This does not fulfill the separate Claude/peer task completion gates.
