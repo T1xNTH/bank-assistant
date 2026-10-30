@@ -119,19 +119,21 @@ def test_forbidden_request_records_authenticated_identity():
 
 def test_answerer_failure_creates_one_row_without_inventing_a_route(caplog):
     app = create_app()
+    phone = "+84900000001"  # Synthetic PII; exercise the real T-020 masker.
 
     class Broken:
         def answer(self, *args):
             raise RuntimeError("private-provider-detail")
 
     app.dependency_overrides[get_answerer] = Broken
-    response = TestClient(app).post("/ask", json={"question": "private"})
+    response = TestClient(app).post("/ask", json={"question": f"{phone} 100 VND"})
     assert response.status_code == 500
     [row] = rows()
-    assert row["question_masked"] == audit.REDACTED
+    assert row["question_masked"] == "<PHONE_NUMBER> 100 VND"
     assert row["route"] is None and row["refused"] is None
     assert row["trace_id"] == response.headers["x-request-id"]
     assert "private-provider-detail" not in json.dumps(row) + response.text + caplog.text
+    assert phone not in json.dumps(row) + response.text + caplog.text
 
 
 @pytest.mark.parametrize("broken_answerer", [False, True])
