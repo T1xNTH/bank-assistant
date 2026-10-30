@@ -33,7 +33,7 @@ Chống chèn thẻ: trong nội dung chunk, tên nguồn và câu hỏi, mọi 
 ## Trích dẫn
 
 - Marker `[n]`, `[n, m]` và `[n; m]` đều được nhận; dạng nhóm được viết lại thành `[n][m]`. Số 0 đứng đầu được bỏ (`[01]` thành `[1]`).
-- Số ngoài khoảng 1..số hit (ví dụ `[0]`, `[7]` khi chỉ có 5 hit, hay số có hơn 4 chữ số sau khi bỏ số 0 đầu) bị xóa khỏi câu trả lời, cùng khoảng trắng đứng trước nó. Vì vậy mọi marker còn lại đều có `Citation` tương ứng, đúng quy tắc trong `docs/04-api/contract.md`.
+- Số ngoài khoảng 1..số hit (ví dụ `[0]`, `[7]` khi chỉ có 5 hit, hay số có hơn 4 chữ số sau khi bỏ số 0 đầu) bị xóa khỏi câu trả lời, cùng khoảng trắng đứng trước nó. Việc xóa lặp lại đến khi câu trả lời không đổi, nên `[[9]2]` thành `[2]` và được trích dẫn, không để lại marker mồ côi. Vì vậy mọi marker còn lại đều có `Citation` tương ứng, đúng quy tắc trong `docs/04-api/contract.md`.
 - Mỗi số chỉ có một `Citation(n, source, page, score)`, xếp theo `n` tăng dần. `score` là điểm của hit (ở `hybrid_rerank` là điểm rerank).
 - Ngoặc vuông không phải số, như `[a]` hay `[II]`, được giữ nguyên.
 
@@ -44,7 +44,7 @@ Chống chèn thẻ: trong nội dung chunk, tên nguồn và câu hỏi, mọi 
 | `retrieve` không trả chunk nào (dưới ngưỡng rerank, hoặc không có chunk user được đọc) | không |
 | Model trả câu `REFUSAL`, kể cả khi kèm `[n]` | có |
 | Câu trả lời không có trích dẫn hợp lệ nào (không có `[n]`, hoặc chỉ có số ngoài khoảng) | có |
-| Câu trả lời cuối (sau khi xóa marker sai) chứa `CANARY`, không phân biệt hoa thường, kể cả bị chèn khoảng trắng hay marker `[n]` vào giữa | có |
+| Câu trả lời cuối (sau khi xóa marker sai) chứa `CANARY`, không phân biệt hoa thường, kể cả bị chèn khoảng trắng, ký tự vô hình (khoảng trắng độ rộng 0, gạch nối mềm) hay marker `[n]` vào giữa | có |
 
 Trường hợp thứ ba là lựa chọn có chủ đích: NFR-04 yêu cầu 100% câu trả lời có trích dẫn, và một câu trả lời không trích dẫn thì không kiểm chứng được là lấy từ tài liệu. Đổi lại, nếu model trả lời đúng nhưng quên ghi `[n]`, người dùng sẽ nhận câu từ chối. Tỉ lệ này cần đo ở E-008 với model thật.
 

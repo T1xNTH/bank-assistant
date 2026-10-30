@@ -18,6 +18,7 @@ from __future__ import annotations
 import os
 import re
 import time
+import unicodedata
 from collections.abc import Callable
 from typing import get_args
 
@@ -77,8 +78,10 @@ class RagAnswerer:
 
 
 def _leaks_canary(text: str) -> bool:
-    """Whether ``text`` holds CANARY, ignoring case, whitespace and citation markers split into it."""
-    return CANARY.lower() in re.sub(r"\s+", "", _MARKER.sub("", text)).lower()
+    """Whether ``text`` holds CANARY, ignoring case, whitespace, invisible format characters
+    (zero-width space, soft hyphen) and citation markers split into it."""
+    visible = "".join(c for c in _MARKER.sub("", text) if not c.isspace() and unicodedata.category(c) != "Cf")
+    return CANARY.lower() in visible.lower()
 
 
 def cite(reply: str, hits: list[Hit]) -> tuple[str, list[Citation]]:
@@ -92,7 +95,11 @@ def cite(reply: str, hits: list[Hit]) -> tuple[str, list[Citation]]:
         cited.update(valid)
         return match.group(1) + "".join(f"[{n}]" for n in valid) if valid else ""
 
-    text = _MARKER.sub(keep_valid, reply).strip()
+    # Repeat until stable: dropping "[9]" from "[[9]2]" leaves a new marker "[2]" to map.
+    text, previous = reply, None
+    while text != previous:
+        previous, text = text, _MARKER.sub(keep_valid, text)
+    text = text.strip()
     # A refusal that still cites a passage is a refusal: the contract pairs found=false with REFUSAL.
     # The canary is checked on the final text, after invalid markers are dropped (PR #62 review).
     if not cited or text.startswith(REFUSAL.rstrip(".")) or _leaks_canary(text):

@@ -70,6 +70,24 @@ def test_out_of_range_markers_are_dropped_from_text():
     assert [c.n for c in result.citations] == [1, 2]
 
 
+@pytest.mark.parametrize(
+    ("reply", "answer", "cited"),
+    [
+        ("A [[9]2]. B [1].", "A [2]. B [1].", [1, 2]),
+        ("A [[0]3].", "A [3].", [3]),
+        ("A [2[9]].", "A [2].", [2]),
+        ("A [[9]2, 3].", "A [2][3].", [2, 3]),
+        ("A [[9]]. B [1].", "A []. B [1].", [1]),
+    ],
+)
+def test_marker_revealed_by_dropping_an_inner_one_is_mapped(reply, answer, cited):
+    # Review round 3 (F-11): one pass left "[2]" in the answer without a citation.
+    result, _, _ = run(reply)
+    assert result.answer == answer
+    assert [c.n for c in result.citations] == cited
+    assert {int(n) for n in re.findall(r"\[(\d+)\]", result.answer)} == set(cited)
+
+
 def test_huge_marker_numbers_are_dropped_not_crashing():
     result, _, _ = run("A [" + "9" * 5000 + "]. B [01] [00002]. C [" + "0" * 5000 + "].")
     assert result.answer == "A. B [1] [2]. C."
@@ -127,6 +145,12 @@ def test_canary_split_by_a_marker_is_refused(marker):
     result, _, _ = run(reply)
     assert (result.answer, result.found, result.citations) == (REFUSAL, False, [])
     assert prompts.CANARY not in result.answer
+
+
+@pytest.mark.parametrize("hidden", ["\u200b", "\u00ad", "\u2060", "\ufeff", "\u00a0"])
+def test_canary_split_by_an_invisible_character_is_refused(hidden):
+    result, _, _ = run(prompts.CANARY[:4] + hidden + prompts.CANARY[4:] + " [1]")
+    assert (result.answer, result.found, result.citations) == (REFUSAL, False, [])
 
 
 def test_refusal_that_cites_is_still_a_refusal():
