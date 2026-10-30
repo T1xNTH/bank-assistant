@@ -22,3 +22,4 @@ Phần này cung cấp hướng dẫn phát triển, chuẩn viết code và cô
 - [Qdrant store](qdrant-store.md) - T009 input format, identity and real-server checks.
 - `ingest.md` – Chạy `scripts/ingest.py` nạp bộ tài liệu vào Qdrant, cache parse/embed
 - [LLM gateway](llm-gateway.md) - LiteLLM aliases, OpenAI setup, optional Ollama and smoke checks.
+- [Request audit](audit.md) - SQLite rows, privacy fallback, persistence and failure behavior.

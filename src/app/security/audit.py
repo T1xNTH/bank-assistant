@@ -5,6 +5,61 @@ Owner: B — Epic E-006. See docs/00-project/product-plan.md.
 
 from __future__ import annotations
 
+import os
+import sqlite3
+from contextlib import closing
+from datetime import datetime, timezone
+from pathlib import Path
 
-def write(**fields) -> None:
-    raise NotImplementedError("E-006")
+from app.security import pii
+
+REDACTED = "[REDACTED]"
+
+
+def mask_question(question: str) -> str:
+    """Never fall back to raw input when the E-007 masker is unavailable."""
+    try:
+        masked, _ = pii.mask_text(question)
+        return masked if isinstance(masked, str) else REDACTED
+    except Exception:
+        return REDACTED
+
+
+def write(
+    *,
+    user_id: str | None = None,
+    department: str | None = None,
+    endpoint: str,
+    question_masked: str | None = None,
+    route: str | None = None,
+    refused: bool | None = None,
+    latency_ms: int,
+    cost_usd: float | None = None,
+    trace_id: str | None = None,
+) -> None:
+    """Commit one append-only row, or raise; callers must pass already-masked text.
+
+    A separate connection/transaction per call supports sync workers and concurrent
+    requests. SQLite serializes writers and waits up to 10 seconds for a lock.
+    Unknown values stay NULL, rather than pretending a failed request cost zero.
+    """
+    path = Path(os.getenv("AUDIT_DB_PATH", "data/audit.db"))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with closing(sqlite3.connect(path, timeout=10)) as connection, connection:
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS audit_log (
+                ts TEXT NOT NULL, user_id TEXT, department TEXT, endpoint TEXT NOT NULL,
+                question_masked TEXT, route TEXT, refused INTEGER CHECK (refused IN (0, 1)),
+                latency_ms INTEGER NOT NULL CHECK (latency_ms >= 0),
+                cost_usd REAL, trace_id TEXT
+            )"""
+        )
+        connection.execute(
+            """INSERT INTO audit_log
+                (ts, user_id, department, endpoint, question_masked, route, refused, latency_ms, cost_usd, trace_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
+                user_id, department, endpoint, question_masked, route, refused, latency_ms, cost_usd, trace_id,
+            ),
+        )
