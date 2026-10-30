@@ -15,4 +15,4 @@ torchvision==0.29.1
 # E-003 vector store.
 qdrant-client>=1.12.2,<1.13  # matches compose Qdrant 1.12.x
 # E-007 regex-only PII detection; no spaCy language model is needed.
-presidio-analyzer==2.2.366
+presidio-analyzer==2.2.365  # supports Python 3.10 used by CI
