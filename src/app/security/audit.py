@@ -15,11 +15,6 @@ from app.security.masking import REDACTED as REDACTED
 from app.security.masking import mask_identifier, mask_text
 
 
-def mask_question(question: str) -> str:
-    """Never fall back to raw input when the E-007 masker is unavailable."""
-    return mask_text(question)
-
-
 def write(
     *,
     user_id: str | None = None,

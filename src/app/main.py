@@ -57,6 +57,7 @@ def ask(
     answerer: Answerer = Depends(get_answerer),
 ) -> AskResponse:
     request.state.audit_user = user
+    # Keep a safe audit value if input masking raises before the next assignment.
     request.state.audit_question = REDACTED
     request.state.audit_question = _mask_input(req.question)
     result = answerer.answer(request.state.audit_question, user, req.mode)
