@@ -22,21 +22,21 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `28`
+- **Context Revision**: `29`
 - **Context Status**: `current`
 - **Last Updated**: `2026-10-30`
 - **Updated By**: `codex`
-- **Update Trigger**: `T-016 supplemental QA checkpoint passed; formal epic QA follows DEC-005`
+- **Update Trigger**: `PR52 conflict resolution after main eb82e08/PR55; migrate table-heading issue to ISSUE-020`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 merged in main); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 review); E-006 (EPIC_IN_PROGRESS; T-014 review); E-004 (EPIC_IN_PROGRESS; T-016 review); E-007..E-009 (EPIC_READY)`
-- **Active Task IDs**: `T-002, T-012, T-014, T-016`
+- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 merged in main); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 review, T-013 review); E-006 (EPIC_IN_PROGRESS; T-014 review); E-004 (EPIC_IN_PROGRESS; T-016 review); E-007..E-009 (EPIC_READY)`
+- **Active Task IDs**: `T-002, T-012, T-013, T-014, T-016`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261030-t016-qa`
+- **Current Session ID**: `S-20261030-pr52-chat-merge`
 
 ## Revision Provenance
 
@@ -79,3 +79,5 @@ Revision 26 merges main `2c5526e` (PR #53, T-011 done) into PR #51: keep T-011 d
 Revision 27 merges main `7efee34` into PR #52: retain T-010 done and E-004/T-016 review from PR52 alongside main T-011 done and T-012 review. Both session histories and commit-map updates are preserved. Revision 25 on the PR52 branch recorded T-016 implementation and T-010 closure; main independently used revision 25 for T-011 closure. T-010 and T-016 task metadata now match the board. This resolution records no new review, approval or task closure.
 
 Revision 28 records user-requested T-016 supplemental QA at 055acaf: 300 regression and four real-server/model retrieval tests pass, both sample recall scores 11/12 on 24 documents. Evidence is in `.agent/reports/qa/E-004-T016.md`. DEC-005 governs formal epic QA; task-level CLI is unsupported. T-016 remains review pending owner approval/merge, E-004 remains EPIC_IN_PROGRESS, and no approval or closure is claimed.
+
+Revision 29 merges main eb82e08 (PR55, structured /chat) into PR52 d599f63. Both session histories and task states are preserved; T-013 is reflected as review from the board. Main ISSUE-019 remains the chat JSON-compliance follow-up. The PR52 table-heading defect is now ISSUE-020, with explicit identifier migration and CR-009 link update. Retrieval source and tests are unchanged; no approval, task closure, or new corpus measurement is claimed.

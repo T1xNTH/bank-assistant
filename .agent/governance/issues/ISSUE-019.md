@@ -1,86 +1,84 @@
 ---
 id: issue-019
-title: Table chunks can carry the heading of the next section on the same page
+title: "PR55-F03: Measure chat JSON compliance on the real cloud model"
 type: governance
-domain: rag
-module: chunk
-tags: [issue, cr-009, t-007, chunk, table, docling]
-priority: 2
+domain: platform
+module: src/app/chat.py
+tags: [issue, t-013, pr55-f03, cr-008, llm]
+priority: 3
 ---
-# ISSUE-019: Bảng có thể mang tiêu đề của đầu mục kế tiếp trên cùng trang
+# ISSUE-019: Measure chat JSON compliance on the real cloud model
 
 ## Usage Purpose
 
-Theo dõi một giới hạn của cách chia chunk CR-009 (đã merge ở #54): tiêu đề gắn vào chunk bảng có thể sai khi trên trang có đầu mục mới bắt đầu.
+Track the explicitly permitted follow-up from A's [PR55 review](https://github.com/caitoithap/bank-assistant/pull/55#issuecomment-6513438452).
 
 ## Record Metadata
 
 - **Issue ID**: `ISSUE-019`
-- **Title**: `Table chunks can carry the heading of the next section on the same page`
-- **Owner**: `trong-hung`
-- **Reporter**: `claude-code-a`
+- **Title**: `Measure chat JSON compliance on the real cloud model`
+- **Owner**: `teammate-b`
+- **Reporter**: `trong-hung` via PR55-F03.
 - **Status**: `open`
-- **Issue Type**: `defect`
-- **Priority**: `2`
+- **Issue Type**: `gap`
+- **Priority**: `3`
 - **Created Date**: `2026-10-30`
-- **Target Date**: `none`
+- **Target Date**: `none`; include in CR-008's pre-evaluation 5–10 question measurement.
 
 ## Description
 
-`parse_docling.parse()` trả về mỗi trang dạng `{text, tables}`: chữ và bảng tách riêng, không có vị trí của bảng trong trang. Vì vậy `chunk_pages` gắn cho bảng tiêu đề đang có hiệu lực ở cuối phần chữ của trang (CR-009, ghi trong docstring của `chunk.py` và `docs/07-development/ingest.md`). Ngoại lệ duy nhất là tiêu đề nằm cuối trang mà sau nó không còn chữ (F-08 của review CR-009). Khi một đầu mục mới bắt đầu sau bảng trên cùng trang, bảng mang tiêu đề của đầu mục mới.
-
-Ví dụ thật: bảng lương tối thiểu vùng của NĐ 293/2025 (`nd293-2025`, các mức 5.310.000 / 4.730.000 / 4.140.000 / 3.700.000) thuộc Điều 3 "Mức lương tối thiểu", nhưng chunk của nó mở đầu bằng `Điều 4. Áp dụng mức lương tối thiểu`, vì Điều 4 bắt đầu trên cùng trang. Bảng cuối của 3 biểu phí VietinBank (chuyen-tien, ngan-hang-dien-tu, tai-khoan) mang tiêu đề `Lưu ý:` dù nằm trước mục đó.
+POST /chat uses prompted JSON and strict application validation. Deterministic
+tests establish safe rejection, but do not measure malformed-output frequency on
+the real configured cloud-chat model. A explicitly allowed F03 as a follow-up.
 
 ## Impact
 
-- **Affected Scope**: `chunk bảng trên trang có đầu mục mới bắt đầu: 28/136 trang có bảng, 43/245 chunk bảng, 14/30 tài liệu (đếm trên cache parse 2026-10-30; số trang có thể đúng hoặc sai, chưa đối chiếu từng bảng)`
-- **Severity**: `medium`
-- **User or Delivery Impact**: `Nội dung bảng và số liệu không sai; chỉ dòng tiêu đề sai. Tìm kiếm vẫn khớp nội dung bảng (12/12 câu mẫu, kể cả câu lương tối thiểu), nhưng LLM có thể trích dẫn sai Điều (ví dụ "theo Điều 4" thay vì Điều 3), ảnh hưởng tới trích dẫn ở T-018 và đánh giá ở E-008`
+- **Affected Scope**: `T-013`, `E-005`, CR-008's real-model measurement.
+- **Severity**: `low`
+- **User or Delivery Impact**: A model may produce fenced JSON or commentary and cause 503 despite an otherwise useful answer.
 
 ## Reproduction Evidence
 
-- **Preconditions**: `cache parse của T-010 (data/cache/parsed/nd293-2025.json); chunk.py của main sau #54`
-- **Steps**: `chunk_pages(pages của nd293-2025) rồi tìm chunk chứa "5.310.000"`
-- **Observed Result**: `dòng đầu của chunk là "Điều 4. Áp dụng mức lương tối thiểu"`
-- **Expected Result**: `dòng đầu là "Điều 3. Mức lương tối thiểu" (đầu mục chứa bảng)`
-- **Evidence Paths**: `.agent/reports/implementation/T-007-CR-009.md (Known Limitations), .agent/reports/review/T-007-CR-009.md (F-07, F-08)`
+- **Preconditions**: Running authenticated LiteLLM gateway and configured real cloud provider.
+- **Steps**: Submit a synthetic message to /chat with an LLM reply containing fenced JSON; compare with a valid JSON reply.
+- **Observed Result**: Malformed output returns 503; valid output returns 200. Real-model frequency remains unmeasured. `docker ps` on 2026-10-30 returned no running containers, so no gateway/model smoke was attempted in this follow-up.
+- **Expected Result**: Quantified real-model JSON compliance and an explicit decision about native structured output.
+- **Evidence Paths**: `tests/api/test_chat.py`, `.agent/reports/implementation/T-013-PR55-fixes.md`.
 
 ## Related Files
 
-- **Affected Files**: `src/app/rag/parse_docling.py, src/app/rag/chunk.py, tests/unit/test_chunk.py`
-- **Tasks or Epics**: `T-006, T-007, CR-009, E-003; ảnh hưởng T-018 (trích dẫn) và E-008 (đánh giá)`
-- **Decisions**: `DEC-001`
-- **Risks**: `none`
-- **Blockers**: `none`
+- **Affected Files**: `src/app/chat.py`, `src/app/llm.py`, `src/app/contracts.py` only if a later approved protocol extension is required.
+- **Tasks or Epics**: `T-013`, `E-005`, `E-008`.
+- **Decisions**: `.agent/governance/change-requests/CR-008.md`.
+- **Risks**: `RISK-003` (provider budget).
+- **Blockers**: `none`; A classified this as a nonblocking follow-up.
 
 ## Acceptance Criteria
 
-- [ ] Parser giữ thứ tự chữ và bảng trong trang (docling có thứ tự các phần tử khi đọc tài liệu), ví dụ một marker vị trí của từng bảng trong `text` hoặc danh sách phần tử theo thứ tự, mà vẫn giữ hợp đồng đầu ra hoặc có CR cho thay đổi hợp đồng.
-- [ ] `chunk_pages` gắn bảng với đầu mục đứng ngay trước nó; test với một trang có bảng rồi đến Điều mới.
-- [ ] Trên 30 tài liệu: bảng lương của `nd293-2025` mang `Điều 3`; đếm lại số chunk bảng đổi tiêu đề và kiểm tra mẫu.
-- [ ] Parse lại (thay đổi parser làm cache parse hết hạn, khoảng 1 giờ) và ingest lại `bank_docs`; recall@5 của `tests/integration/test_retrieve_recall.py` không giảm.
+- [ ] Run 5–10 synthetic, non-PII messages through the actual /chat endpoint and configured real cloud-chat model within CR-008's budget. Record model/version, date, sample count, tokens and estimated cost.
+- [ ] Record HTTP status for every sample; count 503 responses caused by malformed output separately from transport/provider/auth failures. Instrument validation counts without logging raw customer input, output or keys.
+- [ ] If malformed-output 503 count is greater than zero, open a separately governed contract PR for LLM.chat response_format/json_schema support, requiring both owners' approval, as A requested.
+- [ ] If the count is zero, record the limited sample result and retain application validation; do not claim universal model reliability.
 
 ## Resolution
 
-- **Resolution Type**: `none`
-- **Resolution Summary**: `none`
-- **Verification Evidence**: `none`
+- **Resolution Type**: `not-applicable` while measurement remains open.
+- **Resolution Summary**: Pending; follow-up is authorized by A, not claimed complete.
+- **Verification Evidence**: Existing deterministic API coverage only; no real provider result.
 - **Resolved By**: `none`
 - **Resolved Date**: `none`
 
 ## Completion Criteria
 
-- [ ] Acceptance criteria pass or a disposition is formally accepted.
-- [ ] Resolution evidence is linked.
-- [ ] Task and review records reflect the result.
+- [ ] Real measurement evidence and disposition are linked.
+- [ ] Any required contract follow-up is tracked with both-owner approval.
+- [ ] Task/review records link the final result.
 
 ## Forbidden Actions
 
-- Không đóng issue khi chưa có bằng chứng sửa hoặc quyết định chấp nhận được ghi lại.
-- Không đổi hợp đồng đầu ra của `parse()` hay `chunk_pages` mà không có CR.
-- Không đoán vị trí bảng bằng heuristic theo nội dung (ví dụ bỏ qua tiêu đề "Lưu ý") thay cho vị trí thật từ docling.
+- Do not label deterministic fake-gateway tests as real-model compliance measurements.
+- Do not expose credentials or customer data, or broaden the existing LLM protocol without approval.
 
 ## Output Requirements
 
-- Lưu tại `.agent/governance/issues/ISSUE-019.md`.
-- Giữ nguyên các heading của template.
+Preserve the source review and attach real measurement evidence before resolving.
