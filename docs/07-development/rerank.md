@@ -9,7 +9,7 @@ priority: 2
 ---
 # Rerank và ngưỡng từ chối
 
-`rerank(question, hits, k)` chấm từng cặp (câu hỏi, nội dung chunk) bằng cross-encoder `BAAI/bge-reranker-v2-m3`. Điểm đi qua sigmoid nên nằm trong (0, 1). Hàm trả về tối đa `k` hit có điểm từ ngưỡng trở lên, xếp từ cao xuống thấp, và `Hit.score` là điểm rerank. Danh sách rỗng nghĩa là không tìm thấy gì đủ liên quan: answerer (T-018) trả lời `REFUSAL`. Model chạy trên CPU (fp32) qua `transformers` (tokenizer + đầu phân loại, đã có sẵn do FlagEmbedding kéo về), nạp một lần cho mỗi process ở lần gọi đầu, khoảng 2,3 GB. Không dùng `FlagReranker.compute_score`: bản 1.4.2 chấm batch đầu hai lần để dò kích thước batch, làm rerank 5 ứng viên chậm gấp đôi. Điểm của hai cách trùng nhau (sai lệch tối đa 2,5e-7 trên 30 cặp thật).
+`rerank(question, hits, k)` chấm từng cặp (câu hỏi, nội dung chunk) bằng cross-encoder `BAAI/bge-reranker-v2-m3`. Điểm đi qua sigmoid nên nằm trong (0, 1). Hàm trả về tối đa `k` hit có điểm từ ngưỡng trở lên, xếp từ cao xuống thấp, và `Hit.score` là điểm rerank. Danh sách rỗng nghĩa là không tìm thấy gì đủ liên quan: answerer (T-018) trả lời `REFUSAL`. Model chạy trên CPU (fp32) qua `transformers` (tokenizer + đầu phân loại, đã có sẵn do FlagEmbedding kéo về), nạp một lần cho mỗi process ở lần gọi đầu, khoảng 2,3 GB. Không dùng `FlagReranker.compute_score`: bản 1.4.2 chấm batch đầu hai lần để dò kích thước batch, làm rerank 5 ứng viên chậm gấp đôi. Như FlagReranker, câu hỏi dài hơn 768 token (3/4 `MAX_LENGTH`) bị cắt trước khi ghép cặp; chỉ cắt phần chunk thì lỗi khi riêng câu hỏi đã vượt 1024 token (2.000 ký tự emoji hay dấu câu, mức tối đa `/ask` nhận). Điểm của hai cách trùng nhau: sai lệch tối đa 2,7e-7 trên 31 cặp thật, kể cả câu hỏi 2.000 ký tự và đoạn văn 3.800 token.
 
 Mode `hybrid_rerank` của `retrieve()` (mặc định của `RETRIEVAL_MODE`) lấy `RERANK_CANDIDATES` kết quả hybrid (vẫn qua bộ lọc phòng ban và văn bản bị thay thế), rồi giữ `k` kết quả rerank tốt nhất đạt ngưỡng. Vì vậy mode này có thể trả ít hơn `k` kết quả, hoặc không trả kết quả nào.
 
@@ -34,5 +34,5 @@ Với 5 ứng viên, điểm cao nhất của câu trong phạm vi thấp nhất
 
 ## Kiểm thử
 
-- `pytest tests/unit/test_rerank.py`: cross-encoder giả. Kiểm tra thứ tự, điểm, ngưỡng (mặc định, từ env, giá trị sai), câu ngoài phạm vi trả rỗng, nạp model một lần, và `hybrid_rerank` lấy đúng số ứng viên.
-- `pytest -m integration tests/integration/test_rerank_refusal.py`: model thật trên collection đã ingest. 12 câu trong phạm vi giữ đúng tài liệu (cho phép trượt 1), 14 câu ngoài phạm vi không trả kết quả nào. Mất khoảng 2 phút.
+- `pytest tests/unit/test_rerank.py`: cross-encoder giả; hàm chấm thật được kiểm với tokenizer và model giả (sigmoid, batch theo thứ tự, tham số cắt, câu hỏi dài). Kiểm tra thứ tự, điểm, ngưỡng (mặc định, từ env, giá trị sai), câu ngoài phạm vi trả rỗng, nạp model một lần, và `hybrid_rerank` lấy đúng số ứng viên.
+- `pytest -m integration tests/integration/test_rerank_refusal.py`: model thật trên collection đã ingest. 12 câu trong phạm vi giữ đúng tài liệu (cho phép trượt 1), 14 câu ngoài phạm vi không trả kết quả nào; câu hỏi dài đúng giới hạn của API vẫn được chấm. Mất khoảng 2 phút.

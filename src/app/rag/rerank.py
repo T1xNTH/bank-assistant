@@ -24,6 +24,7 @@ from app.contracts import Hit
 MODEL = "BAAI/bge-reranker-v2-m3"
 BATCH_SIZE = 8
 MAX_LENGTH = 1024  # tokens for question + chunk; chunks are ~800 characters, long table rows ~2100
+QUESTION_MAX_LENGTH = MAX_LENGTH * 3 // 4  # as FlagReranker: a long question leaves room for the chunk
 # Midway between the lowest top score of in-scope sample questions (0.74) and the highest of
 # out-of-scope ones (0.34), with 5 candidates on bank_docs, 2026-10-30; see docs/07-development/rerank.md.
 DEFAULT_THRESHOLD = 0.5
@@ -76,15 +77,26 @@ class _CrossEncoder:
             for start in range(0, len(pairs), BATCH_SIZE):
                 batch = pairs[start : start + BATCH_SIZE]
                 inputs = self.tokenizer(
-                    [q for q, _ in batch],
+                    [self._question(q) for q, _ in batch],
                     [t for _, t in batch],
                     padding=True,
-                    truncation="only_second",  # never cut the question
+                    truncation="only_second",
                     max_length=MAX_LENGTH,
                     return_tensors="pt",
                 )
                 scores += torch.sigmoid(self.model(**inputs).logits.view(-1).float()).tolist()
         return scores
+
+    def _question(self, question: str) -> str:
+        """The question cut to QUESTION_MAX_LENGTH tokens, as FlagReranker 1.4.2 does on transformers 5.
+
+        Truncating only the chunk fails when the question alone fills MAX_LENGTH, and /ask accepts
+        2,000 characters (2,000 characters of emoji or punctuation are ~2,000 tokens).
+        """
+        ids = self.tokenizer(question, add_special_tokens=False)["input_ids"]
+        if len(ids) <= QUESTION_MAX_LENGTH:
+            return question
+        return self.tokenizer.decode(ids[:QUESTION_MAX_LENGTH])
 
 
 def _load() -> _CrossEncoder:

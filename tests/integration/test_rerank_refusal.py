@@ -78,3 +78,10 @@ def test_out_of_scope_questions_return_nothing(corpus):
     answered = {q: hits for q, hits in answered.items() if hits}
     print(f"hybrid_rerank: {len(OUT_OF_SCOPE) - len(answered)}/{len(OUT_OF_SCOPE)} out-of-scope questions refused")
     assert not answered  # measured 14/14 on 2026-10-30, highest top score 0.34
+
+
+@pytest.mark.parametrize("question", ["a1" * 1000, "😀" * 2000, "?!" * 1000])
+def test_a_question_at_the_api_length_limit_is_scored(corpus, question):
+    # 2,000 characters (schemas.AskRequest) of these are 1,600-2,000 tokens, more than MAX_LENGTH.
+    hits = ask(corpus, question, "public")
+    assert all(0.0 <= h.score <= 1.0 for h in hits)

@@ -1,9 +1,12 @@
 """rerank(): ordering, scores and the refusal threshold with a fake cross-encoder (CI)."""
 
+import math
 import threading
 import time
+from types import SimpleNamespace
 
 import pytest
+import torch
 
 from app.contracts import Hit, User
 from app.rag import rerank as rr
@@ -147,8 +150,8 @@ class _Calls(list):
 
 @pytest.fixture
 def hybrid(monkeypatch):
-    monkeypatch.delenv("RERANK_CANDIDATES", raising=False)
     """Stub the hybrid stage of retrieve(): hybrid_rerank looks retrieve up in its module."""
+    monkeypatch.delenv("RERANK_CANDIDATES", raising=False)
     real, calls = rag.retrieve, _Calls()
 
     def stub(question, user, k, mode, **kwargs):
@@ -197,3 +200,63 @@ def test_a_malformed_candidate_count_is_an_error(fake, hybrid, monkeypatch, env)
     monkeypatch.setenv("RERANK_CANDIDATES", env)
     with pytest.raises(ValueError, match="RERANK_CANDIDATES"):
         real(QUESTION, User("u", "hr"), 5, "hybrid_rerank")
+
+
+class FakeTokenizer:
+    """Words are tokens. A pair batch carries each chunk's "logit=" marker for FakeHead."""
+
+    def __init__(self):
+        self.batches = []
+
+    def __call__(self, first, second=None, **kwargs):
+        if second is None:
+            return {"input_ids": first.split()}
+        self.batches.append((first, second, kwargs))
+        return {"logit": torch.tensor([float(t.split("logit=")[1].split()[0]) for t in second])}
+
+    def decode(self, ids):
+        return " ".join(ids)
+
+
+class FakeHead:
+    def __call__(self, logit):
+        return SimpleNamespace(logits=logit.view(-1, 1))
+
+
+@pytest.fixture
+def encoder():
+    ce = object.__new__(rr._CrossEncoder)  # no download: tokenizer and model are fakes
+    ce.tokenizer, ce.model = FakeTokenizer(), FakeHead()
+    return ce
+
+
+def test_scores_are_the_sigmoid_of_the_logits(encoder):
+    assert encoder.score([(QUESTION, "logit=0"), (QUESTION, "logit=2"), (QUESTION, "logit=-3")]) == pytest.approx(
+        [0.5, 1 / (1 + math.exp(-2)), 1 / (1 + math.exp(3))]
+    )
+
+
+def test_pairs_are_scored_in_batches_in_input_order(encoder):
+    pairs = [(QUESTION, f"logit={i}") for i in range(rr.BATCH_SIZE + 2)]
+
+    scores = encoder.score(pairs)
+
+    assert [len(second) for _, second, _ in encoder.tokenizer.batches] == [rr.BATCH_SIZE, 2]
+    assert scores == sorted(scores) and len(scores) == len(pairs)  # logits 0, 1, 2, ... keep their order
+
+
+def test_only_the_chunk_is_truncated_to_the_model_length(encoder):
+    encoder.score([(QUESTION, "logit=1")])
+
+    [(_, _, kwargs)] = encoder.tokenizer.batches
+    assert kwargs == {"padding": True, "truncation": "only_second", "max_length": rr.MAX_LENGTH, "return_tensors": "pt"}
+
+
+def test_a_long_question_is_cut_before_pairing(encoder):
+    long = " ".join(f"w{i}" for i in range(rr.QUESTION_MAX_LENGTH + 50))
+
+    encoder.score([(long, "logit=1"), (QUESTION, "logit=1")])
+
+    [(questions, _, _)] = encoder.tokenizer.batches
+    assert questions[0].split() == long.split()[: rr.QUESTION_MAX_LENGTH]
+    assert questions[1] == QUESTION  # a short question is passed through unchanged
