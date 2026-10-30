@@ -15,6 +15,7 @@ Owner: A — Epic E-004 / E-010. See docs/00-project/product-plan.md.
 from __future__ import annotations
 
 import os
+import re
 from typing import get_args
 
 from qdrant_client import QdrantClient, models
@@ -26,9 +27,10 @@ from app.rag.store import _collection_name, _connection
 # Candidates each of dense and sparse contributes to the fusion; RRF needs more than k from
 # each branch so that a chunk ranked well by only one of them can still reach the top k.
 PREFETCH = 20
-# Hybrid results the cross-encoder rescores. Each costs ~0.8 s on CPU and NFR-08 allows 10 s for the
-# whole /ask: 5 measured 4.0 s median (7.4 s max), 10 measured 9.1 s, with the same 12/12 sample recall.
+# Hybrid results the cross-encoder rescores. NFR-08 allows 10 s for the whole /ask; on CPU, 5 measured
+# 1.9 s median (3.7 s max) and 10 measured 5.7 s (8.1 s), with the same 12/12 sample recall.
 DEFAULT_RERANK_CANDIDATES = 5
+MAX_RERANK_CANDIDATES = 100  # a typo such as 500 would take minutes per question
 _DEPARTMENTS = set(get_args(Department))
 
 
@@ -77,8 +79,8 @@ def rerank_candidates() -> int:
     raw = os.getenv("RERANK_CANDIDATES", "").strip()
     if not raw:
         return DEFAULT_RERANK_CANDIDATES
-    if not raw.isdigit() or int(raw) < 1:
-        raise ValueError(f"RERANK_CANDIDATES must be a positive integer, got {raw!r}")
+    if not re.fullmatch(r"[0-9]+", raw) or not 1 <= int(raw) <= MAX_RERANK_CANDIDATES:
+        raise ValueError(f"RERANK_CANDIDATES must be an integer from 1 to {MAX_RERANK_CANDIDATES}, got {raw!r}")
     return int(raw)
 
 

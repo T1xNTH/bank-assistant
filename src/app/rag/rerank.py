@@ -8,7 +8,9 @@ cross-encoder, maps the logit through a sigmoid to (0, 1), and returns the best
 score. An empty list means nothing relevant was found: the answerer refuses
 (docs/12-ai/ai-design.md). The threshold is ``REFUSAL_THRESHOLD`` from the
 environment, or ``DEFAULT_THRESHOLD`` when it is unset or blank. The model runs on
-CPU (fp32) and is loaded once per process, on first use.
+CPU (fp32) and is loaded once per process, on first use. Pairs are scored in one
+forward pass per batch: FlagEmbedding's ``compute_score`` (1.4.2) scores its first
+batch twice to probe the batch size, which doubles the cost of a 5-candidate rerank.
 """
 
 from __future__ import annotations
@@ -37,11 +39,7 @@ def rerank(question: str, hits: list[Hit], k: int, threshold: float | None = Non
     cutoff = refusal_threshold() if threshold is None else threshold
     if not hits:
         return []
-    scores = _model().compute_score(
-        [[question, hit.text] for hit in hits], batch_size=BATCH_SIZE, max_length=MAX_LENGTH, normalize=True
-    )
-    if not isinstance(scores, list):  # FlagEmbedding returns a bare float for a single pair
-        scores = [scores]
+    scores = _model().score([(question, hit.text) for hit in hits])
     ranked = sorted(zip(scores, hits, strict=True), key=lambda pair: -pair[0])  # stable: ties keep fusion order
     return [dataclasses.replace(hit, score=float(score)) for score, hit in ranked if score >= cutoff][:k]
 
@@ -60,11 +58,37 @@ def refusal_threshold() -> float:
     return value
 
 
-def _load():
-    # Imported lazily: FlagEmbedding pulls in torch.
-    from FlagEmbedding import FlagReranker
+class _CrossEncoder:
+    """Tokenizer and sequence-classification head of the reranker; ``score`` returns sigmoid scores."""
 
-    return FlagReranker(MODEL, use_fp16=False, devices="cpu")
+    def __init__(self) -> None:
+        # Imported lazily: transformers pulls in torch.
+        from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+        self.tokenizer = AutoTokenizer.from_pretrained(MODEL)
+        self.model = AutoModelForSequenceClassification.from_pretrained(MODEL).eval()
+
+    def score(self, pairs: list[tuple[str, str]]) -> list[float]:
+        import torch
+
+        scores: list[float] = []
+        with torch.inference_mode():
+            for start in range(0, len(pairs), BATCH_SIZE):
+                batch = pairs[start : start + BATCH_SIZE]
+                inputs = self.tokenizer(
+                    [q for q, _ in batch],
+                    [t for _, t in batch],
+                    padding=True,
+                    truncation="only_second",  # never cut the question
+                    max_length=MAX_LENGTH,
+                    return_tensors="pt",
+                )
+                scores += torch.sigmoid(self.model(**inputs).logits.view(-1).float()).tolist()
+        return scores
+
+
+def _load() -> _CrossEncoder:
+    return _CrossEncoder()
 
 
 def _model():

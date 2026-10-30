@@ -17,15 +17,14 @@ def hit(doc_id, text, score=0.03):
 
 
 class FakeModel:
-    """Scores a pair by the first number in a "score=" marker in the chunk text."""
+    """Scores a pair by the number after "score=" in the chunk text, already a sigmoid probability."""
 
     def __init__(self):
         self.calls = []
 
-    def compute_score(self, pairs, **kwargs):
-        self.calls.append((pairs, kwargs))
-        scores = [float(text.split("score=")[1].split()[0]) for _, text in pairs]
-        return scores[0] if len(scores) == 1 else scores  # as FlagEmbedding does
+    def score(self, pairs):
+        self.calls.append(pairs)
+        return [float(text.split("score=")[1].split()[0]) for _, text in pairs]
 
 
 @pytest.fixture
@@ -51,13 +50,10 @@ def test_hits_are_reordered_by_the_cross_encoder_and_carry_its_score(fake):
     assert out[0] == HITS[1].__class__(**{**HITS[1].__dict__, "score": 0.9})  # only the score changes
 
 
-def test_pairs_are_question_and_chunk_text_with_normalised_scores(fake):
+def test_pairs_are_question_and_chunk_text_scored_in_one_call(fake):
     rr.rerank(QUESTION, HITS, k=5)
 
-    [(pairs, kwargs)] = fake.calls
-    assert pairs == [[QUESTION, h.text] for h in HITS]
-    assert kwargs["normalize"] is True  # sigmoid: the threshold is a probability
-    assert kwargs["max_length"] == rr.MAX_LENGTH
+    assert fake.calls == [[(QUESTION, h.text) for h in HITS]]
 
 
 def test_k_limits_the_result_after_ranking(fake):
@@ -85,7 +81,14 @@ def test_ties_keep_the_fusion_order(fake):
 
 def test_no_hits_does_not_load_the_model(monkeypatch):
     monkeypatch.setattr(rr, "_model", lambda: pytest.fail("model loaded"))
+    monkeypatch.delenv("REFUSAL_THRESHOLD", raising=False)
     assert rr.rerank(QUESTION, [], k=5) == []
+
+
+def test_a_malformed_threshold_is_an_error_even_without_hits(monkeypatch):
+    monkeypatch.setenv("REFUSAL_THRESHOLD", "abc")  # a misconfiguration must not hide behind empty results
+    with pytest.raises(ValueError, match="REFUSAL_THRESHOLD"):
+        rr.rerank(QUESTION, [], k=5)
 
 
 @pytest.mark.parametrize(("env", "expected"), [("0.75", 0.75), (" 0 ", 0.0), ("1", 1.0), ("", 0.3)])
@@ -134,14 +137,23 @@ def test_concurrent_first_calls_load_the_model_once(monkeypatch):
     assert len(loads) == 1
 
 
+class _Calls(list):
+    """(k, mode, kwargs) of each hybrid call, and the users it was asked for."""
+
+    def __init__(self):
+        super().__init__()
+        self.users = []
+
+
 @pytest.fixture
 def hybrid(monkeypatch):
     monkeypatch.delenv("RERANK_CANDIDATES", raising=False)
     """Stub the hybrid stage of retrieve(): hybrid_rerank looks retrieve up in its module."""
-    real, calls = rag.retrieve, []
+    real, calls = rag.retrieve, _Calls()
 
     def stub(question, user, k, mode, **kwargs):
         calls.append((k, mode, kwargs))
+        calls.users.append(user)
         return HITS
 
     monkeypatch.setattr(rag, "retrieve", stub)
@@ -150,8 +162,11 @@ def hybrid(monkeypatch):
 
 def test_hybrid_rerank_rescores_more_hybrid_candidates_than_k(fake, hybrid):
     real, calls = hybrid
+    asker = User("u-public", "public")
 
-    out = real(QUESTION, User("u", "hr"), 1, "hybrid_rerank", collection="c")
+    out = real(QUESTION, asker, 1, "hybrid_rerank", collection="c")
+
+    assert calls.users == [asker]  # the hybrid stage, and so the access filter, gets the asking user
 
     assert calls == [(rag.DEFAULT_RERANK_CANDIDATES, "hybrid", {"client": None, "collection": "c"})]
     assert [(h.doc_id, h.score) for h in out] == [("fusion-2nd", 0.9)]
@@ -176,7 +191,7 @@ def test_the_number_of_candidates_comes_from_the_environment(fake, hybrid, monke
     assert calls[0][0] == 12
 
 
-@pytest.mark.parametrize("env", ["0", "-3", "five", "2.5"])
+@pytest.mark.parametrize("env", ["0", "-3", "five", "2.5", "²", "101"])
 def test_a_malformed_candidate_count_is_an_error(fake, hybrid, monkeypatch, env):
     real, _ = hybrid
     monkeypatch.setenv("RERANK_CANDIDATES", env)
