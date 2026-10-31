@@ -28,7 +28,8 @@ QUEUE_NAME = "ask"
 
 def owner_id(user: User) -> str:
     # Preserve exact ownership even when masking would collapse two identifiers.
-    # Neither API keys nor original user identifiers are persisted in Redis.
+    # This is pseudonymization, not anonymization: short IDs remain guessable.
+    # API keys are never persisted in Redis.
     return hashlib.sha256(user.user_id.encode("utf-8")).hexdigest()
 
 
@@ -135,14 +136,17 @@ def enqueue_job(
     request.state.audit_user = user
     request.state.audit_question = REDACTED
     try:
-        return queue.enqueue(req, user)
+        request.state.audit_question = require_mask_text(req.question)
+        return queue.enqueue(req.model_copy(update={"question": request.state.audit_question}), user)
     except (RedisError, MaskingError):
         raise HTTPException(status_code=503, detail="Queue unavailable") from None
 
 
 def get_job(
-    job_id: str, user: User = Depends(get_current_user), queue: JobQueue = Depends(get_job_queue),
+    job_id: str, request: Request,
+    user: User = Depends(get_current_user), queue: JobQueue = Depends(get_job_queue),
 ) -> JobStatusResponse:
+    request.state.audit_user = user
     try:
         return queue.status(job_id, user)
     except RedisError:

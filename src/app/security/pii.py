@@ -13,6 +13,8 @@ from functools import lru_cache
 from presidio_analyzer import AnalyzerEngine, Pattern, PatternRecognizer, RecognizerRegistry, RecognizerResult
 from presidio_analyzer.nlp_engine import NoOpNlpEngine
 
+_UUID = re.compile(r"(?<![\w-])[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\w-])")
+
 
 @lru_cache(maxsize=1)
 def _analyzer() -> AnalyzerEngine:
@@ -60,6 +62,23 @@ def mask_text(text: str) -> tuple[str, list[str]]:
     grouped numbers, so a following amount/account is not swallowed by a match.
     Already masked text is unchanged. No original text is logged or retained.
     """
+    pieces: list[str] = []
+    types: list[str] = []
+    cursor = 0
+    # Analyze gaps independently so numeric matches cannot consume UUID groups
+    # or bridge a UUID and adjacent personal data.
+    for match in _UUID.finditer(text):
+        masked, found = _mask_non_uuid(text[cursor:match.start()])
+        pieces.extend((masked, match.group()))
+        types.extend(kind for kind in found if kind not in types)
+        cursor = match.end()
+    masked, found = _mask_non_uuid(text[cursor:])
+    pieces.append(masked)
+    types.extend(kind for kind in found if kind not in types)
+    return "".join(pieces), types
+
+
+def _mask_non_uuid(text: str) -> tuple[str, list[str]]:
     if not text:
         return text, []
     analyzer = _analyzer()

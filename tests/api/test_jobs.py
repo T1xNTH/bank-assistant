@@ -2,6 +2,8 @@
 
 import hashlib
 import json
+import os
+import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from uuid import uuid4
@@ -54,6 +56,48 @@ def work(queue):
 def redis_contents(connection):
     # Include all Redis types (job payloads, meta, results and failures).
     return b"\n".join(connection.dump(key) for key in connection.scan_iter())
+
+
+def audit_rows():
+    with sqlite3.connect(os.environ["AUDIT_DB_PATH"]) as connection:
+        return connection.execute(
+            "SELECT endpoint, user_id, department, question_masked FROM audit_log ORDER BY rowid"
+        ).fetchall()
+
+
+def test_enqueue_audits_exact_persisted_masked_question(api):
+    client, queue, _ = api
+    response = enqueue(client, question=f"CCCD {PII}")
+    assert response.status_code == 202
+    question = fetch(queue, response.json()["job_id"]).args[0]["question"]
+    assert PII not in question and question != jobs.REDACTED
+    assert audit_rows() == [("/ask/jobs", OWNER.user_id, OWNER.department, question)]
+
+
+@pytest.mark.parametrize("case", ["owner", "other", "missing", "expired", "invalid", "unavailable"])
+def test_poll_audits_reader_on_success_and_errors(api, monkeypatch, case):
+    client, queue, application = api
+    job_id = enqueue(client).json()["job_id"]
+    reader = OWNER
+    expected = 200
+    if case == "other":
+        reader = replace(OWNER, user_id="other@example.com")
+        application.dependency_overrides[jobs.get_current_user] = lambda: reader
+    if case in {"other", "missing", "expired", "invalid"}:
+        expected = 404
+    if case == "missing":
+        job_id = str(uuid4())
+    elif case == "expired":
+        queue.connection.expire(fetch(queue, job_id).key, 0)
+    elif case == "invalid":
+        job_id = "bad-id"
+    elif case == "unavailable":
+        def unavailable(*args, **kwargs):
+            raise ConnectionError("Unavailable")
+        monkeypatch.setattr(queue, "status", unavailable)
+        expected = 503
+    assert client.get(f"/ask/jobs/{job_id}").status_code == expected
+    assert audit_rows()[-1] == ("/ask/jobs/{job_id}", reader.user_id, reader.department, None)
 
 
 def test_accepts_masked_payload_and_tracks_position(api):
@@ -199,6 +243,7 @@ def test_masking_failure_enqueues_nothing(api, monkeypatch):
     assert enqueue(client, question=f"CCCD {PII}").status_code == 503
     assert queue.queue.count == 0
     assert not list(queue.connection.scan_iter("rq:job:*"))
+    assert audit_rows()[-1] == ("/ask/jobs", OWNER.user_id, OWNER.department, jobs.REDACTED)
 
 
 @pytest.mark.parametrize("method", ["post", "get"])

@@ -20,6 +20,10 @@ Authenticated clients can enqueue the same body at `POST /ask/jobs` and poll
 receive 404. Redis stores masked requests/results; completed and failed jobs expire
 after one hour. `REDIS_URL` selects Redis and `QUEUE_MAX_LENGTH` (default 100) limits
 waiting jobs; a full or unavailable queue returns 503.
+Waiting jobs currently have no TTL. Run a worker to drain them; without a worker,
+the queue remains full once it reaches its limit. Waiting-job expiry and worker
+operations belong to T-025. Owner IDs in Redis are SHA-256 pseudonyms, not anonymous
+identities: short or predictable user IDs can still be guessed from their hashes.
 
 For a local worker smoke test, run from the repository root with `src` on the Python
 path: `PYTHONPATH=src .venv/bin/rq worker ask --serializer rq.serializers.JSONSerializer`.
