@@ -13,6 +13,7 @@ services:
       REFUSAL_THRESHOLD: ${REFUSAL_THRESHOLD:-}
       RERANK_CANDIDATES: ${RERANK_CANDIDATES:-}
       REDIS_URL: redis://redis:6379/0
+      QUEUE_MAX_LENGTH: ${QUEUE_MAX_LENGTH:-100}
       LLM_BASE_URL: http://litellm:4000
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?Set a random sk- prefixed gateway key in .env.local}
       API_KEYS_FILE: ${API_KEYS_FILE:-config/api_keys.json}

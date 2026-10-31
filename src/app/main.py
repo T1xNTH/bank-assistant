@@ -16,6 +16,7 @@ from app.deps import get_answerer, get_current_user, get_llm
 from app.errors import install_error_handlers
 from app.log_config import configure_logging, get_logger
 from app.middleware import RequestContextMiddleware
+from app.queue.jobs import enqueue_job, get_job
 from app.rag.answer import AnswerUnavailable, retrieval_mode, warm_up
 from app.schemas import AskRequest, AskResponse, ChatRequest, ChatResponse, ErrorResponse
 from app.security.masking import REDACTED, MaskingError, mask_identifier, mask_text, require_mask_text
@@ -51,6 +52,8 @@ def create_app() -> FastAPI:
         "/ask", ask, methods=["POST"], response_model=AskResponse,
         responses={503: {"model": ErrorResponse, "description": "Dependency unavailable"}},
     )
+    application.add_api_route("/ask/jobs", enqueue_job, methods=["POST"], status_code=202)
+    application.add_api_route("/ask/jobs/{job_id}", get_job, methods=["GET"])
     application.add_api_route(
         "/chat", chat, methods=["POST"], response_model=ChatResponse,
         responses={503: {"model": ErrorResponse, "description": "Dependency unavailable"}},
