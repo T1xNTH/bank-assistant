@@ -55,6 +55,12 @@ dequeue interval (up to 480s including grace). Redis outages fail the check. A h
 parent is detected after that heartbeat window; job hangs are bounded by the job
 timeout. Docker marks failed checks unhealthy; `restart: unless-stopped` restarts
 exited processes and does not automatically restart an unhealthy running process.
+After an abrupt kill (SIGKILL/OOM), an old registration can share the restarted
+container's hostname and PID 1. The check can report healthy from that registration
+for up to about 480s, even if the replacement worker hangs or fails to register.
+Before using this healthcheck for autoheal or orchestrator recovery, require the
+registration's birth time to be after the current process's start time (for
+example, from `/proc/1/stat` or a startup timestamp recorded by the worker).
 
 ## Where things are
 | Path | What |
