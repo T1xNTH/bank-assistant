@@ -119,6 +119,11 @@ def test_production_entrypoint_post_worker_poll_and_masked_storage(redis_connect
                 assert process.poll() is None, "Worker exited before completing the job"
                 time.sleep(0.1)
             assert response.json()["status"] == "done"
+            health = subprocess.run(
+                [sys.executable, "-m", "app.queue.worker", "--healthcheck"],
+                cwd=ROOT, env=env, capture_output=True, timeout=15,
+            )
+            assert health.returncode == 0, "Production worker healthcheck failed"
             assert b"000000000001" not in b"".join(redis_connection.dump(key) for key in redis_connection.scan_iter())
     finally:
         process.terminate()

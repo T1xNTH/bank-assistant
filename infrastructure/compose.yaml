@@ -42,11 +42,14 @@ services:
     build: {context: .., dockerfile: infrastructure/docker/Dockerfile}
     command: ["python", "-m", "app.queue.worker"]
     environment: *app-environment
-    volumes:
-      - ../config:/app/config:ro
-      - audit_data:/app/data
     depends_on: [qdrant, redis, litellm]
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-m", "app.queue.worker", "--healthcheck"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
   litellm:
     image: ghcr.io/berriai/litellm:v1.106.6
     command: ["--config", "/app/config.yaml", "--host", "0.0.0.0", "--port", "4000"]

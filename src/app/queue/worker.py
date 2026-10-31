@@ -7,16 +7,18 @@ from __future__ import annotations
 
 import math
 import os
+import socket
+import sys
 import time
 from collections.abc import Callable
+from datetime import timezone
 from typing import TypeVar
 
 from redis import Redis
+from redis.exceptions import RedisError
 from rq import Worker
 from rq.serializers import JSONSerializer
 
-from app.llm import LLMRateLimitError
-from app.log_config import configure_logging
 from app.queue.limits import TokenBucket
 
 QUEUE_NAMES = ("ask-high", "ask-default", "ask")  # Drain pre-T-025 jobs last.
@@ -43,6 +45,8 @@ def run_with_policy(action: Callable[[], T], connection: Redis) -> T:
     A one-token bucket avoids an initial RPM-sized burst. Backoff is bounded by
     retry count; every retry re-acquires a token, including across workers.
     """
+    from app.llm import LLMRateLimitError
+
     bucket = TokenBucket(connection, "ask:worker:rate", positive_int("WORKER_RPM", 60))
     retries = positive_int("WORKER_MAX_ATTEMPTS", 4)
     backoff = positive_float("WORKER_BACKOFF_SECONDS", 1)
@@ -58,14 +62,45 @@ def run_with_policy(action: Callable[[], T], connection: Redis) -> T:
 
 
 def main() -> None:
+    # Keep the separate healthcheck process free of Presidio/LLM imports.
+    from app.log_config import configure_logging
+
     configure_logging()
     # RQ uses blocking dequeue: its socket timeout must exceed dequeue timeout.
     connection = Redis.from_url(
         os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0"), socket_connect_timeout=2,
     )
-    Worker(QUEUE_NAMES, connection=connection, serializer=JSONSerializer).work()
+    Worker(QUEUE_NAMES, name=worker_name(), connection=connection, serializer=JSONSerializer).work()
+
+
+def worker_name() -> str:
+    return f"bank-ask-{socket.gethostname()}"
+
+
+def healthy() -> bool:
+    """Check this container's registration and heartbeat, never another replica's.
+
+    RQ can block idle dequeue for 405s, so allow its default worker TTL plus
+    heartbeat grace. Busy workers heartbeat from the monitoring parent.
+    """
+    connection = Redis.from_url(
+        os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0"), socket_connect_timeout=2, socket_timeout=2,
+    )
+    try:
+        worker = Worker.find_by_key(f"rq:worker:{worker_name()}", connection, serializer=JSONSerializer)
+        if worker is None or worker.last_heartbeat is None or worker.get_state() == "stopped":
+            return False
+        seconds, micros = connection.time()
+        age = seconds + micros / 1_000_000 - worker.last_heartbeat.replace(tzinfo=timezone.utc).timestamp()
+        return 0 <= age <= worker.worker_ttl + 60
+    except RedisError:
+        return False
+    finally:
+        connection.close()
 
 
 if __name__ == "__main__":
+    if "--healthcheck" in sys.argv[1:]:
+        sys.exit(0 if healthy() else 1)
     main()
 

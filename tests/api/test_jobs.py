@@ -114,6 +114,19 @@ def test_priority_uses_authenticated_role_not_request_fields(api):
     assert client.get(f"/ask/jobs/{staff}").json()["position"] == 2
 
 
+def test_queue_full_attempt_consumes_token_as_documented(api, monkeypatch):
+    client, queue, _ = api
+    queue.max_length = 1
+    monkeypatch.setenv("API_KEY_RPM", "1")
+    monkeypatch.setenv("API_KEY_BURST", "2")
+    assert enqueue(client).status_code == 202
+    assert enqueue(client).status_code == 503
+    denied = enqueue(client)
+    assert denied.status_code == 429
+    assert int(denied.headers["Retry-After"]) > 0
+    assert queue.queue.count == 1
+
+
 @pytest.mark.parametrize("case", ["owner", "other", "missing", "expired", "invalid", "unavailable"])
 def test_poll_audits_reader_on_success_and_errors(api, monkeypatch, case):
     client, queue, application = api

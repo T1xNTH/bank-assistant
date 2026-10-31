@@ -2,11 +2,13 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 
 import fakeredis
 import pytest
 from fastapi import HTTPException
 from redis.exceptions import ConnectionError
+from rq.utils import utcformat
 
 from app.contracts import User
 from app.llm import LLMError, LLMRateLimitError
@@ -120,3 +122,23 @@ def test_legacy_jobs_visible_and_count_toward_capacity():
     with pytest.raises(HTTPException) as error:
         queue.enqueue(AskRequest(question="New?"), user)
     assert error.value.status_code == 503
+
+
+@pytest.mark.parametrize("state", ["live", "missing", "other", "stale", "stopped", "outage"])
+def test_healthcheck_requires_own_fresh_registration(monkeypatch, state):
+    connection = fakeredis.FakeRedis()
+    name = "another-replica" if state == "other" else worker.worker_name()
+    registered = worker.Worker(worker.QUEUE_NAMES, name=name, connection=connection)
+    if state != "missing":
+        registered.register_birth()
+    if state == "stale":
+        stale = utcformat(datetime.now(timezone.utc) - timedelta(seconds=1000))
+        connection.hset(registered.key, "last_heartbeat", stale)
+    elif state == "stopped":
+        connection.hset(registered.key, "state", "stopped")
+    elif state == "outage":
+        def unavailable(*args, **kwargs):
+            raise ConnectionError("Unavailable")
+        monkeypatch.setattr(connection, "hgetall", unavailable)
+    monkeypatch.setattr(worker.Redis, "from_url", lambda *args, **kwargs: connection)
+    assert worker.healthy() == (state == "live")

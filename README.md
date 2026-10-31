@@ -36,6 +36,9 @@ No new request field or client-supplied priority is accepted.
 `POST /ask/jobs` uses a shared Redis token bucket per authenticated API-key digest:
 `API_KEY_RPM` (default 60) and `API_KEY_BURST` (default 10). Exhaustion returns the
 standard 429 envelope with integer `Retry-After`; polling is not throttled.
+The bucket counts authenticated, valid enqueue attempts, including attempts that
+later return 503 (queue full, Redis enqueue failure or masking unavailable). These
+tokens are not refunded; clients should back off on 503 rather than retry rapidly.
 With fake authentication the bucket is per user. Worker execution attempts share
 one Redis bucket (`WORKER_RPM`, default 60, capacity 1), including retries. The LLM
 client retains its own bounded HTTP retries; RPM here counts answer execution
@@ -46,6 +49,12 @@ at `WORKER_BACKOFF_SECONDS` (default 1), capped at 60s. Final failures stay sani
 increase it for lower RPM or long LLM latency. Worker operations require Redis;
 limiter outages fail closed. Limits must be positive integers; backoff seconds
 also accepts positive finite fractions for testing or shorter retry schedules.
+The Compose worker has no API-key registry or audit volume mounts. Its healthcheck
+checks its own Redis registration and last heartbeat, allowing RQ's default idle
+dequeue interval (up to 480s including grace). Redis outages fail the check. A hung
+parent is detected after that heartbeat window; job hangs are bounded by the job
+timeout. Docker marks failed checks unhealthy; `restart: unless-stopped` restarts
+exited processes and does not automatically restart an unhealthy running process.
 
 ## Where things are
 | Path | What |
