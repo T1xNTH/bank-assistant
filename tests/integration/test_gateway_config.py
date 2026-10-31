@@ -41,6 +41,9 @@ def test_core_excludes_ollama_and_isolates_provider_key(monkeypatch):
     assert services["api"]["environment"]["LANGFUSE_BASE_URL"] == "http://langfuse:3000"
     assert services["api"]["environment"]["AUTH_BACKEND"] == "apikey"
     assert services["api"]["environment"]["API_KEYS_FILE"] == "config/api_keys.json"
+    assert services["worker"]["environment"] == services["api"]["environment"]
+    assert services["worker"]["command"] == ["python", "-m", "app.queue.worker"]
+    assert not services["worker"].get("ports")
     registry_mount = next(mount for mount in services["api"]["volumes"] if mount["target"] == "/app/config")
     assert registry_mount["type"] == "bind" and registry_mount["read_only"]
     assert Path(registry_mount["source"]) == ROOT / "config"

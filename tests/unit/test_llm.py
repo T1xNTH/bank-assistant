@@ -73,6 +73,7 @@ def test_failure_is_bounded_and_safe(gateway, status, count):
     assert len(gateway["requests"]) == count
     assert "stub-secret" not in str(error.value)
     assert "private" not in str(error.value)
+    assert isinstance(error.value, llm.LLMRateLimitError) == (status == 429)
 
 
 @pytest.mark.parametrize("body", [{}, {"choices": []}, {"choices": None}, {
