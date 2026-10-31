@@ -68,3 +68,5 @@ priority: 3
 | `T-024` | `6656369` | `#63 (draft); issue #25` | `.agent/reports/implementation/T-024.md` | `Bounded Redis/RQ API with masked JSON payload/results, exact owner isolation, 1h TTL and 19 fakeredis API tests; full make check 583 passed/29 deselected; independent review pending` |
 
 | `T-025` | `285d749` | `feat/T-025-worker; issue #26` | `.agent/reports/implementation/T-025.md` | `Shared Redis worker/per-key token buckets, bounded typed-429 retry, priority queues, waiting TTL/capacity cleanup and Compose worker; 665 passed/34 deselected and 8 real Redis/worker/Compose integration checks passed; independent review pending` |
+
+| `T-025` | `183c8dd` | `#65` | `.agent/reports/implementation/T-025-pr65-fixes.md` | `Review follow-up: remove worker config/audit mounts, add own-worker heartbeat healthcheck and document 503 attempt token consumption; independent re-review pending` |
