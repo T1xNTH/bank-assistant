@@ -28,7 +28,7 @@ Mode: tham số `mode` (từ request) được ưu tiên. Nếu không có thì 
 - `CANARY`: chuỗi bí mật chỉ nằm trong `SYSTEM`. Câu trả lời chứa chuỗi này nghĩa là model đang làm lộ system prompt (OWASP LLM07).
 - `PROMPT_VERSION`: hiện là `"1"`. Tăng mỗi lần sửa `SYSTEM` hoặc `build_context` để trace và báo cáo eval ghi được prompt nào đã chạy.
 
-Chống chèn thẻ: trong nội dung chunk, tên nguồn và câu hỏi, mọi chuỗi giống thẻ `<tai_lieu` hoặc `</tai_lieu` (không phân biệt hoa thường, kể cả có khoảng trắng như `< / TAI_LIEU`) bị bỏ dấu `<`. Việc này lặp lại đến khi không còn chuỗi nào khớp, nên `<</tai_lieu>` hay `<<<tai_lieu` cũng không dựng lại được thẻ. Dấu `"` trong tên nguồn cũng bị bỏ. Nhờ vậy một chunk không thể tự đóng khối của nó bằng thẻ ASCII rồi giả làm chỉ dẫn hay mở một khối số khác. Các ký tự trông giống (`＜` toàn khổ, chữ Kirin, ký tự độ rộng 0, `&lt;`) không bị chặn; model vẫn có thể bị đánh lừa bởi chúng, xem phần Giới hạn.
+Chống chèn thẻ: trong nội dung chunk, tên nguồn và câu hỏi, mọi chuỗi giống thẻ `<tai_lieu` hoặc `</tai_lieu` (không phân biệt hoa thường, kể cả có khoảng trắng như `< / TAI_LIEU`) bị bỏ dấu `<`. Việc này lặp lại đến khi không còn chuỗi nào khớp, nên `<</tai_lieu>` hay `<<<tai_lieu` cũng không dựng lại được thẻ. Tên nguồn bị bỏ hẳn các ký tự `<`, `>` và `"`, vì tên file không cần chúng; cách cũ bỏ `"` sau khi lọc nên `<"tai_lieu` ghép lại thành thẻ (review PR #62). Nhờ vậy một chunk không thể tự đóng khối của nó bằng thẻ ASCII rồi giả làm chỉ dẫn hay mở một khối số khác. Các ký tự trông giống (`＜` toàn khổ, chữ Kirin, ký tự độ rộng 0, `&lt;`) không bị chặn; model vẫn có thể bị đánh lừa bởi chúng, xem phần Giới hạn.
 
 ## Trích dẫn
 

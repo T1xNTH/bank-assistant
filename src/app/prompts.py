@@ -52,7 +52,12 @@ def _defuse(text: str) -> str:
 
 
 def _attribute(value: str) -> str:
-    return _defuse(value).replace('"', "")
+    """A source name for an attribute: without ``<``, ``>`` or ``"`` no tag or attribute can form.
+
+    Removing characters after _defuse could join a tag back together (``<"tai_lieu``, PR #62 review),
+    so the characters a tag needs are dropped outright instead.
+    """
+    return re.sub(r'[<>"]', "", value)
 
 
 def build_context(hits: list[Hit]) -> str:
