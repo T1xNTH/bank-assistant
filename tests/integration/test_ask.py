@@ -79,7 +79,8 @@ QUESTIONS = [
         "Phí chuyển tiền trong nước khác hệ thống là bao nhiêu?",
         "dichvuthanhtoanchuyentienvtb.pdf",
         {2, 3},
-        r"0[,.]03\s*%",
+        # The VND amounts: 0,03% alone also matches the foreign-currency row (PR #64 review round 2).
+        r"\b20[.,]000\b|\b3[.,]000[.,]000\b",
     ),
 ]
 OUT_OF_SCOPE = [
