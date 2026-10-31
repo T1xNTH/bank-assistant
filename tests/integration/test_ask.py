@@ -6,6 +6,11 @@ into QDRANT_COLLECTION (default bank_docs) and the LiteLLM gateway on LLM_BASE_U
 http://127.0.0.1:4000) with LITELLM_MASTER_KEY set. Skipped when any of them is missing. Calls the
 paid cloud model (about 15 questions, well under 0.01 USD with gpt-6-luna) and loads two models on
 CPU, so it takes a few minutes.
+
+Pages and facts below hold for the shared corpus only: the 30 PDFs of GitHub Release
+``corpus-2026-10-28`` ingested with the CR-009 chunker, 2815 points. The VietinBank fee schedules are
+browser prints, so a corpus printed again paginates and ranks differently; the fixture fails on any
+other point count instead of reporting misleading misses.
 """
 
 import hashlib
@@ -25,29 +30,63 @@ from app.contracts import REFUSAL
 
 pytestmark = pytest.mark.integration
 
-# T-019 manual set: (department, question, source, pages holding the answer). Checked by reading the
-# chunks; not taken from eval/golden.jsonl so the E-008 evaluation stays independent.
+# T-019 manual set: (department, question, source, pages holding the answer, fact the answer must state).
+# Checked by reading the chunks; not taken from eval/golden.jsonl so the E-008 evaluation stays
+# independent. The fact (a regex, case-insensitive) catches an answer that cites the right page but
+# leaves out what was asked (PR #64 QA: a transfer-fee answer gave foreign-currency fees only).
 QUESTIONS = [
-    ("hr", "Mức lương tối thiểu tháng vùng I là bao nhiêu?", "293-cp.signed.pdf", {2}),
-    ("hr", "Mức lương tối thiểu giờ vùng IV là bao nhiêu?", "293-cp.signed.pdf", {2}),
-    ("hr", "Tổng số giờ làm thêm trong một ngày không được vượt quá bao nhiêu?", "145.signed.pdf", {45}),
-    ("credit", "Hồ sơ đề nghị vay vốn gồm những gì?", "86-vbhn-nhnn.pdf", {11}),
-    ("credit", "Tổ chức tín dụng không được cho vay đối với những nhu cầu vốn nào?", "86-vbhn-nhnn.pdf", {9, 10}),
-    ("credit", "Lãi suất áp dụng với dư nợ gốc bị quá hạn tối đa là bao nhiêu?", "86-vbhn-nhnn.pdf", {13, 14}),
+    ("hr", "Mức lương tối thiểu tháng vùng I là bao nhiêu?", "293-cp.signed.pdf", {2}, r"5[.,]310[.,]000"),
+    ("hr", "Mức lương tối thiểu giờ vùng IV là bao nhiêu?", "293-cp.signed.pdf", {2}, r"17[.,]800"),
+    (
+        "hr",
+        "Tổng số giờ làm thêm trong một ngày không được vượt quá bao nhiêu?",
+        "145.signed.pdf",
+        {45},
+        r"50\s*%|12 giờ",
+    ),
+    ("credit", "Hồ sơ đề nghị vay vốn gồm những gì?", "86-vbhn-nhnn.pdf", {11}, r"điều kiện vay"),
+    (
+        "credit",
+        "Tổ chức tín dụng không được cho vay đối với những nhu cầu vốn nào?",
+        "86-vbhn-nhnn.pdf",
+        {9, 10},
+        r"vàng miếng",
+    ),
+    (
+        "credit",
+        "Lãi suất áp dụng với dư nợ gốc bị quá hạn tối đa là bao nhiêu?",
+        "86-vbhn-nhnn.pdf",
+        {13, 14},
+        r"150\s*%",
+    ),
     (
         "credit",
         "Chủ thẻ tín dụng VietinBank được phát hành tối đa bao nhiêu thẻ phụ?",
         "DieukhoanvaDieukienphathanhvasudungthetindungcanhanVietinBank.pdf",
         {5},
+        r"\b(0?3|ba)\b",
     ),
-    ("public", "Phí phát hành lại thẻ ghi nợ quốc tế là bao nhiêu?", "dichvsptheghinoqt.pdf", {1}),
-    ("public", "Phí cấp lại mã PIN thẻ ghi nợ quốc tế tại quầy là bao nhiêu?", "dichvsptheghinoqt.pdf", {3}),
-    ("public", "Phí chuyển tiền trong nước khác hệ thống là bao nhiêu?", "dichvuthanhtoanchuyentienvtb.pdf", {2, 3}),
+    ("public", "Phí phát hành lại thẻ ghi nợ quốc tế là bao nhiêu?", "dichvsptheghinoqt.pdf", {1}, r"50[.,]000"),
+    (
+        "public",
+        "Phí cấp lại mã PIN thẻ ghi nợ quốc tế tại quầy là bao nhiêu?",
+        "dichvsptheghinoqt.pdf",
+        {3},
+        r"27[.,]273",
+    ),
+    (
+        "public",
+        "Phí chuyển tiền trong nước khác hệ thống là bao nhiêu?",
+        "dichvuthanhtoanchuyentienvtb.pdf",
+        {2, 3},
+        r"0[,.]03\s*%",
+    ),
 ]
 OUT_OF_SCOPE = [
     ("public", "Giá vàng SJC hôm nay là bao nhiêu?"),
     ("credit", "Thời tiết Hà Nội ngày mai thế nào?"),
 ]
+CORPUS_POINTS = 2815  # release corpus-2026-10-28, scripts/ingest.py with the CR-009 chunker
 HR_DOCS = {"145.signed.pdf", "158-ndcp.signed.pdf", "293-cp.signed.pdf", "74-cp.signed.pdf"}
 SUPERSEDED = {"74-cp.signed.pdf", "06-vbhn-nhnn.pdf"}
 
@@ -66,12 +105,18 @@ def api(tmp_path_factory):
     connection = QdrantClient(url=os.getenv("QDRANT_URL", "http://127.0.0.1:6333"), timeout=10)
     name = os.getenv("QDRANT_COLLECTION", "bank_docs")
     try:
-        if not connection.collection_exists(name) or connection.count(name).count == 0:
-            pytest.skip(f"collection {name} is empty; run scripts/ingest.py first")
+        points = connection.count(name).count if connection.collection_exists(name) else 0
     except Exception:
         pytest.skip("Qdrant is not reachable")
     finally:
         connection.close()
+    if points == 0:
+        pytest.skip(f"collection {name} is empty; run scripts/ingest.py first")
+    if points != CORPUS_POINTS:
+        pytest.fail(
+            f"{name} has {points} points, the shared corpus has {CORPUS_POINTS}: download release "
+            "corpus-2026-10-28 into data/ (docs/07-development/corpus.md), then scripts/ingest.py --data data"
+        )
     gateway_key = os.getenv("LITELLM_MASTER_KEY", "")
     base = os.getenv("LLM_BASE_URL", "http://127.0.0.1:4000").rstrip("/")
     if not gateway_key or not _gateway_up(base, gateway_key):
@@ -110,14 +155,15 @@ def ask(api, department, question, **body):
     return response.json()
 
 
-@pytest.mark.parametrize(("department", "question", "source", "pages"), QUESTIONS, ids=range(1, 11))
-def test_in_scope_question_cites_the_right_file_and_page(api, department, question, source, pages):
+@pytest.mark.parametrize(("department", "question", "source", "pages", "fact"), QUESTIONS, ids=range(1, 11))
+def test_in_scope_question_cites_the_right_file_and_page(api, department, question, source, pages, fact):
     body = ask(api, department, question)
     cited = [(c["source"], c["page"]) for c in body["citations"]]
     print(f"\n[{department}] {question}\n  {body['answer']}\n  {cited} {body['latency_ms']} ms")
     assert body["found"] is True
     assert body["retrieval_mode"] == "hybrid_rerank" and body["route"] == "cloud"
     assert any(s == source and p in pages for s, p in cited), cited
+    assert re.search(fact, body["answer"], re.IGNORECASE), body["answer"]
     assert not SUPERSEDED & {s for s, _ in cited}
     # Every marker in the text has a citation and every citation is marked: the contract's [n] rule.
     assert {int(n) for n in re.findall(r"\[(\d+)\]", body["answer"])} == {c["n"] for c in body["citations"]}
