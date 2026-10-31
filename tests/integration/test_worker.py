@@ -2,6 +2,7 @@
 
 import os
 import secrets
+import socket
 import subprocess
 import sys
 import time
@@ -14,7 +15,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from redis import Redis
 from redis.exceptions import ConnectionError
-from rq import SimpleWorker
+from rq import SimpleWorker, Worker
 from rq.serializers import JSONSerializer
 
 from app.contracts import Hit, LLMResult, User
@@ -99,6 +100,10 @@ def test_burst_30_jobs_completes_with_zero_failures_against_429_fake_llm(redis_c
 def test_production_entrypoint_post_worker_poll_and_masked_storage(redis_connection, monkeypatch):
     monkeypatch.setenv("REDIS_URL", f"redis://127.0.0.1:{redis_connection.connection_pool.connection_kwargs['port']}/0")
     app, _ = make_api(redis_connection)
+    # A killed container leaves its registration until RQ's TTL expires.
+    previous = Worker(list(jobs.JobQueue(redis_connection).queues.values()),
+                      name=f"bank-ask-{socket.gethostname()}", connection=redis_connection)
+    previous.register_birth()
     env = {**os.environ, "PYTHONPATH": str(ROOT / "src"), "RAG_BACKEND": "fake", "LLM_BACKEND": "fake"}
     # Withhold worker output: it must never accidentally expose host configuration.
     process = subprocess.Popen(
@@ -124,6 +129,7 @@ def test_production_entrypoint_post_worker_poll_and_masked_storage(redis_connect
                 cwd=ROOT, env=env, capture_output=True, timeout=15,
             )
             assert health.returncode == 0, "Production worker healthcheck failed"
+            assert redis_connection.exists(previous.key), "Restart must not delete old registrations"
             assert b"000000000001" not in b"".join(redis_connection.dump(key) for key in redis_connection.scan_iter())
     finally:
         process.terminate()

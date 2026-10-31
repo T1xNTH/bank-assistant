@@ -70,29 +70,35 @@ def main() -> None:
     connection = Redis.from_url(
         os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0"), socket_connect_timeout=2,
     )
-    Worker(QUEUE_NAMES, name=worker_name(), connection=connection, serializer=JSONSerializer).work()
-
-
-def worker_name() -> str:
-    return f"bank-ask-{socket.gethostname()}"
+    # RQ's random name avoids collisions with registrations left by SIGKILL/OOM.
+    Worker(QUEUE_NAMES, connection=connection, serializer=JSONSerializer).work()
 
 
 def healthy() -> bool:
     """Check this container's registration and heartbeat, never another replica's.
 
     RQ can block idle dequeue for 405s, so allow its default worker TTL plus
-    heartbeat grace. Busy workers heartbeat from the monitoring parent.
+    heartbeat grace. Busy workers heartbeat from the monitoring parent. Match
+    hostname and a live PID because each startup receives a new RQ name.
     """
     connection = Redis.from_url(
         os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0"), socket_connect_timeout=2, socket_timeout=2,
     )
     try:
-        worker = Worker.find_by_key(f"rq:worker:{worker_name()}", connection, serializer=JSONSerializer)
-        if worker is None or worker.last_heartbeat is None or worker.get_state() == "stopped":
-            return False
         seconds, micros = connection.time()
-        age = seconds + micros / 1_000_000 - worker.last_heartbeat.replace(tzinfo=timezone.utc).timestamp()
-        return 0 <= age <= worker.worker_ttl + 60
+        for worker in Worker.all(connection=connection, serializer=JSONSerializer):
+            if worker.hostname != socket.gethostname() or not worker.pid:
+                continue
+            if worker.last_heartbeat is None or worker.get_state() == "stopped":
+                continue
+            try:
+                os.kill(worker.pid, 0)
+            except OSError:
+                continue
+            age = seconds + micros / 1_000_000 - worker.last_heartbeat.replace(tzinfo=timezone.utc).timestamp()
+            if 0 <= age <= worker.worker_ttl + 60:
+                return True
+        return False
     except RedisError:
         return False
     finally:

@@ -124,14 +124,19 @@ def test_legacy_jobs_visible_and_count_toward_capacity():
     assert error.value.status_code == 503
 
 
-@pytest.mark.parametrize("state", ["live", "missing", "other", "stale", "stopped", "outage"])
+@pytest.mark.parametrize("state", ["live", "missing", "other", "dead", "stale", "stopped", "outage"])
 def test_healthcheck_requires_own_fresh_registration(monkeypatch, state):
     connection = fakeredis.FakeRedis()
-    name = "another-replica" if state == "other" else worker.worker_name()
-    registered = worker.Worker(worker.QUEUE_NAMES, name=name, connection=connection)
+    registered = worker.Worker(worker.QUEUE_NAMES, connection=connection)
     if state != "missing":
         registered.register_birth()
-    if state == "stale":
+    if state == "other":
+        connection.hset(registered.key, "hostname", "another-replica")
+    elif state == "dead":
+        def missing_process(pid, signal):
+            raise ProcessLookupError()
+        monkeypatch.setattr(worker.os, "kill", missing_process)
+    elif state == "stale":
         stale = utcformat(datetime.now(timezone.utc) - timedelta(seconds=1000))
         connection.hset(registered.key, "last_heartbeat", stale)
     elif state == "stopped":
@@ -142,3 +147,19 @@ def test_healthcheck_requires_own_fresh_registration(monkeypatch, state):
         monkeypatch.setattr(connection, "hgetall", unavailable)
     monkeypatch.setattr(worker.Redis, "from_url", lambda *args, **kwargs: connection)
     assert worker.healthy() == (state == "live")
+
+
+def test_worker_restart_with_undeclared_death(monkeypatch):
+    connection = fakeredis.FakeRedis()
+    previous = worker.Worker(worker.QUEUE_NAMES, connection=connection)
+    previous.register_birth()
+    monkeypatch.setattr(worker.Redis, "from_url", lambda *args, **kwargs: connection)
+    # Exercise the production constructor and RQ birth path without a dequeue loop.
+    def work(restarted):
+        assert restarted.name != previous.name
+        restarted.register_birth()
+        connection.hset(previous.key, "hostname", "old-container")
+        assert worker.healthy()
+        assert connection.exists(previous.key)
+    monkeypatch.setattr(worker.Worker, "work", work)
+    worker.main()
