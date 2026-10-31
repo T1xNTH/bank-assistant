@@ -56,6 +56,13 @@ def test_fake_backend_does_not_warm_up(monkeypatch, warmed):
     assert calls == []
 
 
+def test_fake_backend_ignores_retrieval_mode(monkeypatch, warmed):
+    real_settings(monkeypatch, "fake")
+    monkeypatch.setenv("RETRIEVAL_MODE", "bm25")
+    with TestClient(main.create_app()) as client:
+        assert client.get("/health").status_code == 200
+
+
 def test_bad_retrieval_mode_stops_startup(monkeypatch, warmed):
     calls, _ = warmed
     real_settings(monkeypatch)
@@ -121,17 +128,38 @@ class BrokenLLM:
         raise LLMError("LLM gateway returned HTTP 502")
 
 
+def unexpected(status):
+    return UnexpectedResponse(status, "x", b'{"status":{"error":"x"}}', httpx.Headers())
+
+
 QDRANT_ERRORS = [
     ResponseHandlingException(httpx.ConnectError("[Errno 111] Connection refused")),
-    UnexpectedResponse(404, "Not Found", b'{"status":{"error":"Collection not found"}}', httpx.Headers()),
+    ResponseHandlingException(httpx.ReadTimeout("timed out")),
+    unexpected(404),
+    unexpected(500),
+    unexpected(503),
 ]
 
 
-@pytest.mark.parametrize("error", QDRANT_ERRORS, ids=["connection-refused", "no-collection"])
+@pytest.mark.parametrize("error", QDRANT_ERRORS, ids=["refused", "timeout", "no-collection", "500", "503"])
 def test_qdrant_failure_is_answer_unavailable(error):
     with pytest.raises(ans.AnswerUnavailable, match="retrieval") as info:
         ans.RagAnswerer(Retrieve(error=error), FakeLLM()).answer("q", USER)
     assert info.value.__cause__ is error
+
+
+def test_qdrant_status_is_in_the_reason():
+    with pytest.raises(ans.AnswerUnavailable, match=r"HTTP 404"):
+        ans.RagAnswerer(Retrieve(error=unexpected(404)), FakeLLM()).answer("q", USER)
+
+
+@pytest.mark.parametrize("status", [400, 401, 403, 409, 422])
+def test_qdrant_client_errors_are_bugs_not_outages(status):
+    # A wrong vector name or filter is a 400 from Qdrant: a bug that must stay a 500.
+    error = unexpected(status)
+    with pytest.raises(UnexpectedResponse) as info:
+        ans.RagAnswerer(Retrieve(error=error), FakeLLM()).answer("q", USER)
+    assert info.value is error
 
 
 def test_llm_failure_is_answer_unavailable():
@@ -166,11 +194,25 @@ def test_ask_returns_503_when_a_dependency_is_down(answerer):
     assert response.json() == {"error": {"code": "SERVICE_UNAVAILABLE", "message": "Service Unavailable"}}
 
 
-def test_ask_still_returns_500_for_bugs():
-    response = client_with(ans.RagAnswerer(Retrieve(error=KeyError("payload")), FakeLLM())).post(
+@pytest.mark.parametrize("error", [KeyError("payload"), unexpected(400)], ids=["key-error", "qdrant-400"])
+def test_ask_still_returns_500_for_bugs(error):
+    response = client_with(ans.RagAnswerer(Retrieve(error=error), FakeLLM())).post(
         "/ask", json={"question": "Phí phát hành lại thẻ?"}
     )
     assert response.status_code == 500
+
+
+def test_unavailable_log_names_the_reason_and_root_cause(caplog):
+    with caplog.at_level("WARNING", logger=main.logger.name):
+        client_with(ans.RagAnswerer(Retrieve(error=unexpected(503)), FakeLLM())).post("/ask", json={"question": "q?"})
+    [record] = [r for r in caplog.records if r.getMessage().startswith("ask.unavailable")]
+    assert record.getMessage() == "ask.unavailable: retrieval unavailable (HTTP 503)"
+    assert record.exception_type == "UnexpectedResponse"
+
+
+def test_openapi_declares_503_for_ask():
+    responses = main.create_app().openapi()["paths"]["/ask"]["post"]["responses"]
+    assert "503" in responses
 
 
 # Real answerer behind /ask

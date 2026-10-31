@@ -8,7 +8,10 @@ Markers outside 1..len(hits) are dropped from the text, so each remaining marker
 or answered without grounding, and NFR-04 requires a citation on every answer) or when it contains
 ``CANARY``.
 
-An unreachable Qdrant or LLM gateway raises ``AnswerUnavailable``, which ``/ask`` returns as 503.
+An unreachable Qdrant (no connection, timeout, HTTP 404 such as a missing collection, or 5xx) or any
+``LLMError`` raises ``AnswerUnavailable``, which ``/ask`` returns as 503. ``LLMError`` is one class for
+transport, gateway status and gateway configuration failures, so all of them are 503 here as in
+``/chat``. Other Qdrant 4xx (a wrong vector name or filter: a bug) propagate and become 500.
 ``warm_up`` loads bge-m3 and the reranker so the first request does not wait for them.
 
 Routing sensitive questions to the local model is E-010; this always uses ``cloud-chat``.
@@ -85,8 +88,12 @@ class RagAnswerer:
         mode = mode or retrieval_mode()
         try:
             hits = self._retrieve(question, user, self.k, mode)
-        except (ResponseHandlingException, UnexpectedResponse) as exc:  # Qdrant down, or no collection
+        except ResponseHandlingException as exc:  # no connection, or a timeout
             raise AnswerUnavailable("retrieval unavailable") from exc
+        except UnexpectedResponse as exc:
+            if exc.status_code != 404 and exc.status_code < 500:
+                raise
+            raise AnswerUnavailable(f"retrieval unavailable (HTTP {exc.status_code})") from exc
         text, citations = REFUSAL, []
         if hits:
             messages = [

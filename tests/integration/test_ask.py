@@ -11,6 +11,7 @@ CPU, so it takes a few minutes.
 import hashlib
 import json
 import os
+import re
 import secrets
 import urllib.request
 
@@ -118,8 +119,8 @@ def test_in_scope_question_cites_the_right_file_and_page(api, department, questi
     assert body["retrieval_mode"] == "hybrid_rerank" and body["route"] == "cloud"
     assert any(s == source and p in pages for s, p in cited), cited
     assert not SUPERSEDED & {s for s, _ in cited}
-    markers = {c["n"] for c in body["citations"]}
-    assert all(f"[{n}]" in body["answer"] for n in markers)
+    # Every marker in the text has a citation and every citation is marked: the contract's [n] rule.
+    assert {int(n) for n in re.findall(r"\[(\d+)\]", body["answer"])} == {c["n"] for c in body["citations"]}
 
 
 @pytest.mark.parametrize(("department", "question"), OUT_OF_SCOPE)
