@@ -23,6 +23,7 @@ priority: 1
 
 ## Prompt
 `src/app/prompts.py`: `SYSTEM`, `build_context()`, `CANARY`, `PROMPT_VERSION`. Chỉ trả lời dựa trên ngữ cảnh đã đánh số, trích `[n]`, nếu không thì trả `REFUSAL`.
+Chi tiết prompt, ánh xạ trích dẫn và các trường hợp từ chối: `docs/07-development/answer.md`.
 
 ## Đánh giá
 Các trường của `eval/golden.jsonl`: `user_input, reference, sources[{file,page}], category, difficulty, in_scope`. Báo cáo: `docs/12-ai/rag-eval-report.md`.
