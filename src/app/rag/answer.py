@@ -57,7 +57,7 @@ class AnswerUnavailable(RuntimeError):
 
 
 def warm_up() -> None:
-    """Load the embedding and rerank models now instead of on the first question (about 4.5 GB)."""
+    """Load the embedding and rerank models now instead of on the first question."""
     from app.rag import embed, rerank
 
     embed._model()

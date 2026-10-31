@@ -26,10 +26,10 @@ Mode: tham số `mode` (từ request) được ưu tiên. Nếu không có thì 
 
 - **Khởi động** (`lifespan` trong `src/app/main.py`):
   - `RETRIEVAL_MODE` sai làm app dừng khởi động ngay, thay vì mọi request đều lỗi.
-  - Một luồng nền gọi `warm_up()` để nạp bge-m3 và reranker (khoảng 4,5 GB RAM). `/health` trả lời ngay trong lúc nạp. Request `/ask` đến sớm sẽ chờ cùng khóa nạp model, không nạp hai lần.
+  - Một luồng nền gọi `warm_up()` để nạp bge-m3 và reranker (container dùng khoảng 1,4 GB RAM sau khi nạp). `/health` trả lời ngay trong lúc nạp. Request `/ask` đến sớm sẽ chờ cùng khóa nạp model, không nạp hai lần.
   - Nạp lỗi (hết đĩa, không tải được model) được ghi log `rag.warm_up_failed`; request `/ask` đầu tiên sẽ thử nạp lại và báo lỗi của chính nó.
 - **Lỗi dependency → 503:** Qdrant không kết nối được, không có collection (`ResponseHandlingException`, `UnexpectedResponse`), hoặc gateway LiteLLM lỗi (`LLMError`) thành `AnswerUnavailable`. `/ask` trả `503 SERVICE_UNAVAILABLE` và ghi log `ask.unavailable` kèm loại lỗi. Các lỗi khác (bug, cấu hình sai) vẫn là 500, để không che lỗi thật.
-- **Compose:** container `api` có volume `hf_cache` (`/root/.cache/huggingface`). Lần đầu chạy `RAG_BACKEND=real` sẽ tải model một lần; các lần tạo lại container không phải tải lại. Để chạy RAG thật trong compose, đặt trong `.env.local`: `RAG_BACKEND=real`, `LLM_BACKEND=litellm`, `AUTH_BACKEND=apikey`, và tạo key bằng `scripts/make_key.py`.
+- **Compose:** container `api` có volume `hf_cache` (`/root/.cache/huggingface`). Lần đầu chạy `RAG_BACKEND=real` sẽ tải model một lần (6,4 GB, khoảng 8 phút trên máy dev; `/health` vẫn trả lời trong lúc tải); các lần tạo lại container không phải tải lại. Image `api` có thêm torch, FlagEmbedding và docling nên nặng 3,37 GB. Để chạy RAG thật trong compose, đặt trong `.env.local`: `RAG_BACKEND=real`, `LLM_BACKEND=litellm`, `AUTH_BACKEND=apikey`, và tạo key bằng `scripts/make_key.py`.
 
 ## Prompt (`src/app/prompts.py`)
 
@@ -65,6 +65,7 @@ Trường hợp thứ ba là lựa chọn có chủ đích: NFR-04 yêu cầu 10
 - Chạy thử thủ công với Qdrant và rerank thật, LLM giả trả `"Theo tài liệu [1]."`: 2 câu trong phạm vi trích đúng (`293-cp.signed.pdf` trang 2, `86-vbhn-nhnn.pdf` trang 13); 2 câu ngoài phạm vi (giá vàng, thời tiết) bị từ chối mà không gọi LLM. Lần gọi đầu mất khoảng 15 giây vì phải nạp bge-m3 và reranker; các lần sau khoảng 2–2,5 giây.
 
 - `tests/api/test_ask_real.py` (CI, không nạp model): warm-up chạy nền chỉ khi `RAG_BACKEND=real`; `RETRIEVAL_MODE` sai dừng khởi động; warm-up lỗi được ghi log và app vẫn chạy; Qdrant hay LLM lỗi trả 503, lỗi khác trả 500; `/ask` truyền đúng user và mode xuống `RagAnswerer`.
+- Kiểm tra thủ công trong container (`RAG_BACKEND=real`, `LLM_BACKEND=litellm`, `AUTH_BACKEND=fake` nên user là `public`): 3 câu public trích đúng file và trang, câu lương vùng I (tài liệu `hr`) bị từ chối, câu giá vàng bị từ chối; tắt Qdrant hay LiteLLM thì `/ask` trả 503 và log ghi `ask.unavailable` kèm loại lỗi, bật lại thì trả lời bình thường.
 - `tests/integration/test_ask.py` (`pytest -m integration`, cần Qdrant có corpus, LiteLLM và `LITELLM_MASTER_KEY`, gọi model trả phí): app chạy trong process với API key thật cho từng phòng ban (tạo tạm trong thư mục test). Gồm 10 câu hỏi thủ công phải trích đúng file và trang, 2 câu ngoài phạm vi bị từ chối, user `credit` không đọc được tài liệu `hr`, không bao giờ trích văn bản đã bị thay thế, mode trong request được dùng, thiếu key trả 401.
 
 ## Giới hạn
