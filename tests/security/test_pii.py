@@ -7,6 +7,32 @@ import pytest
 from app.security.pii import NoOpNlpEngine, _analyzer, mask_text
 
 
+@pytest.mark.parametrize("job_id", [
+    "b1ae62af-a423-1234-5678-a53598f3641b",
+    "B1AE62AF-A423-1234-5678-A53598F3641B",
+    "12345678-1234-1234-1234-123456789012",
+])
+def test_uuid_in_text_preserved_while_adjacent_pii_masked(job_id):
+    text = f"CCCD 000000000001; job ({job_id}) STK 10000001; {job_id}; 0900000001"
+    assert mask_text(text) == (
+        f"CCCD <CCCD>; job ({job_id}) STK <ACCOUNT_NUMBER>; {job_id}; <PHONE_NUMBER>",
+        ["CCCD", "ACCOUNT_NUMBER", "PHONE_NUMBER"],
+    )
+
+
+def test_worker_log_preserves_uuid_and_masks_pii():
+    from app.log_config import JsonFormatter
+
+    job_id = "b1ae62af-a423-1234-5678-a53598f3641b"
+    record = logging.LogRecord(
+        "rq.worker", logging.INFO, __file__, 1,
+        "ask: Masked ask request (%s) CCCD 000000000001", (job_id,), None,
+    )
+    rendered = JsonFormatter().format(record)
+    assert job_id in rendered
+    assert "000000000001" not in rendered
+
+
 @pytest.mark.parametrize(
     ("text", "entity"),
     [
