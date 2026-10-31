@@ -8,6 +8,12 @@ Markers outside 1..len(hits) are dropped from the text, so each remaining marker
 or answered without grounding, and NFR-04 requires a citation on every answer) or when it contains
 ``CANARY``.
 
+An unreachable Qdrant (no connection, timeout, HTTP 404 such as a missing collection, or 5xx) or any
+``LLMError`` raises ``AnswerUnavailable``, which ``/ask`` returns as 503. ``LLMError`` is one class for
+transport, gateway status and gateway configuration failures, so all of them are 503 here as in
+``/chat``. Other Qdrant 4xx (a wrong vector name or filter: a bug) propagate and become 500.
+``warm_up`` loads bge-m3 and the reranker so the first request does not wait for them.
+
 Routing sensitive questions to the local model is E-010; this always uses ``cloud-chat``.
 
 Owner: A — Epic E-004. See docs/00-project/product-plan.md.
@@ -22,7 +28,10 @@ import unicodedata
 from collections.abc import Callable
 from typing import get_args
 
+from qdrant_client.http.exceptions import ResponseHandlingException, UnexpectedResponse
+
 from app.contracts import LLM, REFUSAL, AskResult, Citation, Hit, RetrievalMode, User
+from app.llm import LLMError
 from app.prompts import CANARY, SYSTEM, user_message
 
 ALIAS = "cloud-chat"
@@ -46,6 +55,18 @@ def retrieval_mode() -> RetrievalMode:
     return raw  # type: ignore[return-value]
 
 
+class AnswerUnavailable(RuntimeError):
+    """A dependency of the answer (Qdrant, the LLM gateway) failed; the message names which."""
+
+
+def warm_up() -> None:
+    """Load the embedding and rerank models now instead of on the first question."""
+    from app.rag import embed, rerank
+
+    embed._model()
+    rerank._model()
+
+
 def _default_retrieve(question: str, user: User, k: int, mode: RetrievalMode) -> list[Hit]:
     from app.rag.retrieve import retrieve
 
@@ -65,14 +86,25 @@ class RagAnswerer:
     def answer(self, question: str, user: User, mode: RetrievalMode | None = None) -> AskResult:
         started = time.monotonic()
         mode = mode or retrieval_mode()
-        hits = self._retrieve(question, user, self.k, mode)
+        try:
+            hits = self._retrieve(question, user, self.k, mode)
+        except ResponseHandlingException as exc:  # no connection, or a timeout
+            raise AnswerUnavailable("retrieval unavailable") from exc
+        except UnexpectedResponse as exc:
+            if exc.status_code != 404 and exc.status_code < 500:
+                raise
+            raise AnswerUnavailable(f"retrieval unavailable (HTTP {exc.status_code})") from exc
         text, citations = REFUSAL, []
         if hits:
             messages = [
                 {"role": "system", "content": SYSTEM},
                 {"role": "user", "content": user_message(question, hits)},
             ]
-            text, citations = cite(self._llm.chat(messages, ALIAS, temperature=0.0).text, hits)
+            try:
+                reply = self._llm.chat(messages, ALIAS, temperature=0.0).text
+            except LLMError as exc:
+                raise AnswerUnavailable("LLM gateway unavailable") from exc
+            text, citations = cite(reply, hits)
         latency_ms = round((time.monotonic() - started) * 1000)
         return AskResult(text, bool(citations), citations, mode, "cloud", latency_ms)
 
