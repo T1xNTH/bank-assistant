@@ -23,6 +23,8 @@ services:
     volumes:
       - ../config:/app/config:ro
       - audit_data:/app/data
+      # bge-m3 and the reranker (about 4.5 GB) download on the first RAG_BACKEND=real start only.
+      - hf_cache:/root/.cache/huggingface
     ports: ["127.0.0.1:8000:8000"]
     depends_on: [qdrant, redis, litellm]
     healthcheck:
@@ -69,5 +71,6 @@ services:
       retries: 10
 volumes:
   audit_data:
+  hf_cache:
   qdrant_data:
   ollama_data:

@@ -18,7 +18,18 @@ priority: 2
 
 Mode: tham số `mode` (từ request) được ưu tiên. Nếu không có thì đọc `RETRIEVAL_MODE`; để trống thì dùng `hybrid_rerank`. Giá trị khác `dense`, `hybrid` và `hybrid_rerank` báo `ValueError`.
 
-Định tuyến câu hỏi nhạy cảm sang model local thuộc E-010. Nối vào `/ask` (`RAG_BACKEND=real`), nạp sẵn model khi khởi động và trace id thuộc T-019.
+Định tuyến câu hỏi nhạy cảm sang model local thuộc E-010. Trace id (Langfuse) thuộc E-013.
+
+## `/ask` với `RAG_BACKEND=real` (T-019)
+
+`get_answerer()` (`src/app/deps.py`) trả `RagAnswerer()` khi `RAG_BACKEND=real`. `/ask` xác thực key, che PII trong câu hỏi (T-021), gọi `answer(question, user, req.mode)` với `User` của key, rồi che PII trong câu trả lời và tên nguồn.
+
+- **Khởi động** (`lifespan` trong `src/app/main.py`):
+  - `RETRIEVAL_MODE` sai làm app dừng khởi động ngay, thay vì mọi request đều lỗi.
+  - Một luồng nền gọi `warm_up()` để nạp bge-m3 và reranker (khoảng 4,5 GB RAM). `/health` trả lời ngay trong lúc nạp. Request `/ask` đến sớm sẽ chờ cùng khóa nạp model, không nạp hai lần.
+  - Nạp lỗi (hết đĩa, không tải được model) được ghi log `rag.warm_up_failed`; request `/ask` đầu tiên sẽ thử nạp lại và báo lỗi của chính nó.
+- **Lỗi dependency → 503:** Qdrant không kết nối được, không có collection (`ResponseHandlingException`, `UnexpectedResponse`), hoặc gateway LiteLLM lỗi (`LLMError`) thành `AnswerUnavailable`. `/ask` trả `503 SERVICE_UNAVAILABLE` và ghi log `ask.unavailable` kèm loại lỗi. Các lỗi khác (bug, cấu hình sai) vẫn là 500, để không che lỗi thật.
+- **Compose:** container `api` có volume `hf_cache` (`/root/.cache/huggingface`). Lần đầu chạy `RAG_BACKEND=real` sẽ tải model một lần; các lần tạo lại container không phải tải lại. Để chạy RAG thật trong compose, đặt trong `.env.local`: `RAG_BACKEND=real`, `LLM_BACKEND=litellm`, `AUTH_BACKEND=apikey`, và tạo key bằng `scripts/make_key.py`.
 
 ## Prompt (`src/app/prompts.py`)
 
@@ -53,10 +64,12 @@ Trường hợp thứ ba là lựa chọn có chủ đích: NFR-04 yêu cầu 10
 - `tests/unit/test_answer.py` (CI, `FakeLLM` và retrieve giả): ánh xạ trích dẫn, marker nhóm và ngoài khoảng, bốn trường hợp từ chối, nội dung message gửi LLM, chống chèn thẻ, chọn mode, giá trị của các trường kết quả.
 - Chạy thử thủ công với Qdrant và rerank thật, LLM giả trả `"Theo tài liệu [1]."`: 2 câu trong phạm vi trích đúng (`293-cp.signed.pdf` trang 2, `86-vbhn-nhnn.pdf` trang 13); 2 câu ngoài phạm vi (giá vàng, thời tiết) bị từ chối mà không gọi LLM. Lần gọi đầu mất khoảng 15 giây vì phải nạp bge-m3 và reranker; các lần sau khoảng 2–2,5 giây.
 
+- `tests/api/test_ask_real.py` (CI, không nạp model): warm-up chạy nền chỉ khi `RAG_BACKEND=real`; `RETRIEVAL_MODE` sai dừng khởi động; warm-up lỗi được ghi log và app vẫn chạy; Qdrant hay LLM lỗi trả 503, lỗi khác trả 500; `/ask` truyền đúng user và mode xuống `RagAnswerer`.
+- `tests/integration/test_ask.py` (`pytest -m integration`, cần Qdrant có corpus, LiteLLM và `LITELLM_MASTER_KEY`, gọi model trả phí): app chạy trong process với API key thật cho từng phòng ban (tạo tạm trong thư mục test). Gồm 10 câu hỏi thủ công phải trích đúng file và trang, 2 câu ngoài phạm vi bị từ chối, user `credit` không đọc được tài liệu `hr`, không bao giờ trích văn bản đã bị thay thế, mode trong request được dùng, thiếu key trả 401.
+
 ## Giới hạn
 
 - Mới chạy 8 câu với model thật (gpt-6-luna qua LiteLLM): 5 câu trong phạm vi đều có trích dẫn đúng, câu ngoài phạm vi bị từ chối, câu đòi in system prompt không làm lộ prompt hay canary. Model vẫn làm theo yêu cầu "trả lời bằng tiếng Anh" trong câu hỏi (quy tắc 6 bị bỏ qua) nhưng vẫn ghi `[n]`. Tỉ lệ tuân thủ `[n]` và `REFUSAL` cần đo trên golden set ở E-008.
 - Chưa có bộ ≥ 10 test prompt injection với model thật theo `docs/06-security/security-design.md`. T-018 chỉ có phần kiểm soát cố định: canary, phân tách ngữ cảnh và chính sách từ chối.
 - Marker dạng `[1-3]`, `［1］` hay `[Tài liệu 1]` chưa được nhận; câu trả lời chỉ dùng các dạng này sẽ bị từ chối.
-- `RETRIEVAL_MODE` sai chỉ báo lỗi khi có request, không phải lúc khởi động; T-019 có thể kiểm tra lúc khởi động.
 - `CANARY` nằm trong repo public. Nó dùng để phát hiện rò system prompt, không phải để giữ bí mật với người đọc code.

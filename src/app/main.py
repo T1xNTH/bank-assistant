@@ -2,27 +2,55 @@
 
 from __future__ import annotations
 
+import threading
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from dataclasses import asdict
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 
 from app.chat import structured_chat
+from app.config import get_settings
 from app.contracts import LLM, Answerer, User
 from app.deps import get_answerer, get_current_user, get_llm
 from app.errors import install_error_handlers
-from app.log_config import configure_logging
+from app.log_config import configure_logging, get_logger
 from app.middleware import RequestContextMiddleware
+from app.rag.answer import AnswerUnavailable, retrieval_mode, warm_up
 from app.schemas import AskRequest, AskResponse, ChatRequest, ChatResponse, ErrorResponse
 from app.security.masking import REDACTED, MaskingError, mask_identifier, mask_text, require_mask_text
+
+logger = get_logger(__name__)
+
+
+def _warm_up() -> None:
+    try:
+        warm_up()
+    except Exception as exc:  # the first /ask retries the load and reports its own error
+        logger.error("rag.warm_up_failed", extra={"exception_type": type(exc).__name__})
+    else:
+        logger.info("rag.warm_up_done")
+
+
+@asynccontextmanager
+async def lifespan(application: FastAPI) -> AsyncIterator[None]:
+    if get_settings().rag_backend == "real":
+        retrieval_mode()  # a bad RETRIEVAL_MODE stops startup instead of failing every /ask
+        # In the background so /health answers while the models load; /ask waits on the same lock.
+        threading.Thread(target=_warm_up, name="rag-warm-up", daemon=True).start()
+    yield
 
 
 def create_app() -> FastAPI:
     configure_logging()
-    application = FastAPI(title="bank-assistant", version="0.1.0")
+    application = FastAPI(title="bank-assistant", version="0.1.0", lifespan=lifespan)
     install_error_handlers(application)
     application.add_middleware(RequestContextMiddleware)
     application.add_api_route("/health", health, methods=["GET"])
-    application.add_api_route("/ask", ask, methods=["POST"], response_model=AskResponse)
+    application.add_api_route(
+        "/ask", ask, methods=["POST"], response_model=AskResponse,
+        responses={503: {"model": ErrorResponse, "description": "Dependency unavailable"}},
+    )
     application.add_api_route(
         "/chat", chat, methods=["POST"], response_model=ChatResponse,
         responses={503: {"model": ErrorResponse, "description": "Dependency unavailable"}},
@@ -60,7 +88,11 @@ def ask(
     # Keep a safe audit value if input masking raises before the next assignment.
     request.state.audit_question = REDACTED
     request.state.audit_question = _mask_input(req.question)
-    result = answerer.answer(request.state.audit_question, user, req.mode)
+    try:
+        result = answerer.answer(request.state.audit_question, user, req.mode)
+    except AnswerUnavailable as exc:
+        logger.warning("ask.unavailable: %s", exc, extra={"exception_type": type(exc.__cause__ or exc).__name__})
+        raise HTTPException(status_code=503, detail="Answer unavailable") from None
     fields = asdict(result)
     fields["answer"] = mask_text(result.answer)
     fields["citations"] = [dict(c, source=mask_text(c["source"])) for c in fields["citations"]]
