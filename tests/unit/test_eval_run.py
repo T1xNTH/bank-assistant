@@ -272,3 +272,133 @@ def test_limit_and_repeated_mode(tmp_path):
 def test_mode_and_all_are_exclusive(tmp_path):
     with pytest.raises(SystemExit):
         cli(tmp_path, ["--all", "--mode", "dense"])
+
+
+# Review round 1 (F-01, F-02, F-04, F-07)
+
+
+def answered_records(table=TABLE, reply="Đáp [1]."):
+    return run.answer_all(ROWS, "hybrid", DEPARTMENTS, Retrieve(table), FakeLLM(reply))
+
+
+def test_nan_score_is_unscored_and_never_passes():
+    records = answered_records()
+    run.judge_records(records, lambda samples: [float("nan"), 1.0])
+    assert records[0].faithfulness is None and records[0].judge_error == "invalid score nan"
+    summary = run.metrics(records, set())
+    assert summary["faithfulness"] == 1.0 and summary["faithfulness_scored"] == 1
+    assert summary["faithfulness_coverage"] == 0.5
+    assert "faithfulness" in run.failures(summary, {"faithfulness": 0.8})
+    assert "NaN" not in json.dumps([vars(r) for r in records])
+
+
+def test_nan_metric_is_a_failure():
+    assert run.failures({"faithfulness": float("nan"), "faithfulness_coverage": 1.0}, {"faithfulness": 0.8}) == [
+        "faithfulness"
+    ]
+
+
+def test_faithfulness_needs_judge_coverage():
+    good = {"faithfulness": 0.95, "faithfulness_coverage": 0.9}
+    assert run.failures(good, {"faithfulness": 0.8}) == []
+    assert run.failures({**good, "faithfulness_coverage": 0.89}, {"faithfulness": 0.8}) == ["faithfulness"]
+
+
+def test_judge_failure_reason_is_kept_and_reported(tmp_path):
+    records = answered_records()
+    run.judge_records(records, lambda samples: [TimeoutError("judge timed out"), 0.9])
+    assert records[0].judge_error == "TimeoutError: judge timed out"
+    code, out, _ = cli(tmp_path, ["--mode", "dense"], judge=lambda s: [RuntimeError("bad json")] + [1.0] * (len(s) - 1))
+    assert "- `dense` — Lương vùng I?: RuntimeError: bad json" in out.read_text()
+
+
+def test_judge_scores_only_found_in_scope_answers():
+    table = {**TABLE, "Giá vàng?": [hit("phi.pdf", 1)]}  # the out-of-scope question gets answered
+    records = run.answer_all(ROWS, "hybrid", DEPARTMENTS, Retrieve(table), FakeLLM("Đáp [1]."))
+    refused = run.answer_all(ROWS[:1], "hybrid", DEPARTMENTS, Retrieve({}), FakeLLM("Đáp [1]."))
+    seen = []
+    run.judge_records(records + refused, lambda samples: seen.extend(samples) or [1.0] * len(samples))
+    assert [s["user_input"] for s in seen] == ["Lương vùng I?", "Phí thẻ và lãi?"]
+
+
+def test_judge_must_score_every_sample():
+    with pytest.raises(ValueError):
+        run.judge_records(answered_records(), lambda samples: [1.0])
+
+
+def test_all_contexts_are_kept_and_replaced_per_attempt(monkeypatch):
+    from app.llm import LLMError
+
+    monkeypatch.setattr(run, "RETRY_DELAY_S", 0)
+    attempts = iter([[hit("x.pdf", 1)], [hit("luong.pdf", 2), hit("phi.pdf", 3)]])
+
+    class FailOnce(FakeLLM):
+        calls = 0
+
+        def chat(self, messages, alias, temperature=0.0):
+            FailOnce.calls += 1
+            if FailOnce.calls == 1:
+                raise LLMError("HTTP 502")
+            return super().chat(messages, alias, temperature)
+
+    [record] = run.answer_all(ROWS[:1], "dense", DEPARTMENTS, lambda q, u, k, m: next(attempts), FailOnce("Đáp [1]."))
+    assert [(c["source"], c["page"]) for c in record.contexts] == [("luong.pdf", 2), ("phi.pdf", 3)]
+
+
+def test_failed_last_attempt_keeps_no_stale_contexts(monkeypatch):
+    from qdrant_client.http.exceptions import ResponseHandlingException
+
+    monkeypatch.setattr(run, "RETRY_DELAY_S", 0)
+    calls = []
+
+    def retrieve(question, user, k, mode):
+        calls.append(1)
+        if len(calls) == 1:
+            return [hit("luong.pdf", 2)]
+        raise ResponseHandlingException(OSError("refused"))
+
+    class Broken(FakeLLM):
+        def chat(self, messages, alias, temperature=0.0):
+            from app.llm import LLMError
+
+            raise LLMError("HTTP 502")
+
+    [record] = run.answer_all(ROWS[:1], "dense", DEPARTMENTS, retrieve, Broken())
+    assert record.error and record.contexts == []
+
+
+def test_latency_percentiles_skip_failed_questions():
+    records = answered_records()
+    for r, ms in zip(records, [100, 200, 300], strict=True):
+        r.latency_ms = ms
+    records[2].error = "boom"
+    summary = run.metrics(records, set())
+    assert (summary["latency_p50_ms"], summary["latency_p95_ms"]) == (100, 200)
+
+
+def test_citation_rate_counts_answered_questions_only():
+    records = answered_records()
+    records[1].found, records[1].citations = False, []  # a refusal is not an uncited answer
+    assert run.metrics(records, set())["citation_rate"] == 1.0
+    records[0].citations = []
+    assert run.metrics(records, set())["citation_rate"] == 0.0
+
+
+def test_percentile_is_nearest_rank():
+    assert run._percentile([1, 2, 3, 4], 0.5) == 2
+    assert run._percentile(list(range(1, 11)), 0.95) == 10  # rank ceil(9.5) = 10, not 9
+    assert run._percentile(list(range(1, 51)), 0.95) == 48
+
+
+def test_fake_llm_backend_is_refused(tmp_path, monkeypatch):
+    monkeypatch.delenv("LLM_BACKEND", raising=False)
+    with pytest.raises(SystemExit):
+        run.main(["--mode", "dense", "--no-judge", "--out", str(tmp_path / "r.md"), "--results", str(tmp_path)])
+    assert not (tmp_path / "r.md").exists()
+
+
+def test_citation_footnote_in_report(tmp_path):
+    _, out, _ = cli(tmp_path, ["--mode", "dense"], judge=lambda s: [1.0] * len(s))
+    text = out.read_text()
+    assert "Câu trả lời có trích dẫn (NFR-04)¹" in text and "NFR-04 đạt bằng thiết kế" in text
+    assert "## Judge không chấm được" in text and "- Không có." in text

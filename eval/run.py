@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import os
 import statistics
 import sys
@@ -42,8 +43,10 @@ K = 5
 RETRIES = 2  # AnswerUnavailable is transient (gateway 5xx/timeout, Qdrant restart); latency is the last attempt's
 RETRY_DELAY_S = 2.0
 
-# (question, answer, contexts) for each answered in-scope question -> one score per sample, None if unscored.
-Judge = Callable[[list[dict]], list[float | None]]
+# (question, answer, contexts) for each answered in-scope question -> one item per sample: a score in [0, 1],
+# or the reason the judge could not score it (an exception or a message).
+Judge = Callable[[list[dict]], list[float | BaseException | str | None]]
+MIN_JUDGE_COVERAGE = 0.9  # faithfulness counts only when the judge scored this share of the answers
 
 
 @dataclass
@@ -62,6 +65,7 @@ class Record:
     input_tokens: int = 0
     output_tokens: int = 0
     faithfulness: float | None = None
+    judge_error: str | None = None
     error: str | None = None
     retries: int = 0
 
@@ -114,7 +118,10 @@ def answer_all(
     from app.rag.answer import AnswerUnavailable, RagAnswerer
 
     if retrieve is None:
+        from app.rag.answer import warm_up
         from app.rag.retrieve import retrieve
+
+        warm_up()  # load the models now so the first question's latency is not the model load
     if llm is None:
         from app import llm
     records = []
@@ -130,6 +137,7 @@ def answer_all(
 
         counter = _CountingLLM(llm)
         for attempt in range(RETRIES + 1):
+            seen.clear()  # a failed attempt must not leave its chunks as this question's contexts
             started = time.monotonic()
             try:
                 result = RagAnswerer(capture, counter, k=K).answer(row["user_input"], User("eval", department), mode)
@@ -161,7 +169,16 @@ def judge_records(records: list[Record], judge: Judge) -> None:
         for r in answered
     ]
     for record, score in zip(answered, judge(samples) if samples else [], strict=True):
-        record.faithfulness = score
+        if isinstance(score, (int, float)) and not isinstance(score, bool) and math.isfinite(score):
+            record.faithfulness = float(score)
+        else:  # RAGAS returns nan when it extracts no statement: unscored, never a pass
+            record.judge_error = score if isinstance(score, str) else _judge_reason(score)
+
+
+def _judge_reason(score) -> str:
+    if isinstance(score, BaseException):
+        return f"{type(score).__name__}: {score}"
+    return "no score" if score is None else f"invalid score {score!r}"
 
 
 def _mean(values: list) -> float | None:
@@ -171,8 +188,8 @@ def _mean(values: list) -> float | None:
 def _percentile(values: list[int], q: float) -> int | None:
     if not values:
         return None
-    ordered = sorted(values)
-    return ordered[min(len(ordered) - 1, round(q * (len(ordered) - 1)))]
+    ordered = sorted(values)  # nearest-rank: the smallest value with at least q of the values at or below it
+    return ordered[max(0, math.ceil(q * len(ordered)) - 1)]
 
 
 def metrics(records: list[Record], superseded: set[str]) -> dict:
@@ -189,6 +206,7 @@ def metrics(records: list[Record], superseded: set[str]) -> dict:
         "retries": sum(r.retries for r in records),
         "faithfulness": _mean(scored),
         "faithfulness_scored": len(scored),
+        "faithfulness_coverage": round(len(scored) / len(answered), 4) if answered else None,
         "hit_at_5": _mean([r.hit for r in in_scope]),
         "refusal_accuracy": _mean([not r.found for r in out_scope]),
         "citation_rate": _mean([bool(r.citations) for r in answered]),
@@ -202,8 +220,16 @@ def metrics(records: list[Record], superseded: set[str]) -> dict:
 
 
 def failures(summary: dict, thresholds: dict) -> list[str]:
-    """Threshold names missed; a metric that could not be computed counts as missed."""
-    return [name for name, minimum in thresholds.items() if summary.get(name) is None or summary[name] < minimum]
+    """Threshold names missed. A metric that could not be computed (None, nan) counts as missed, and so does
+    faithfulness when the judge scored less than MIN_JUDGE_COVERAGE of the answers."""
+    missed = []
+    for name, minimum in thresholds.items():
+        value = summary.get(name)
+        if value is None or not math.isfinite(value) or value < minimum:
+            missed.append(name)
+        elif name == "faithfulness" and (summary.get("faithfulness_coverage") or 0) < MIN_JUDGE_COVERAGE:
+            missed.append(name)
+    return missed
 
 
 def by_category(records: list[Record]) -> dict[str, dict]:
@@ -254,18 +280,16 @@ def render_report(results: dict[str, list[Record]], summaries: dict[str, dict], 
         "faithfulness": "Faithfulness (NFR-01)",
         "hit_at_5": "Hit@5 (NFR-02)",
         "refusal_accuracy": "Từ chối đúng câu ngoài phạm vi (NFR-03)",
-        "citation_rate": "Câu trả lời có trích dẫn (NFR-04)",
+        "citation_rate": "Câu trả lời có trích dẫn (NFR-04)¹",
     }
+    missed = {m: failures(summaries[m], thresholds) for m in modes}
     for name, label in labels.items():
-        cells = []
-        for m in modes:
-            value = summaries[m].get(name)
-            ok = value is not None and value >= thresholds.get(name, float("-inf"))
-            cells.append(f"{_fmt(value)} {'✅' if ok else '❌'}")
+        cells = [f"{_fmt(summaries[m].get(name))} {'❌' if name in missed[m] else '✅'}" for m in modes]
         lines.append(f"| {label} | ≥ {thresholds.get(name, '—')} | " + " | ".join(cells) + " |")
     extra = {
         "answer_rate": "Câu trong phạm vi được trả lời",
         "faithfulness_scored": "Số câu được chấm faithfulness",
+        "faithfulness_coverage": f"Tỉ lệ câu trả lời được chấm (faithfulness chỉ tính khi ≥ {MIN_JUDGE_COVERAGE})",
         "superseded_cited": "Trích văn bản bị thay thế (phải 0)",
         "errors": "Lỗi khi chạy (sau khi thử lại)",
         "retries": "Số lần thử lại do dependency lỗi tạm thời",
@@ -277,6 +301,9 @@ def render_report(results: dict[str, list[Record]], summaries: dict[str, dict], 
     for name, label in extra.items():
         lines.append(f"| {label} | | " + " | ".join(_fmt(summaries[m].get(name)) for m in modes) + " |")
     lines += [
+        "",
+        "¹ Luôn 1,00 theo cách làm: `RagAnswerer` đổi câu trả lời không có trích dẫn hợp lệ thành câu từ chối, nên "
+        'NFR-04 đạt bằng thiết kế. Câu bị đổi như vậy làm giảm dòng "Câu trong phạm vi được trả lời".',
         "",
         "## Theo loại câu hỏi",
         "",
@@ -319,6 +346,9 @@ def render_report(results: dict[str, list[Record]], summaries: dict[str, dict], 
             )
             lines.append(f"- [{r.category}, {r.department}] {r.user_input} — {what}")
         lines.append("")
+    lines += ["## Judge không chấm được", ""]
+    unscored = [(m, r) for m in modes for r in results[m] if r.judge_error]
+    lines += [f"- `{m}` — {r.user_input}: {r.judge_error}" for m, r in unscored] or ["- Không có."]
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -344,26 +374,28 @@ def ragas_judge(model: str, base_url: str, api_key: str) -> Judge:  # pragma: no
 
     if not api_key:
         raise SystemExit("LITELLM_MASTER_KEY is required for the judge (or pass --no-judge)")
-    client = AsyncOpenAI(base_url=f"{base_url}/v1", api_key=api_key)
-    metric = Faithfulness(llm=llm_factory(model, client=client, reasoning_effort="none"))
+    url = base_url if base_url.endswith("/v1") else f"{base_url}/v1"  # app.llm accepts both forms
 
-    async def score_all(samples: list[dict]) -> list[float | None]:
-        gate = asyncio.Semaphore(JUDGE_CONCURRENCY)
+    async def score_all(samples: list[dict]) -> list[float | BaseException]:
+        # A client per event loop: asyncio.run closes the loop, and pooled connections die with it.
+        async with AsyncOpenAI(base_url=url, api_key=api_key) as client:
+            metric = Faithfulness(llm=llm_factory(model, client=client, reasoning_effort="none"))
+            gate = asyncio.Semaphore(JUDGE_CONCURRENCY)
 
-        async def score(sample: dict) -> float | None:
-            async with gate:
-                try:
-                    result = await metric.ascore(
-                        user_input=sample["user_input"],
-                        response=sample["response"],
-                        retrieved_contexts=sample["contexts"],
-                    )
-                except Exception as exc:  # noqa: BLE001 - one unscored sample must not stop the run
-                    print(f"  judge failed: {type(exc).__name__}", file=sys.stderr)
-                    return None
-                return float(result.value)
+            async def score(sample: dict) -> float | BaseException:
+                async with gate:
+                    try:
+                        result = await metric.ascore(
+                            user_input=sample["user_input"],
+                            response=sample["response"],
+                            retrieved_contexts=sample["contexts"],
+                        )
+                    except Exception as exc:  # noqa: BLE001 - one unscored sample must not stop the run
+                        print(f"  judge failed: {type(exc).__name__}", file=sys.stderr)
+                        return exc
+                    return float(result.value)  # may be nan; judge_records treats it as unscored
 
-        return await asyncio.gather(*(score(s) for s in samples))
+            return await asyncio.gather(*(score(s) for s in samples))
 
     return lambda samples: asyncio.run(score_all(samples))
 
@@ -384,6 +416,10 @@ def main(argv: list[str] | None = None, judge: Judge | None = None, retrieve=Non
     args = parser.parse_args(argv)
     if args.limit is not None and args.limit < 1:
         parser.error("--limit must be at least 1")
+    backend = os.getenv("LLM_BACKEND", "fake")
+    if llm is None and backend != "litellm":
+        # app.llm answers "Câu trả lời [1]." on the fake backend: every metric would look perfect.
+        parser.error(f"LLM_BACKEND=litellm is required (got {backend!r}); the fake LLM would fake the results")
 
     modes = list(MODES) if args.all else list(dict.fromkeys(args.mode))
     rows = load_golden(args.golden)[: args.limit]

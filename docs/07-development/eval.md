@@ -24,7 +24,7 @@ python3 -m venv ~/.venvs/bank-eval
 
 ## Chạy
 
-Cần Qdrant có corpus dùng chung (2.815 point, xem `corpus.md`), gateway LiteLLM, và `LITELLM_MASTER_KEY` trong môi trường:
+Cần Qdrant có corpus dùng chung (2.815 point, xem `corpus.md`), gateway LiteLLM, `LLM_BACKEND=litellm` và `LITELLM_MASTER_KEY` trong môi trường. Thiếu `LLM_BACKEND=litellm` thì runner dừng với lỗi, vì LLM giả trả `"Câu trả lời [1]."` cho mọi câu và mọi chỉ số sẽ trông như đạt:
 
 ```bash
 export LLM_BACKEND=litellm LITELLM_MASTER_KEY=...   # lấy từ .env.local, đừng in ra
@@ -40,12 +40,12 @@ export LLM_BACKEND=litellm LITELLM_MASTER_KEY=...   # lấy từ .env.local, đ�
 
 | Chỉ số | NFR | Cách tính |
 |---|---|---|
-| `faithfulness` | NFR-01 ≥ 0,80 | RAGAS `Faithfulness` trên các câu trong phạm vi được trả lời: câu trả lời so với đúng các chunk đã đưa cho LLM. Judge là `JUDGE_MODEL` (mặc định alias `cloud-chat`) qua LiteLLM, `reasoning_effort="none"` vì RAGAS gửi `top_p`. Câu judge không chấm được thì để trống và đếm riêng. |
+| `faithfulness` | NFR-01 ≥ 0,80 | RAGAS `Faithfulness` trên các câu trong phạm vi được trả lời: câu trả lời so với đúng các chunk đã đưa cho LLM. Judge là `JUDGE_MODEL` (mặc định alias `cloud-chat`) qua LiteLLM, `reasoning_effort="none"` vì RAGAS gửi `top_p`. Câu judge không chấm được (lỗi gọi, hoặc RAGAS trả `nan` khi không tách được mệnh đề nào) thì để trống, ghi lý do vào kết quả và mục "Judge không chấm được" của báo cáo. Faithfulness chỉ được tính là đạt khi judge chấm được ≥ 90% số câu trả lời; giá trị thiếu hoặc `nan` luôn tính là trượt. |
 | `hit_at_5` | NFR-02 ≥ 0,75 | Câu trong phạm vi có ít nhất một chunk (trong tối đa 5 chunk đưa cho LLM) trùng `(file, page)` của golden. Với `hybrid_rerank`, chunk dưới ngưỡng rerank đã bị loại, nên câu bị từ chối thì không trúng. |
 | `refusal_accuracy` | NFR-03 ≥ 0,90 | Câu ngoài phạm vi có `found: false`. |
-| `citation_rate` | NFR-04 = 1,00 | Câu trong phạm vi có `found: true` mang ít nhất một trích dẫn. `RagAnswerer` đổi câu không trích dẫn thành từ chối, nên chỉ số này luôn 1,00; tỉ lệ đó hiện ra ở `answer_rate`. |
+| `citation_rate` | NFR-04 = 1,00 | Câu trong phạm vi có `found: true` mang ít nhất một trích dẫn. `RagAnswerer` đổi câu không trích dẫn thành từ chối, nên chỉ số này luôn 1,00 (báo cáo ghi chú điều này); câu bị đổi làm giảm `answer_rate`. |
 
-Ngoài ra báo cáo có: tỉ lệ câu trong phạm vi được trả lời, số lần trích văn bản bị thay thế (phải 0), lỗi và số lần thử lại, độ trễ p50/p95 (trong process, không gồm HTTP), token của LLM trả lời.
+Ngoài ra báo cáo có: tỉ lệ câu trong phạm vi được trả lời, số lần trích văn bản bị thay thế (phải 0), lỗi và số lần thử lại, độ trễ p50/p95 (nearest-rank; trong process, không gồm HTTP; model được nạp trước khi đo; câu lỗi không tính; câu được thử lại chỉ tính lần cuối), token của LLM trả lời.
 
 **Phòng ban:** mỗi câu được hỏi với user thuộc phòng ban của nguồn không public (nếu có), ngược lại là `public`. Golden không có câu nào cần cả `credit` lẫn `hr`.
 
