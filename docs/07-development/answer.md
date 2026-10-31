@@ -18,7 +18,18 @@ priority: 2
 
 Mode: tham số `mode` (từ request) được ưu tiên. Nếu không có thì đọc `RETRIEVAL_MODE`; để trống thì dùng `hybrid_rerank`. Giá trị khác `dense`, `hybrid` và `hybrid_rerank` báo `ValueError`.
 
-Định tuyến câu hỏi nhạy cảm sang model local thuộc E-010. Nối vào `/ask` (`RAG_BACKEND=real`), nạp sẵn model khi khởi động và trace id thuộc T-019.
+Định tuyến câu hỏi nhạy cảm sang model local thuộc E-010. Trace id (Langfuse) thuộc E-013.
+
+## `/ask` với `RAG_BACKEND=real` (T-019)
+
+`get_answerer()` (`src/app/deps.py`) trả `RagAnswerer()` khi `RAG_BACKEND=real`. `/ask` xác thực key, che PII trong câu hỏi (T-021), gọi `answer(question, user, req.mode)` với `User` của key, rồi che PII trong câu trả lời và tên nguồn.
+
+- **Khởi động** (`lifespan` trong `src/app/main.py`):
+  - `RETRIEVAL_MODE` sai làm app dừng khởi động ngay, thay vì mọi request đều lỗi.
+  - Một luồng nền gọi `warm_up()` để nạp bge-m3 và reranker (container dùng khoảng 1,4 GB RAM sau khi nạp). `/health` trả lời ngay trong lúc nạp. Request `/ask` đến sớm sẽ chờ cùng khóa nạp model, không nạp hai lần.
+  - Nạp lỗi (hết đĩa, không tải được model) được ghi log `rag.warm_up_failed`; request `/ask` đầu tiên sẽ thử nạp lại và báo lỗi của chính nó.
+- **Lỗi dependency → 503:** `/ask` trả `503 SERVICE_UNAVAILABLE` khi Qdrant không kết nối được hoặc quá thời gian (`ResponseHandlingException`), Qdrant trả HTTP 404 (ví dụ chưa có collection) hoặc 5xx (`UnexpectedResponse`), và với mọi `LLMError`. `LLMError` là một lớp chung cho lỗi kết nối, lỗi HTTP của gateway và cấu hình gateway sai (thiếu `LITELLM_MASTER_KEY`, `LLM_BACKEND` sai, key bị gateway từ chối), nên các trường hợp này đều thành 503, giống `/chat`. Log `ask.unavailable` ghi lý do (kèm mã HTTP của Qdrant nếu có) và `exception_type` là loại lỗi gốc. Qdrant trả 4xx khác (sai tên vector hay bộ lọc, tức là bug) và mọi lỗi khác vẫn là 500, để không che lỗi thật.
+- **Compose:** container `api` có volume `hf_cache` (`/root/.cache/huggingface`). Lần đầu chạy `RAG_BACKEND=real` sẽ tải model một lần (6,4 GB, khoảng 8 phút trên máy dev; `/health` vẫn trả lời trong lúc tải); các lần tạo lại container không phải tải lại. Image `api` có thêm torch, FlagEmbedding và docling nên nặng 3,37 GB. Để chạy RAG thật trong compose, đặt trong `.env.local`: `RAG_BACKEND=real`, `LLM_BACKEND=litellm`, `AUTH_BACKEND=apikey`, và tạo key bằng `scripts/make_key.py`.
 
 ## Prompt (`src/app/prompts.py`)
 
@@ -53,10 +64,14 @@ Trường hợp thứ ba là lựa chọn có chủ đích: NFR-04 yêu cầu 10
 - `tests/unit/test_answer.py` (CI, `FakeLLM` và retrieve giả): ánh xạ trích dẫn, marker nhóm và ngoài khoảng, bốn trường hợp từ chối, nội dung message gửi LLM, chống chèn thẻ, chọn mode, giá trị của các trường kết quả.
 - Chạy thử thủ công với Qdrant và rerank thật, LLM giả trả `"Theo tài liệu [1]."`: 2 câu trong phạm vi trích đúng (`293-cp.signed.pdf` trang 2, `86-vbhn-nhnn.pdf` trang 13); 2 câu ngoài phạm vi (giá vàng, thời tiết) bị từ chối mà không gọi LLM. Lần gọi đầu mất khoảng 15 giây vì phải nạp bge-m3 và reranker; các lần sau khoảng 2–2,5 giây.
 
+- `tests/api/test_ask_real.py` (CI, không nạp model): warm-up chạy nền chỉ khi `RAG_BACKEND=real`; `RETRIEVAL_MODE` sai dừng khởi động; warm-up lỗi được ghi log và app vẫn chạy; Qdrant hay LLM lỗi trả 503, lỗi khác trả 500; `/ask` truyền đúng user và mode xuống `RagAnswerer`.
+- Kiểm tra thủ công trong container (`RAG_BACKEND=real`, `LLM_BACKEND=litellm`, `AUTH_BACKEND=fake` nên user là `public`): 3 câu public trích đúng file và trang, câu lương vùng I (tài liệu `hr`) bị từ chối, câu giá vàng bị từ chối; tắt Qdrant hay LiteLLM thì `/ask` trả 503 và log ghi `ask.unavailable` kèm loại lỗi, bật lại thì trả lời bình thường.
+- `tests/unit/test_ask_facts.py` (CI): các regex nội dung của integration test chấp nhận câu trả lời đúng đã ghi lại từ gpt-6-luna và từ chối câu thiếu thông tin (chỉ có phí ngoại tệ, chỉ có mã phí, sai số tiền, câu kiểu từ chối).
+- `tests/integration/test_ask.py` (`pytest -m integration`, cần Qdrant có corpus, LiteLLM và `LITELLM_MASTER_KEY`, gọi model trả phí): app chạy trong process với API key thật cho từng phòng ban (tạo tạm trong thư mục test). Gồm 10 câu hỏi thủ công phải trích đúng file và trang và nêu đúng con số hay ý được hỏi (regex, ví dụ số tiền VND `20.000` hoặc `3.000.000` đồng cho phí chuyển tiền, vì `0,03%` cũng khớp dòng phí ngoại tệ), 2 câu ngoài phạm vi bị từ chối, user `credit` không đọc được tài liệu `hr`, không bao giờ trích văn bản đã bị thay thế, mode trong request được dùng, thiếu key trả 401. Trang và con số chỉ đúng với corpus dùng chung: 30 PDF của Release `corpus-2026-10-28`, ingest bằng chunker CR-009, được 2.815 point. Các biểu phí VietinBank là bản in từ trình duyệt, in lại sẽ ngắt trang và xếp hạng khác, nên test fail ngay nếu số point khác 2.815.
+
 ## Giới hạn
 
 - Mới chạy 8 câu với model thật (gpt-6-luna qua LiteLLM): 5 câu trong phạm vi đều có trích dẫn đúng, câu ngoài phạm vi bị từ chối, câu đòi in system prompt không làm lộ prompt hay canary. Model vẫn làm theo yêu cầu "trả lời bằng tiếng Anh" trong câu hỏi (quy tắc 6 bị bỏ qua) nhưng vẫn ghi `[n]`. Tỉ lệ tuân thủ `[n]` và `REFUSAL` cần đo trên golden set ở E-008.
 - Chưa có bộ ≥ 10 test prompt injection với model thật theo `docs/06-security/security-design.md`. T-018 chỉ có phần kiểm soát cố định: canary, phân tách ngữ cảnh và chính sách từ chối.
 - Marker dạng `[1-3]`, `［1］` hay `[Tài liệu 1]` chưa được nhận; câu trả lời chỉ dùng các dạng này sẽ bị từ chối.
-- `RETRIEVAL_MODE` sai chỉ báo lỗi khi có request, không phải lúc khởi động; T-019 có thể kiểm tra lúc khởi động.
 - `CANARY` nằm trong repo public. Nó dùng để phát hiện rò system prompt, không phải để giữ bí mật với người đọc code.
