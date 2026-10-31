@@ -13,3 +13,5 @@ Phần này ghi lại các use case AI, lựa chọn model, prompt, cách đánh
 
 ## Nội dung
 - `ai-design.md` – Thiết kế AI (model, retrieval, prompt, eval)
+- `rag-eval-report.md` – Báo cáo đánh giá 3 mode trên golden set (sinh bởi `eval/run.py`)
+- `rag-eval-notes.md` – Nhận xét kết quả đánh giá và đề xuất cho ngưỡng, số ứng viên rerank
