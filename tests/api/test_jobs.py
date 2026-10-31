@@ -74,6 +74,59 @@ def test_enqueue_audits_exact_persisted_masked_question(api):
     assert audit_rows() == [("/ask/jobs", OWNER.user_id, OWNER.department, question)]
 
 
+def test_masker_called_once_before_persistence(api, monkeypatch):
+    client, _, _ = api
+    original = jobs.require_mask_text
+    calls = []
+
+    def mask(question):
+        calls.append(question)
+        return original(question)
+
+    monkeypatch.setattr(jobs, "require_mask_text", mask)
+    assert enqueue(client, question=f"CCCD {PII}").status_code == 202
+    assert calls == [f"CCCD {PII}"]
+
+
+def test_per_key_limit_retry_after_and_polling_unthrottled(api, monkeypatch):
+    client, queue, _ = api
+    monkeypatch.setenv("API_KEY_RPM", "1")
+    monkeypatch.setenv("API_KEY_BURST", "1")
+    response = client.post("/ask/jobs", json={"question": "Fee?"}, headers={"X-API-Key": "key-a"})
+    assert response.status_code == 202
+    denied = client.post("/ask/jobs", json={"question": "Fee?"}, headers={"X-API-Key": "key-a"})
+    assert denied.status_code == 429
+    assert 1 <= int(denied.headers["Retry-After"]) <= 60
+    assert denied.json()["error"]["code"] == "RATE_LIMITED"
+    assert queue.queue.count == 1
+    assert client.get(f"/ask/jobs/{response.json()['job_id']}").status_code == 200
+    assert client.post("/ask/jobs", json={"question": "Fee?"}, headers={"X-API-Key": "key-b"}).status_code == 202
+    assert b"key-a" not in redis_contents(queue.connection)
+
+
+def test_priority_uses_authenticated_role_not_request_fields(api):
+    client, queue, application = api
+    staff = enqueue(client, priority="high").json()["job_id"]
+    assert fetch(queue, staff).origin == "ask-default"
+    application.dependency_overrides[jobs.get_current_user] = lambda: replace(OWNER, role="approver")
+    high = enqueue(client).json()["job_id"]
+    assert fetch(queue, high).origin == "ask-high"
+    assert client.get(f"/ask/jobs/{staff}").json()["position"] == 2
+
+
+def test_queue_full_attempt_consumes_token_as_documented(api, monkeypatch):
+    client, queue, _ = api
+    queue.max_length = 1
+    monkeypatch.setenv("API_KEY_RPM", "1")
+    monkeypatch.setenv("API_KEY_BURST", "2")
+    assert enqueue(client).status_code == 202
+    assert enqueue(client).status_code == 503
+    denied = enqueue(client)
+    assert denied.status_code == 429
+    assert int(denied.headers["Retry-After"]) > 0
+    assert queue.queue.count == 1
+
+
 @pytest.mark.parametrize("case", ["owner", "other", "missing", "expired", "invalid", "unavailable"])
 def test_poll_audits_reader_on_success_and_errors(api, monkeypatch, case):
     client, queue, application = api

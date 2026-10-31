@@ -31,6 +31,10 @@ class LLMError(RuntimeError):
     """Public error that never includes gateway bodies or credentials."""
 
 
+class LLMRateLimitError(LLMError):
+    """Typed, sanitized 429 signal for the worker's bounded retry policy."""
+
+
 def chat(messages: list[dict], alias: str, temperature: float = 0.0) -> LLMResult:
     messages = mask_data(messages)
     backend = os.getenv("LLM_BACKEND", "fake")
@@ -58,6 +62,8 @@ def chat(messages: list[dict], alias: str, temperature: float = 0.0) -> LLMResul
                     time.sleep(0.5 * 2**attempt)
                     continue
             if response.status_code != 200:
+                if response.status_code == 429:
+                    raise LLMRateLimitError("LLM gateway returned HTTP 429")
                 raise LLMError(f"LLM gateway returned HTTP {response.status_code}")
             try:
                 data = response.json()

@@ -20,15 +20,47 @@ Authenticated clients can enqueue the same body at `POST /ask/jobs` and poll
 receive 404. Redis stores masked requests/results; completed and failed jobs expire
 after one hour. `REDIS_URL` selects Redis and `QUEUE_MAX_LENGTH` (default 100) limits
 waiting jobs; a full or unavailable queue returns 503.
-Waiting jobs currently have no TTL. Run a worker to drain them; without a worker,
-the queue remains full once it reaches its limit. Waiting-job expiry and worker
-operations belong to T-025. Owner IDs in Redis are SHA-256 pseudonyms, not anonymous
+Waiting jobs expire after `QUEUE_WAITING_TTL` seconds (default 3600). Enqueue reclaims
+expired queue entries even if no worker ran, across all queues under the same bound.
+Owner IDs in Redis are SHA-256 pseudonyms, not anonymous
 identities: short or predictable user IDs can still be guessed from their hashes.
 
 For a local worker smoke test, run from the repository root with `src` on the Python
-path: `PYTHONPATH=src .venv/bin/rq worker ask --serializer rq.serializers.JSONSerializer`.
-The worker must use the API's Redis URL and the same RAG/LLM settings. Deployment,
-rate limiting, priorities and retry policy are handled by T-025.
+path: `PYTHONPATH=src .venv/bin/python -m app.queue.worker`.
+Compose starts this worker with the same Redis/RAG/LLM environment as the API.
+Authenticated approvers enqueue to `ask-high`; other roles use `ask-default`.
+Workers consume in that priority order, then drain legacy `ask` jobs. Positions
+are snapshots across those queues; continuous high-priority work can delay others.
+No new request field or client-supplied priority is accepted.
+
+`POST /ask/jobs` uses a shared Redis token bucket per authenticated API-key digest:
+`API_KEY_RPM` (default 60) and `API_KEY_BURST` (default 10). Exhaustion returns the
+standard 429 envelope with integer `Retry-After`; polling is not throttled.
+The bucket counts authenticated, valid enqueue attempts, including attempts that
+later return 503 (queue full, Redis enqueue failure or masking unavailable). These
+tokens are not refunded; clients should back off on 503 rather than retry rapidly.
+With fake authentication the bucket is per user. Worker execution attempts share
+one Redis bucket (`WORKER_RPM`, default 60, capacity 1), including retries. The LLM
+client retains its own bounded HTTP retries; RPM here counts answer execution
+attempts, not individual HTTP calls within an answer. Only typed gateway 429s are
+retried, up to `WORKER_MAX_ATTEMPTS` (default 4), with exponential delays starting
+at `WORKER_BACKOFF_SECONDS` (default 1), capped at 60s. Final failures stay sanitized.
+`WORKER_JOB_TIMEOUT` (default 600s) bounds total job execution, including waits;
+increase it for lower RPM or long LLM latency. Worker operations require Redis;
+limiter outages fail closed. Limits must be positive integers; backoff seconds
+also accepts positive finite fractions for testing or shorter retry schedules.
+The Compose worker has no API-key registry or audit volume mounts. Its healthcheck
+checks its own Redis registration and last heartbeat, allowing RQ's default idle
+dequeue interval (up to 480s including grace). Redis outages fail the check. A hung
+parent is detected after that heartbeat window; job hangs are bounded by the job
+timeout. Docker marks failed checks unhealthy; `restart: unless-stopped` restarts
+exited processes and does not automatically restart an unhealthy running process.
+After an abrupt kill (SIGKILL/OOM), an old registration can share the restarted
+container's hostname and PID 1. The check can report healthy from that registration
+for up to about 480s, even if the replacement worker hangs or fails to register.
+Before using this healthcheck for autoheal or orchestrator recovery, require the
+registration's birth time to be after the current process's start time (for
+example, from `/proc/1/stat` or a startup timestamp recorded by the worker).
 
 ## Where things are
 | Path | What |
