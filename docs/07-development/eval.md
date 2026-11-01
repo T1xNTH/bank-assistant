@@ -42,8 +42,10 @@ export LLM_BACKEND=litellm LITELLM_MASTER_KEY=...   # lấy từ .env.local, đ�
 |---|---|---|
 | `faithfulness` | NFR-01 ≥ 0,80 | RAGAS `Faithfulness` trên các câu trong phạm vi được trả lời: câu trả lời so với đúng các chunk đã đưa cho LLM. Judge là `JUDGE_MODEL` (mặc định alias `cloud-chat`) qua LiteLLM, `reasoning_effort="none"` vì RAGAS gửi `top_p`. Câu judge không chấm được (lỗi gọi, hoặc RAGAS trả `nan` khi không tách được mệnh đề nào) thì để trống, ghi lý do vào kết quả và mục "Judge không chấm được" của báo cáo. Faithfulness chỉ được tính là đạt khi judge chấm được ≥ 90% số câu trả lời; giá trị thiếu hoặc `nan` luôn tính là trượt. |
 | `hit_at_5` | NFR-02 ≥ 0,75 | Câu trong phạm vi có ít nhất một chunk (trong tối đa 5 chunk đưa cho LLM) trùng `(file, page)` của golden. Với `hybrid_rerank`, chunk dưới ngưỡng rerank đã bị loại, nên câu bị từ chối thì không trúng. |
-| `refusal_accuracy` | NFR-03 ≥ 0,90 | Câu ngoài phạm vi có `found: false`. |
+| `refusal_accuracy` | NFR-03 ≥ 0,90 | Câu ngoài phạm vi có `found: false` và chạy không lỗi. Câu bị lỗi có `found: false` mặc định nhưng không được tính là từ chối đúng. |
 | `citation_rate` | NFR-04 = 1,00 | Câu trong phạm vi có `found: true` mang ít nhất một trích dẫn. `RagAnswerer` đổi câu không trích dẫn thành từ chối, nên chỉ số này luôn 1,00 (báo cáo ghi chú điều này); câu bị đổi làm giảm `answer_rate`. |
+
+Ngoài 4 ngưỡng trên, `--check` (và dấu ✅/❌ của báo cáo) còn trượt khi có **câu trích văn bản bị thay thế** (`superseded_cited` > 0, vi phạm FR-02) hoặc **câu vẫn lỗi sau khi thử lại** (`errors` > 0, vì khi đó mọi chỉ số chỉ tính trên một phần lượt chạy). Hai điều kiện này cố định trong code (`MUST_BE_ZERO`), không lấy từ `eval/thresholds.json`.
 
 Ngoài ra báo cáo có: tỉ lệ câu trong phạm vi được trả lời, số lần trích văn bản bị thay thế (phải 0), lỗi và số lần thử lại, độ trễ p50/p95 (nearest-rank; trong process, không gồm HTTP; model được nạp trước khi đo; câu lỗi không tính; câu được thử lại chỉ tính lần cuối), token của LLM trả lời.
 

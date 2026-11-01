@@ -34,8 +34,8 @@ Sinh tự động bởi `python eval/run.py`; không sửa tay (chạy lại đ�
 | Câu trong phạm vi được trả lời | | 0.82 | 0.85 | 0.85 |
 | Số câu được chấm faithfulness | | 33 | 34 | 34 |
 | Tỉ lệ câu trả lời được chấm (faithfulness chỉ tính khi ≥ 0.9) | | 1.00 | 1.00 | 1.00 |
-| Trích văn bản bị thay thế (phải 0) | | 0 | 0 | 0 |
-| Lỗi khi chạy (sau khi thử lại) | | 0 | 0 | 0 |
+| Trích văn bản bị thay thế (FR-02) | = 0 | 0 ✅ | 0 ✅ | 0 ✅ |
+| Lỗi khi chạy (sau khi thử lại) | = 0 | 0 ✅ | 0 ✅ | 0 ✅ |
 | Số lần thử lại do dependency lỗi tạm thời | | 0 | 0 | 0 |
 | Độ trễ p50 (ms) | | 1368 | 1366 | 3423 |
 | Độ trễ p95 (ms) | | 2045 | 1842 | 5028 |

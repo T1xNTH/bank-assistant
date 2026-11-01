@@ -208,7 +208,8 @@ def metrics(records: list[Record], superseded: set[str]) -> dict:
         "faithfulness_scored": len(scored),
         "faithfulness_coverage": round(len(scored) / len(answered), 4) if answered else None,
         "hit_at_5": _mean([r.hit for r in in_scope]),
-        "refusal_accuracy": _mean([not r.found for r in out_scope]),
+        # A question that failed has found=False by default: that is not a refusal (PR #66 review).
+        "refusal_accuracy": _mean([not r.found and r.error is None for r in out_scope]),
         "citation_rate": _mean([bool(r.citations) for r in answered]),
         "answer_rate": _mean([r.found for r in in_scope]),
         "superseded_cited": sum(c["source"] in superseded for r in records for c in r.citations),
@@ -219,10 +220,16 @@ def metrics(records: list[Record], superseded: set[str]) -> dict:
     }
 
 
+# Counts that must be zero whatever eval/thresholds.json says: a superseded citation breaks FR-02, and
+# a question that still failed after the retries leaves every metric computed on a partial run.
+MUST_BE_ZERO = ("superseded_cited", "errors")
+
+
 def failures(summary: dict, thresholds: dict) -> list[str]:
-    """Threshold names missed. A metric that could not be computed (None, nan) counts as missed, and so does
-    faithfulness when the judge scored less than MIN_JUDGE_COVERAGE of the answers."""
-    missed = []
+    """Checks missed. A threshold whose metric could not be computed (None, nan) counts as missed, and so does
+    faithfulness when the judge scored less than MIN_JUDGE_COVERAGE of the answers; so does any MUST_BE_ZERO
+    count above zero."""
+    missed = [name for name in MUST_BE_ZERO if summary.get(name)]
     for name, minimum in thresholds.items():
         value = summary.get(name)
         if value is None or not math.isfinite(value) or value < minimum:
@@ -290,7 +297,7 @@ def render_report(results: dict[str, list[Record]], summaries: dict[str, dict], 
         "answer_rate": "Câu trong phạm vi được trả lời",
         "faithfulness_scored": "Số câu được chấm faithfulness",
         "faithfulness_coverage": f"Tỉ lệ câu trả lời được chấm (faithfulness chỉ tính khi ≥ {MIN_JUDGE_COVERAGE})",
-        "superseded_cited": "Trích văn bản bị thay thế (phải 0)",
+        "superseded_cited": "Trích văn bản bị thay thế (FR-02)",
         "errors": "Lỗi khi chạy (sau khi thử lại)",
         "retries": "Số lần thử lại do dependency lỗi tạm thời",
         "latency_p50_ms": "Độ trễ p50 (ms)",
@@ -299,7 +306,11 @@ def render_report(results: dict[str, list[Record]], summaries: dict[str, dict], 
         "output_tokens": "Token ra (LLM trả lời)",
     }
     for name, label in extra.items():
-        lines.append(f"| {label} | | " + " | ".join(_fmt(summaries[m].get(name)) for m in modes) + " |")
+        if name in MUST_BE_ZERO:
+            cells = [f"{_fmt(summaries[m].get(name))} {'❌' if name in missed[m] else '✅'}" for m in modes]
+            lines.append(f"| {label} | = 0 | " + " | ".join(cells) + " |")
+        else:
+            lines.append(f"| {label} | | " + " | ".join(_fmt(summaries[m].get(name)) for m in modes) + " |")
     lines += [
         "",
         "¹ Luôn 1,00 theo cách làm: `RagAnswerer` đổi câu trả lời không có trích dẫn hợp lệ thành câu từ chối, nên "

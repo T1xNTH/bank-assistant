@@ -402,3 +402,51 @@ def test_citation_footnote_in_report(tmp_path):
     text = out.read_text()
     assert "Câu trả lời có trích dẫn (NFR-04)¹" in text and "NFR-04 đạt bằng thiết kế" in text
     assert "## Judge không chấm được" in text and "- Không có." in text
+
+
+# PR #66 review (B): errors and superseded citations fail the gate
+
+
+def test_failed_out_of_scope_question_is_not_a_correct_refusal():
+    def retrieve(question, user, k, mode):
+        if question == "Giá vàng?":
+            raise KeyError("payload")
+        return TABLE.get(question, [])
+
+    records = run.answer_all(ROWS, "hybrid", DEPARTMENTS, retrieve, FakeLLM("Đáp [1]."))
+    run.judge_records(records, lambda samples: [1.0] * len(samples))
+    summary = run.metrics(records, set())
+    assert summary["errors"] == 1 and summary["refusal_accuracy"] == 0.0
+    assert {"refusal_accuracy", "errors"} <= set(run.failures(summary, {"refusal_accuracy": 0.9}))
+
+
+def test_any_error_fails_the_gate():
+    summary = {"refusal_accuracy": 1.0, "errors": 1, "superseded_cited": 0}
+    assert run.failures(summary, {"refusal_accuracy": 0.9}) == ["errors"]
+
+
+def test_superseded_citation_fails_the_gate(tmp_path):
+    records = answered_records()
+    run.judge_records(records, lambda samples: [1.0] * len(samples))
+    summary = run.metrics(records, superseded={"luong.pdf"})
+    assert summary["superseded_cited"] == 1
+    assert run.failures(summary, {}) == ["superseded_cited"]
+    assert run.failures({**summary, "superseded_cited": 0}, {}) == []
+
+
+def test_check_fails_on_superseded_citation(tmp_path, monkeypatch):
+    table = {**TABLE, "Phí thẻ và lãi?": [hit("the.pdf", 5)]}  # every NFR threshold met
+    code, _, _ = cli(tmp_path, ["--mode", "dense", "--check"], judge=lambda s: [0.9] * len(s), table=table)
+    assert code == 0
+    monkeypatch.setattr(run, "load_manifest", lambda path: (DEPARTMENTS, {"luong.pdf"}))
+    code, out, _ = cli(tmp_path, ["--mode", "dense", "--check"], judge=lambda s: [0.9] * len(s), table=table)
+    assert code == 1
+    assert "| Trích văn bản bị thay thế (FR-02) | = 0 | 1 ❌ |" in out.read_text()
+
+
+def test_report_marks_zero_counts(tmp_path):
+    table = {**TABLE, "Phí thẻ và lãi?": [hit("the.pdf", 5)]}
+    _, out, _ = cli(tmp_path, ["--mode", "dense"], judge=lambda s: [0.9] * len(s), table=table)
+    text = out.read_text()
+    assert "| Trích văn bản bị thay thế (FR-02) | = 0 | 0 ✅ |" in text
+    assert "| Lỗi khi chạy (sau khi thử lại) | = 0 | 0 ✅ |" in text
