@@ -24,5 +24,6 @@ Phần này cung cấp hướng dẫn phát triển, chuẩn viết code và cô
 - `retrieve.md` – `retrieve()`: mode dense và hybrid (RRF), bộ lọc phòng ban và văn bản bị thay thế
 - `rerank.md` – Rerank bge-reranker-v2-m3, ngưỡng từ chối `REFUSAL_THRESHOLD`, số ứng viên `RERANK_CANDIDATES`
 - `answer.md` – `RagAnswerer`: prompt, ánh xạ trích dẫn `[n]`, các trường hợp từ chối, canary
+- `eval.md` – Chạy `eval/run.py`: venv riêng cho RAGAS, các chỉ số NFR-01..04, chi phí
 - [LLM gateway](llm-gateway.md) - LiteLLM aliases, OpenAI setup, optional Ollama and smoke checks.
 - [Request audit](audit.md) - SQLite rows, privacy fallback, persistence and failure behavior.
