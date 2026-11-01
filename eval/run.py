@@ -368,6 +368,8 @@ def _display(path: Path) -> Path:
 
 
 JUDGE_CONCURRENCY = 4
+# ragas defaults to 1024, which a long statement list truncates (PR #66 live QA: two NĐ 52 answers unscored).
+JUDGE_MAX_TOKENS = 4096
 
 
 def ragas_judge(model: str, base_url: str, api_key: str) -> Judge:  # pragma: no cover - needs the eval venv
@@ -390,7 +392,8 @@ def ragas_judge(model: str, base_url: str, api_key: str) -> Judge:  # pragma: no
     async def score_all(samples: list[dict]) -> list[float | BaseException]:
         # A client per event loop: asyncio.run closes the loop, and pooled connections die with it.
         async with AsyncOpenAI(base_url=url, api_key=api_key) as client:
-            metric = Faithfulness(llm=llm_factory(model, client=client, reasoning_effort="none"))
+            llm = llm_factory(model, client=client, reasoning_effort="none", max_tokens=JUDGE_MAX_TOKENS)
+            metric = Faithfulness(llm=llm)
             gate = asyncio.Semaphore(JUDGE_CONCURRENCY)
 
             async def score(sample: dict) -> float | BaseException:
