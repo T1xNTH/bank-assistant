@@ -44,7 +44,9 @@ def test_core_excludes_ollama_and_isolates_provider_key(monkeypatch):
     assert services["worker"]["environment"] == services["api"]["environment"]
     assert services["worker"]["command"] == ["python", "-m", "app.queue.worker"]
     assert not services["worker"].get("ports")
-    assert not services["worker"].get("volumes")
+    assert len(services["worker"]["volumes"]) == 1
+    assert services["worker"]["volumes"][0]["source"] == "hf_cache"
+    assert services["worker"]["volumes"][0]["target"] == "/root/.cache/huggingface"
     assert services["worker"]["healthcheck"]["test"] == [
         "CMD", "python", "-m", "app.queue.worker", "--healthcheck",
     ]

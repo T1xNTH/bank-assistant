@@ -46,6 +46,7 @@ def run_with_policy(action: Callable[[], T], connection: Redis) -> T:
     retry count; every retry re-acquires a token, including across workers.
     """
     from app.llm import LLMRateLimitError
+    from app.rag.answer import AnswerUnavailable
 
     bucket = TokenBucket(connection, "ask:worker:rate", positive_int("WORKER_RPM", 60))
     retries = positive_int("WORKER_MAX_ATTEMPTS", 4)
@@ -54,7 +55,9 @@ def run_with_policy(action: Callable[[], T], connection: Redis) -> T:
         bucket.acquire()
         try:
             return action()
-        except LLMRateLimitError:
+        except (LLMRateLimitError, AnswerUnavailable) as exc:
+            if isinstance(exc, AnswerUnavailable) and not isinstance(exc.__cause__, LLMRateLimitError):
+                raise
             if attempt == retries - 1:
                 raise
             time.sleep(min(60, backoff * 2**attempt))

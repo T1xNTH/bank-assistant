@@ -15,6 +15,7 @@ from app.llm import LLMError, LLMRateLimitError
 from app.queue import worker
 from app.queue.jobs import JobQueue
 from app.queue.limits import TokenBucket
+from app.rag.answer import AnswerUnavailable
 from app.schemas import AskRequest
 
 
@@ -38,7 +39,8 @@ def test_invalid_bucket_settings(rpm, capacity):
         TokenBucket(fakeredis.FakeRedis(), "rate", rpm, capacity)
 
 
-def test_worker_exponential_backoff_and_tokens_for_every_attempt(monkeypatch):
+@pytest.mark.parametrize("wrapped", [False, True])
+def test_worker_exponential_backoff_and_tokens_for_every_attempt(monkeypatch, wrapped):
     tokens, sleeps, calls = [], [], []
     monkeypatch.setattr(worker.TokenBucket, "acquire", lambda self: tokens.append(self.key))
     monkeypatch.setattr(worker.time, "sleep", sleeps.append)
@@ -47,6 +49,8 @@ def test_worker_exponential_backoff_and_tokens_for_every_attempt(monkeypatch):
     def action():
         calls.append(1)
         if len(calls) < 4:
+            if wrapped:
+                raise AnswerUnavailable("LLM gateway unavailable") from LLMRateLimitError("429")
             raise LLMRateLimitError("Synthetic 429")
         return "done"
 

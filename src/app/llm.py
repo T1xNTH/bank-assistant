@@ -55,8 +55,9 @@ def chat(messages: list[dict], alias: str, temperature: float = 0.0) -> LLMResul
         for attempt in range(3):
             try:
                 response = client.post(url, json=payload, headers={"Authorization": f"Bearer {key}"})
-            except httpx.HTTPError:
-                raise LLMError("LLM gateway transport failure") from None
+            except httpx.HTTPError as exc:
+                # The class name only (ReadTimeout, ConnectError...): the message can carry the prompt.
+                raise LLMError(f"LLM gateway transport failure ({type(exc).__name__})") from None
             if response.status_code == 429 or 500 <= response.status_code <= 599:
                 if attempt < 2:
                     time.sleep(0.5 * 2**attempt)
