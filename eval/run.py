@@ -40,8 +40,10 @@ from app.contracts import Hit, RetrievalMode, User  # noqa: E402
 
 MODES: tuple[RetrievalMode, ...] = ("dense", "hybrid", "hybrid_rerank")
 K = 5
-RETRIES = 2  # AnswerUnavailable is transient (gateway 5xx/timeout, Qdrant restart); latency is the last attempt's
-RETRY_DELAY_S = 2.0
+RETRIES = 3  # AnswerUnavailable is transient (gateway 5xx/timeout, Qdrant restart); latency is the last attempt's
+# Waits 5, 10, 15 s: PR #66 live QA lost one question per full run to a gateway transport failure that 2 + 4 s
+# of retries did not outlast and that never came back on a rerun.
+RETRY_DELAY_S = 5.0
 
 # (question, answer, contexts) for each answered in-scope question -> one item per sample: a score in [0, 1],
 # or the reason the judge could not score it (an exception or a message).

@@ -118,6 +118,7 @@ def test_transport_failure_is_safe(gateway, monkeypatch):
     with pytest.raises(llm.LLMError, match="transport failure") as error:
         llm.chat([], "local-chat")
     assert "stub-secret" not in str(error.value)
+    assert str(error.value) == "LLM gateway transport failure (ReadTimeout)"
     assert gateway["sleeps"] == []
 
 

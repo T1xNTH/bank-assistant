@@ -51,7 +51,7 @@ Ngoài ra báo cáo có: tỉ lệ câu trong phạm vi được trả lời, s�
 
 **Phòng ban:** mỗi câu được hỏi với user thuộc phòng ban của nguồn không public (nếu có), ngược lại là `public`. Golden không có câu nào cần cả `credit` lẫn `hr`.
 
-**Lỗi tạm thời:** `AnswerUnavailable` (gateway 5xx, timeout, Qdrant khởi động lại) được thử lại tối đa 2 lần. Lỗi khác không thử lại và được ghi vào kết quả, không làm dừng cả lượt chạy.
+**Lỗi tạm thời:** `AnswerUnavailable` (gateway 5xx, timeout, Qdrant khởi động lại) được thử lại tối đa 3 lần, chờ 5, 10 rồi 15 giây. Lỗi kết nối tới gateway ghi rõ loại lỗi (vd `LLM gateway transport failure (ReadTimeout)`) để biết là timeout hay mất kết nối. Lỗi khác không thử lại và được ghi vào kết quả, không làm dừng cả lượt chạy.
 
 ## Chi phí và thời gian
 

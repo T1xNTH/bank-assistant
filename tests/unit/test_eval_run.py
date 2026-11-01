@@ -129,13 +129,13 @@ def test_transient_unavailable_is_retried(monkeypatch):
                 raise LLMError("LLM gateway returned HTTP 502")
             return super().chat(messages, alias, temperature)
 
-    [ok] = run.answer_all(ROWS[:1], "dense", DEPARTMENTS, Retrieve(TABLE), Flaky(2))
-    assert (ok.found, ok.error, ok.retries) == (True, None, 2)
-    [failed] = run.answer_all(ROWS[:1], "dense", DEPARTMENTS, Retrieve(TABLE), Flaky(3))
-    assert not failed.found and failed.retries == 2
+    [ok] = run.answer_all(ROWS[:1], "dense", DEPARTMENTS, Retrieve(TABLE), Flaky(3))
+    assert (ok.found, ok.error, ok.retries) == (True, None, 3)
+    [failed] = run.answer_all(ROWS[:1], "dense", DEPARTMENTS, Retrieve(TABLE), Flaky(4))
+    assert not failed.found and failed.retries == 3
     assert failed.error == "AnswerUnavailable: LLM gateway unavailable (LLMError: LLM gateway returned HTTP 502)"
     summary = run.metrics([ok, failed], set())
-    assert (summary["errors"], summary["retries"]) == (1, 4)
+    assert (summary["errors"], summary["retries"]) == (1, 6)
 
 
 def test_bugs_are_not_retried():
