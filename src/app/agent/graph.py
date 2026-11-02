@@ -28,6 +28,7 @@ import re
 import sqlite3
 import threading
 import uuid
+from collections import OrderedDict
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -66,7 +67,14 @@ HISTORY = 12  # messages of earlier turns sent to the model
 SENSITIVE = "confidential"  # customer banking data in the thread routes later turns to local-chat
 # A numbered placeholder from require_mask_numbered; only this turn's values are in the vault.
 PLACEHOLDER = re.compile(r"<(?:CCCD|ACCOUNT_NUMBER|PHONE_NUMBER)_\d+>")
-STALE_AMOUNT = "số tiền ở tin nhắn trước đã được che, anh/chị nhập lại số tiền trong tin nhắn này giúp"
+AMOUNT_PLACEHOLDER = re.compile(r"<ACCOUNT_NUMBER_\d+>")
+# Only a plain or dot-grouped number is an amount. The masker joins "50.000.000 12" (amount + term) or
+# "100 000 000" into one span; reading those as a principal gave 5.000.000.012 đ (review round 3, F-10).
+AMOUNT_TEXT = re.compile(r"\d+|\d{1,3}(?:\.\d{3})+")
+STALE_AMOUNT = "số tiền này không còn trong bộ nhớ, anh/chị nhập lại số tiền giúp"
+BAD_AMOUNT = "không đọc chắc được số tiền, anh/chị viết riêng số tiền, ví dụ '50.000.000 đồng' hoặc '50 triệu'"
+VAULT_THREADS = 1000  # threads whose masked amounts are kept in memory (least recently used dropped)
+VAULT_VALUES = 20  # amounts kept per thread
 UNCLEAR = "Xin lỗi, tôi chưa hiểu yêu cầu. Anh/chị nói rõ hơn giúp tôi được không?"
 THREAD_ID = re.compile(r"[0-9a-f]{32}")
 UNAVAILABLE = (LLMError, AnswerUnavailable, ToolUnavailable, MaskingError, sqlite3.Error)
@@ -110,6 +118,7 @@ class AgentState(TypedDict, total=False):
     ticket_failed: bool  # the approved write failed; the thread waits for a decision again
     answer_source: Literal["model", "tool"]
     vault_seq: int  # placeholders numbered so far, so each turn's numbers are new
+    issued: list[str]  # names of the placeholders issued in this thread (never their values)
 
 
 def _clean(text: str) -> str:
@@ -193,29 +202,31 @@ def parse_reply(text: str) -> tuple[str, dict] | str:
     return UNCLEAR
 
 
-_NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
+_RATE = re.compile(r"(\d+(?:[.,]\d+)?)\s*%")
+_MONTHS = re.compile(r"(\d+)\s*th[aá]ng", re.IGNORECASE)
+_YEARS = re.compile(r"(\d+(?:[.,]\d+)?)\s*n[aă]m", re.IGNORECASE)
 
 
-def _stated_numbers(messages: list[AnyMessage]) -> set[Decimal]:
-    numbers = set()
+def _stated(pattern: re.Pattern, messages: list[AnyMessage], scale: int = 1) -> set[Decimal]:
+    found = set()
     for message in messages:
         if isinstance(message, HumanMessage):
-            numbers |= {Decimal(n.replace(",", ".")) for n in _NUMBER.findall(message.content)}
-    return numbers
+            text = PLACEHOLDER.sub(" ", message.content)  # "<ACCOUNT_NUMBER_12>" states no number
+            found |= {Decimal(n.replace(",", ".")) * scale for n in pattern.findall(text)}
+    return found
 
 
 def unstated_loan_terms(args: dict, messages: list[AnyMessage]) -> list[str]:
-    """Rate and term the model passed but no user message of the thread contains (a term in years counts)."""
-    stated = _stated_numbers(messages)
+    """Rate and term the model passed that no user message states as such ("12%"; "12 tháng" or "1 năm")."""
+    rates = _stated(_RATE, messages)
+    terms = _stated(_MONTHS, messages) | _stated(_YEARS, messages, 12)
     missing = []
-    for key, label, also in (("annual_rate_percent", "lãi suất (%/năm)", None), ("months", "kỳ hạn", 12)):
+    for key, label, stated in (("annual_rate_percent", "lãi suất (%/năm)", rates), ("months", "kỳ hạn", terms)):
         try:
             value = Decimal(str(args.get(key)))
         except ArithmeticError:
             continue  # not a number: the calculator rejects it with its own message
-        if not value.is_finite():
-            continue
-        if value not in stated and not (also and value / also in stated):
+        if value.is_finite() and value not in stated:
             missing.append(label)
     return missing
 
@@ -245,16 +256,21 @@ class _BoundTools:
         self.agent_tools = AgentTools(user, bank)
 
     def _amount(self, value: Any) -> Any:
-        """``"<ACCOUNT_NUMBER_1>"`` -> 100000000 when this turn's message hid that amount; else unchanged."""
+        """``"<ACCOUNT_NUMBER_1>"`` -> 100000000 when the user's message hid that amount; else unchanged.
+
+        Only ACCOUNT_NUMBER placeholders: a phone or CCCD must never become a principal that is then
+        shown unmasked and stored in the checkpoint (review round 3, F-09).
+        """
         if not isinstance(value, str) or not PLACEHOLDER.fullmatch(value):
             return value
+        if not AMOUNT_PLACEHOLDER.fullmatch(value):
+            raise ValueError(BAD_AMOUNT)
         raw = self.vault.get(value)
         if raw is None:
             raise ValueError(STALE_AMOUNT)
-        digits = re.sub(r"[ .-]", "", raw)
-        if not digits.isdigit():
-            raise ValueError("Invalid principal")
-        return int(digits)
+        if not AMOUNT_TEXT.fullmatch(raw):
+            raise ValueError(BAD_AMOUNT)
+        return int(raw.replace(".", ""))
 
     def tinh_lai_vay(
         self, principal: Any = None, annual_rate_percent: Any = None, months: Any = None, method: Any = "annuity"
@@ -323,7 +339,20 @@ def build_graph(
         name, args = reply
         args = {key: require_mask_content(_clean(v)) if isinstance(v, str) else v for key, v in args.items()}
         if name == "tinh_lai_vay":
-            missing = unstated_loan_terms(args, state["messages"])
+            principal = args.get("principal")
+            # A placeholder this thread never issued was made up by the model (seen with qwen2.5:3b).
+            invented = (
+                isinstance(principal, str)
+                and PLACEHOLDER.fullmatch(principal) is not None
+                and principal not in state.get("issued", [])
+            )
+            if not invented:
+                try:
+                    bound._amount(principal)  # an unreadable amount is the first thing to fix
+                except ValueError as exc:
+                    answer = f"Chưa thực hiện được (tinh_lai_vay): {exc}."
+                    return {"messages": [AIMessage(content=answer)], "answer": answer, "answer_source": "tool"}
+            missing = (["số tiền vay"] if invented else []) + unstated_loan_terms(args, state["messages"])
             if missing:  # the model filled in a rate or term the user never gave (seen with qwen2.5:3b)
                 answer = f"Anh/chị cho biết {' và '.join(missing)} của khoản vay giúp tôi."
                 return {"messages": [AIMessage(content=answer)], "answer": answer, "answer_source": "tool"}
@@ -464,7 +493,12 @@ class AgentService:
         self.bank = bank if bank is not None else CoreBanking()
         self.tickets = tickets if tickets is not None else TicketStore()
         self.checkpointer = checkpointer if checkpointer is not None else sqlite_checkpointer()
-        self._locks: dict[str, list] = {}  # thread_id -> [lock, users]; removed when no call holds or waits
+        self._locks: dict[str, list] = {}
+        # thread_id -> {placeholder: amount text}: masked amounts, memory only, so "Vay 100.000.000" then
+        # "12%, 12 tháng" works across turns. Only ACCOUNT_NUMBER values; lost on restart (STALE_AMOUNT).
+        self._vaults: OrderedDict[str, dict[str, str]] = (
+            OrderedDict()
+        )  # thread_id -> [lock, users]; removed when no call holds or waits
         self._guard = threading.Lock()
 
     @contextmanager
@@ -480,6 +514,16 @@ class AgentService:
                 entry[1] -= 1
                 if entry[1] == 0:
                     del self._locks[thread_id]
+
+    def _remember(self, thread_id: str, hidden: dict[str, str]) -> dict[str, str]:
+        with self._guard:
+            vault = self._vaults.pop(thread_id, {})
+            vault.update((k, v) for k, v in hidden.items() if AMOUNT_PLACEHOLDER.fullmatch(k))
+            vault = dict(list(vault.items())[-VAULT_VALUES:])
+            self._vaults[thread_id] = vault
+            while len(self._vaults) > VAULT_THREADS:
+                self._vaults.popitem(last=False)
+            return dict(vault)
 
     def _graph(self, user: User, pii: list[str], vault: dict[str, str] | None = None):
         return build_graph(
@@ -533,12 +577,14 @@ class AgentService:
                 if self._pending(snapshot) is not None:  # the decision comes first; this message is not taken
                     return self._result(thread_id, snapshot)
                 seq = values.get("vault_seq", 0)
-                masked, types, vault = require_mask_numbered(message, start=seq)
+                masked, types, hidden = require_mask_numbered(message, start=seq)
                 pii = sorted(set(values.get("pii", [])) | set(types))
-                graph = self._graph(user, pii, vault)  # the vault lives for this call only, never in the state
+                vault = self._remember(thread_id, hidden)
+                graph = self._graph(user, pii, vault)  # the vault never enters the state or the model
                 state = {
                     "messages": [HumanMessage(content=masked)],
-                    "vault_seq": seq + len(vault),
+                    "vault_seq": seq + len(hidden),
+                    "issued": [*values.get("issued", []), *hidden][-200:],
                     "owner": user.user_id,
                     "department": user.department,
                     "role": user.role,

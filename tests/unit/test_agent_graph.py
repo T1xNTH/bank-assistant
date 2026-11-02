@@ -293,7 +293,7 @@ def test_checkpoint_file_never_stores_raw_pii(env):
     thread_id = pending_thread(env)
     svc, _ = env["service"]()
     svc.decide(thread_id, APPROVER, False, "Gọi 0912345678, CCCD 001204012345")
-    raw = env["checkpoints"].read_bytes()
+    raw = checkpoint_bytes(env)
     assert b"0912345678" not in raw and b"001204012345" not in raw
 
 
@@ -417,22 +417,71 @@ def test_masked_amount_reaches_the_calculator_but_never_the_model(env):
     assert result.answer_source == "tool"
 
 
-def test_placeholders_are_numbered_per_thread_and_old_ones_do_not_resolve(env):
-    stale = MASKED_LOAN  # the model reuses turn 1's placeholder in turn 2
-    svc, llm = env["service"]('{"answer": "Lãi suất bao nhiêu?"}', stale)
+def test_amount_from_an_earlier_turn_resolves_until_a_restart(env):
+    # The bot asks for the rate; the amount given one turn earlier must still work (review round 3, F-12).
+    svc, llm = env["service"]('{"answer": "Lãi suất và kỳ hạn bao nhiêu?"}', MASKED_LOAN)
     thread_id = svc.run(OWNER, "Vay 100.000.000 đồng").thread_id
     result = svc.run(OWNER, "12%/năm, 12 tháng, tài khoản 12345678", thread_id)
-    assert llm.calls[1][0][-1]["content"] == "12%/năm, 12 tháng, tài khoản <ACCOUNT_NUMBER_2>"
-    assert result.answer == (
-        "Chưa thực hiện được (tinh_lai_vay): số tiền ở tin nhắn trước đã được che, "
-        "anh/chị nhập lại số tiền trong tin nhắn này giúp."
+    assert llm.calls[1][0][-1]["content"] == "12%/năm, 12 tháng, tài khoản <ACCOUNT_NUMBER_2>"  # numbering goes on
+    assert "Khoản vay 100.000.000 đ" in result.answer
+    restarted, _ = env["service"](MASKED_LOAN)  # memory is gone, the checkpoint never had the value
+    assert restarted.run(OWNER, "Tính lại với 12%, 12 tháng", thread_id).answer == (
+        "Chưa thực hiện được (tinh_lai_vay): số tiền này không còn trong bộ nhớ, anh/chị nhập lại số tiền giúp."
     )
+
+
+def checkpoint_bytes(env):
+    # SqliteSaver writes through WAL: recent pages sit in -wal, not in the main file (review round 3, F-11).
+    return b"".join(path.read_bytes() for path in env["checkpoints"].parent.glob(env["checkpoints"].name + "*"))
+
+
+BAD_AMOUNT_ANSWER = (
+    "Chưa thực hiện được (tinh_lai_vay): không đọc chắc được số tiền, anh/chị viết riêng số tiền, "
+    "ví dụ '50.000.000 đồng' hoặc '50 triệu'."
+)
+
+
+@pytest.mark.parametrize(
+    ("message", "placeholder"),
+    [
+        ("SĐT 0912345678, CCCD 001204012345, lãi 12% 12 tháng", "<CCCD_2>"),
+        ("SĐT 0912345678, lãi 12% 12 tháng", "<PHONE_NUMBER_1>"),
+    ],
+    ids=["cccd", "phone"],
+)
+def test_phone_or_cccd_is_never_used_as_principal(env, message, placeholder):
+    # F-09: the CCCD became "Khoản vay 1.204.012.345 đ", unmasked and stored in the checkpoint.
+    reply = json.dumps(
+        {"tool": "tinh_lai_vay", "args": {"principal": placeholder, "annual_rate_percent": 12, "months": 12}}
+    )
+    svc, _ = env["service"](reply)
+    assert svc.run(OWNER, message).answer == BAD_AMOUNT_ANSWER
+    raw = checkpoint_bytes(env)
+    for digits in (b"001204012345", b"1204012345", b"0912345678", b"912345678"):
+        assert digits not in raw
+
+
+@pytest.mark.parametrize(
+    "message",
+    ["Vay 50.000.000 12 tháng 12%", "Vay 150.000.000 36 tháng 12%", "vay 100 000 000 12 tháng 12%"],
+    ids=["dots-then-term", "dots-then-36", "spaces"],
+)
+def test_amount_joined_with_another_number_is_not_guessed(env, message):
+    # F-10: "50.000.000 12" was read as 5.000.000.012 đ.
+    svc, _ = env["service"](MASKED_LOAN)
+    assert svc.run(OWNER, message).answer == BAD_AMOUNT_ANSWER
+
+
+def test_term_must_be_stated_as_a_term(env):
+    # F-12: months=12 used to pass because "12%" contains 12.
+    svc, _ = env["service"](MASKED_LOAN)
+    assert svc.run(OWNER, "Vay 100.000.000 đồng lãi 12%").answer == ("Anh/chị cho biết kỳ hạn của khoản vay giúp tôi.")
 
 
 def test_vault_is_not_stored_in_the_checkpoint(env):
     svc, _ = env["service"]('{"answer": "Anh/chị cần gì thêm?"}')
     svc.run(OWNER, "Số tài khoản 1234567890123 của tôi")
-    assert b"1234567890123" not in env["checkpoints"].read_bytes()
+    assert b"1234567890123" not in checkpoint_bytes(env)
 
 
 @pytest.mark.parametrize(
@@ -486,3 +535,11 @@ def test_stated_loan_terms_pass_the_check(env, message, rate, months):
     )
     svc, _ = env["service"](reply)
     assert svc.run(OWNER, message).answer.startswith("Khoản vay 100.000.000 đ")
+
+
+def test_placeholder_the_thread_never_issued_asks_for_the_amount(env):
+    # Live run: "Khách SĐT 0912345678 muốn vay, lãi 12% 12 tháng" -> qwen2.5:3b sent "<ACCOUNT_NUMBER_1>".
+    svc, _ = env["service"](MASKED_LOAN)
+    assert svc.run(OWNER, "Khách SĐT 0912345678 muốn vay, lãi 12% 12 tháng").answer == (
+        "Anh/chị cho biết số tiền vay của khoản vay giúp tôi."
+    )
