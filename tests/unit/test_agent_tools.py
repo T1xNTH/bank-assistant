@@ -123,3 +123,38 @@ def test_loan_tool_delegates_to_validated_calculator():
     assert tools.tinh_lai_vay(1000, 12, 2) == tinh_lai_vay(1000, 12, 2)
     with pytest.raises(ValueError):
         tools.tinh_lai_vay(-1, 12, 2)
+
+
+ESCAPED_PHONE = "".join(f"\\u{ord(c):04x}" for c in "0912345678")  # JSON \uXXXX for every digit
+
+
+def test_transaction_json_with_unicode_escaped_pii_is_masked(bank):
+    # PR #89 executor check: the escaped number survived require_mask_text and came back on json.loads.
+    with closing(sqlite3.connect(bank.path)) as connection, connection:
+        connection.execute(
+            "UPDATE transactions SET description = ? WHERE id = ?",
+            (f'{{"phone": "{ESCAPED_PHONE}", "note": "chuyển"}}', "0901234567"),
+        )
+    [row] = AgentTools(User("synthetic-user-1", "credit"), bank).tra_cuu_giao_dich("1234567890123")
+    assert json.loads(row["description"]) == {"phone": "<PHONE_NUMBER>", "note": "chuyển"}
+
+
+@pytest.mark.parametrize(
+    "summary",
+    [f'{{"phone": "{ESCAPED_PHONE}"}}', f'Gọi lại {{"phone":"{ESCAPED_PHONE}"}} giúp'],
+    ids=["json", "json-inside-text"],
+)
+def test_ticket_summary_with_unicode_escaped_pii_is_masked(summary):
+    proposal = AgentTools(User("user", "credit")).tao_ticket(summary)
+    assert "0912345678" not in proposal["summary"] and ESCAPED_PHONE not in proposal["summary"]
+    assert "<PHONE_NUMBER>" in proposal["summary"]
+
+
+def test_escaped_pii_masking_outage_returns_nothing(monkeypatch):
+    def unavailable(text):
+        raise RuntimeError(text)
+
+    monkeypatch.setattr(pii, "mask_text", unavailable)
+    with pytest.raises(MaskingError) as error:
+        AgentTools(User("user", "credit")).tao_ticket(f'{{"phone": "{ESCAPED_PHONE}"}}')
+    assert "0912345678" not in str(error.value) and ESCAPED_PHONE not in str(error.value)

@@ -65,3 +65,13 @@ def test_invalid_inputs(changes):
 
 def test_decimal_float_and_string_inputs_agree():
     assert tinh_lai_vay(1000.50, 7.5, 12) == tinh_lai_vay(Decimal("1000.50"), "7.5", 12)
+
+
+@pytest.mark.parametrize(
+    "annual,shown",
+    [("1E+1", "10"), ("-0", "0"), ("10.5000", "10.5"), (12, "12"), ("100", "100"), ("0E-999999", "0"),
+     ("1e-100", "1E-100")],
+)
+def test_annual_rate_is_shown_canonically(annual, shown):
+    # PR #89 F-02; a tiny accepted exponent must not expand into a huge fixed-point string.
+    assert tinh_lai_vay(1000, annual, 1)["annual_rate_percent"] == shown

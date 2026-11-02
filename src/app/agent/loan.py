@@ -22,6 +22,15 @@ def _number(value: int | float | str | Decimal, name: str) -> Decimal:
     return result
 
 
+def _rate_text(rate: Decimal) -> str:
+    """Canonical rate text: "1E+1" -> "10", "-0" -> "0", "10.5000" -> "10.5".
+
+    Fixed-point only down to 1e-20 so an accepted "1e-999999" stays short.
+    """
+    rate = rate.normalize() + 0  # + 0 turns -0 into 0
+    return format(rate, "f") if rate == 0 or rate.adjusted() >= -20 else str(rate)
+
+
 def tinh_lai_vay(
     principal: int | float | str | Decimal,
     annual_rate_percent: int | float | str | Decimal,
@@ -75,7 +84,7 @@ def tinh_lai_vay(
             total_interest += interest
         return {
             "method": method, "principal": f"{amount:.2f}",
-            "annual_rate_percent": str(annual), "months": months,
+            "annual_rate_percent": _rate_text(annual), "months": months,
             "total_interest": f"{total_interest:.2f}",
             "total_payment": f"{amount + total_interest:.2f}", "schedule": schedule,
         }

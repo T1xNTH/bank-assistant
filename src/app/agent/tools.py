@@ -10,7 +10,7 @@ import sqlite3
 from app.agent.core_banking import CoreBanking
 from app.agent.loan import tinh_lai_vay
 from app.contracts import User
-from app.security.masking import require_mask_text
+from app.security.masking import require_mask_content
 
 
 class ToolUnavailable(RuntimeError):
@@ -47,7 +47,7 @@ class AgentTools:
         except sqlite3.Error:
             raise ToolUnavailable("Transaction lookup unavailable") from None
         return [
-            {key: require_mask_text(value) if isinstance(value, str) else value for key, value in row.items()}
+            {key: require_mask_content(value) if isinstance(value, str) else value for key, value in row.items()}
             for row in rows
         ]
 
@@ -60,7 +60,7 @@ class AgentTools:
         if not isinstance(summary, str) or not summary.strip() or len(summary) > 2000:
             raise ValueError("summary must be non-empty text of at most 2000 characters")
         return {
-            "status": "pending", "created_by": require_mask_text(self._user.user_id),
-            "summary": require_mask_text(summary),
+            "status": "pending", "created_by": require_mask_content(self._user.user_id),
+            "summary": require_mask_content(summary),
         }
 

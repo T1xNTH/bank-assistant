@@ -70,12 +70,15 @@ the user identity, database path, SQL or approval decision.
   Decimal arithmetic, HALF_UP rounding to two decimals each month, and JSON string
   amounts; the final installment clears rounding residue. Fees and day-count
   conventions are excluded. For example, 1000 at 12% over two annuity months gives
-  payments 507.51 and 507.51, interest 15.02, total 1015.02.
+  payments 507.51 and 507.51, interest 15.02, total 1015.02. The returned
+  `annual_rate_percent` is canonical text (`"1E+1"` -> `"10"`, `"-0"` -> `"0"`).
 - `tra_cuu_giao_dich(account_id=None, limit=20)` uses the read-only store and the
   bound user, masks every returned string, and fails closed if masking fails.
+  JSON `\uXXXX` escapes are decoded before masking, so an escaped phone number in
+  a JSON description is masked too (escapes JSON requires stay, keeping JSON valid).
   A foreign account returns an empty list even for approver/service roles.
-- `tao_ticket(summary)` returns only a masked proposal with status `pending` and
-  never opens a database. Its masked `created_by` is a display field. The graph
+- `tao_ticket(summary)` returns only a masked proposal (same JSON-escape
+  masking) with status `pending` and never opens a database. Its masked `created_by` is a display field. The graph
   must keep the real owner in trusted authenticated state, interrupt for approval
   and call TicketStore only after resolving a valid decision. Role `approver` does
   not turn a proposal into a write or bypass the no-self-approval rule.
