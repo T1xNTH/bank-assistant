@@ -22,16 +22,16 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `45`
+- **Context Revision**: `46`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-02`
 - **Updated By**: `claude`
-- **Update Trigger**: `T-027: nhãn classification tổng hợp + test rò RBAC/superseded trên Qdrant thật; chuyển review`
+- **Update Trigger**: `Merge main b0eed4c (T-029 #89) vào PR #93; giữ T-027 review, T-028 done, T-029 review`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-010, E-011 EPIC_IN_PROGRESS; E-012..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-027 review (reviewer teammate-b); other M-002 tasks pending`
+- **Active Task IDs**: `T-027 review (PR #93, reviewer teammate-b); T-029 review; T-026 done; T-028 done; other M-002 tasks pending`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
@@ -40,7 +40,21 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Revision Provenance
 
-Revision 45 (claude cho trong-hung, 2026-11-02) bắt đầu T-027 từ main 7d878e1 (T-026 done, T-028 merged). Commit d199d78: 4 tài liệu có nhãn tổng hợp (2 confidential, 2 internal), ingest lại; tests/integration/test_rbac_leak.py 27 passed trên Qdrant thật; make check 843 passed/77 deselected. T-027 chuyển review, reviewer teammate-b theo quy tắc task của A do B review/QA/duyệt. Chưa có review độc lập hay done.
+Revision 46 (claude cho trong-hung, 2026-11-02) merges main b0eed4c (T-029 PR #89) into PR #93 (T-027). Hai nhánh cùng ghi revision 45: giữ cả hai đoạn bên dưới. Task board: T-027 review từ nhánh này; T-028 done và T-029 review từ main. Không có review, approval hay done mới.
+
+Revision 45 (nhánh T-027, claude cho trong-hung, 2026-11-02) bắt đầu T-027 từ main 7d878e1 (T-026 done, T-028 merged). Commit d199d78: 4 tài liệu có nhãn tổng hợp (2 confidential, 2 internal), ingest lại; tests/integration/test_rbac_leak.py 27 passed trên Qdrant thật; make check 843 passed/77 deselected. T-027 chuyển review, reviewer teammate-b theo quy tắc task của A do B review/QA/duyệt. Chưa có review độc lập hay done.
+
+Parallel revision 45 starts T-029 from main 6dd93c5 on feat/T-029-agent-tools, authorized by
+the user request for issue #70. Owner trong-hung retained; E-011 is in progress.
+T-028 reconciled to done from existing final-head counterpart approval and merged
+PR87, documented in T-029-dependency-closure.md; no new approval is claimed.
+Scope: Decimal loan schedules, user-bound readonly/masked transaction tool and
+pending-only ticket proposals. Contracts/graph/endpoints remain unchanged.
+
+Implementation fcbdc40 passed 55 focused tests and WSL make check: 898 passed /
+50 deselected, Ruff and framework pass. Report T-029.md complete; lifecycle CLI
+requested claude-review-a and moved the task to review. Actual independent Claude
+session and counterpart approval remain pending; no approval/done claim.
 
 Revision 44 (codex, 2026-11-02) merges main 1b22b70 into PR #88, preserving T-026 and T-028 review state and both epic starts. No approval or done transition is claimed.
 
