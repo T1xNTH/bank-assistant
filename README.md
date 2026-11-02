@@ -4,6 +4,31 @@ Internal assistant for bank staff: answers **only from internal documents** with
 
 > Status: **scaffold** — roadmap `R-001` is `ROADMAP_DRAFT` until DEC-001 is approved. MVP target: 10 working days, team of two.
 
+## Synthetic banking stores
+
+Run `python scripts/seed_core_banking.py` from the repository root to create
+`data/core_banking.db` with three synthetic users (`synthetic-user-1` through
+`synthetic-user-3`), one account each and five transactions per account. No real
+customer data is used. `--path PATH` selects another file; existing files are never
+overwritten. Amounts and balances use integer VND; transaction amounts are signed.
+
+`app.agent.core_banking.CoreBanking` opens SQLite with `mode=ro`; even SQL writes
+through its connection fail. `accounts(user)` and
+`transactions(user, account_id=None, limit=20)` filter by the authenticated `User`;
+roles do not grant access to other users' data. Transaction limits range from 1 to
+100, newest first. Use `CORE_BANKING_DB_PATH` to override the default path. The tool
+layer must supply the trusted user and mask output before returning it to an LLM.
+
+`app.agent.tickets.TicketStore.create(created_by, summary, approved_by, *, decision=...)`
+writes to `data/tickets.db` (`TICKETS_DB_PATH` overrides it). A `TicketDecision` must
+explicitly approve the exact creator and summary and identify an authenticated
+`User` with role `approver` matching `approved_by`. Missing, rejected or mismatched
+decisions fail before a database is opened. Created tickets have status `open` and
+a UTC timestamp. Construct decisions only in the trusted approval handler after
+resolving the pending proposal, never from model or tool arguments. Persistent
+decisions, thread ownership and replay prevention are integration work for T-030
+and T-031; these storage modules do not provide agent endpoints.
+
 ## Quick start
 ```bash
 make setup                     # .venv + dev deps
