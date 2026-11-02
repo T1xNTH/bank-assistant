@@ -27,6 +27,7 @@ import os
 import re
 import sqlite3
 import threading
+import time
 import uuid
 from collections import OrderedDict
 from collections.abc import Iterator
@@ -71,10 +72,24 @@ AMOUNT_PLACEHOLDER = re.compile(r"<ACCOUNT_NUMBER_\d+>")
 # Only a plain or dot-grouped number is an amount. The masker joins "50.000.000 12" (amount + term) or
 # "100 000 000" into one span; reading those as a principal gave 5.000.000.012 đ (review round 3, F-10).
 AMOUNT_TEXT = re.compile(r"\d+|\d{1,3}(?:\.\d{3})+")
-STALE_AMOUNT = "số tiền này không còn trong bộ nhớ, anh/chị nhập lại số tiền giúp"
+STALE_AMOUNT = (
+    "không dùng được số này làm số tiền vay (là số tài khoản, đã quá 30 phút hoặc hệ thống vừa khởi động lại), "
+    "anh/chị nhập lại số tiền, ví dụ '100.000.000 đồng'"
+)
 BAD_AMOUNT = "không đọc chắc được số tiền, anh/chị viết riêng số tiền, ví dụ '50.000.000 đồng' hoặc '50 triệu'"
 VAULT_THREADS = 1000  # threads whose masked amounts are kept in memory (least recently used dropped)
 VAULT_VALUES = 20  # amounts kept per thread
+VAULT_TTL_S = 30 * 60  # a masked amount is usable for 30 minutes
+# Amount or account? Both mask to <ACCOUNT_NUMBER_n> (review round 4, F-13). A value is kept as an amount
+# only when the text around its placeholder says so, and never right after an account label.
+_ACCOUNT_BEFORE = re.compile(
+    r"(?:\b(?:s[oố]\s*)?(?:stk|tk)|t[aà]i\s*kho[aả]n|account)\s*(?:s[oố])?\s*[:.#]?\s*$", re.IGNORECASE
+)
+_AMOUNT_BEFORE = re.compile(
+    r"(?:vay|s[oố]\s*ti[eề]n|ti[eề]n\s*g[oố]c|g[oố]c|t[ií]nh\s*l[aã]i(?:\s*cho)?)\s*(?:l[aà])?\s*[:=]?\s*$",
+    re.IGNORECASE,
+)
+_AMOUNT_AFTER = re.compile(r"^\s*(?:đ(?!\w)|đồng|dong\b|vnđ|vnd\b)", re.IGNORECASE)
 UNCLEAR = "Xin lỗi, tôi chưa hiểu yêu cầu. Anh/chị nói rõ hơn giúp tôi được không?"
 THREAD_ID = re.compile(r"[0-9a-f]{32}")
 UNAVAILABLE = (LLMError, AnswerUnavailable, ToolUnavailable, MaskingError, sqlite3.Error)
@@ -229,6 +244,24 @@ def unstated_loan_terms(args: dict, messages: list[AnyMessage]) -> list[str]:
         if value.is_finite() and value not in stated:
             missing.append(label)
     return missing
+
+
+def amounts_in(masked: str, hidden: dict[str, str]) -> dict[str, str]:
+    """The hidden ACCOUNT_NUMBER values whose placeholder the message marks as an amount.
+
+    Kept: "vay <ACCOUNT_NUMBER_1>", "số tiền: <...>", "<...> đồng/đ/VND". Never: "TK/STK/tài khoản <...>".
+    """
+    kept = {}
+    for placeholder, value in hidden.items():
+        at = masked.find(placeholder)
+        if not AMOUNT_PLACEHOLDER.fullmatch(placeholder) or at < 0:
+            continue
+        before, after = masked[max(0, at - 40) : at], masked[at + len(placeholder) :]
+        if _ACCOUNT_BEFORE.search(before):
+            continue
+        if _AMOUNT_BEFORE.search(before) or _AMOUNT_AFTER.match(after):
+            kept[placeholder] = value
+    return kept
 
 
 def model_messages(state: AgentState) -> list[dict]:
@@ -493,12 +526,11 @@ class AgentService:
         self.bank = bank if bank is not None else CoreBanking()
         self.tickets = tickets if tickets is not None else TicketStore()
         self.checkpointer = checkpointer if checkpointer is not None else sqlite_checkpointer()
-        self._locks: dict[str, list] = {}
-        # thread_id -> {placeholder: amount text}: masked amounts, memory only, so "Vay 100.000.000" then
-        # "12%, 12 tháng" works across turns. Only ACCOUNT_NUMBER values; lost on restart (STALE_AMOUNT).
-        self._vaults: OrderedDict[str, dict[str, str]] = (
-            OrderedDict()
-        )  # thread_id -> [lock, users]; removed when no call holds or waits
+        self._locks: dict[str, list] = {}  # thread_id -> [lock, users]; removed when no call holds or waits
+        # thread_id -> {placeholder: (amount text, time stored)}: masked amounts, memory only, so
+        # "Vay 100.000.000 đồng" then "12%, 12 tháng" works across turns. Only values the message marks as an
+        # amount (amounts_in); dropped after VAULT_TTL_S and on restart (STALE_AMOUNT).
+        self._vaults: OrderedDict[str, dict[str, tuple[str, float]]] = OrderedDict()
         self._guard = threading.Lock()
 
     @contextmanager
@@ -515,15 +547,16 @@ class AgentService:
                 if entry[1] == 0:
                     del self._locks[thread_id]
 
-    def _remember(self, thread_id: str, hidden: dict[str, str]) -> dict[str, str]:
+    def _remember(self, thread_id: str, masked: str, hidden: dict[str, str]) -> dict[str, str]:
+        now = time.monotonic()
         with self._guard:
-            vault = self._vaults.pop(thread_id, {})
-            vault.update((k, v) for k, v in hidden.items() if AMOUNT_PLACEHOLDER.fullmatch(k))
+            vault = {k: v for k, v in self._vaults.pop(thread_id, {}).items() if now - v[1] < VAULT_TTL_S}
+            vault.update((k, (v, now)) for k, v in amounts_in(masked, hidden).items())
             vault = dict(list(vault.items())[-VAULT_VALUES:])
             self._vaults[thread_id] = vault
             while len(self._vaults) > VAULT_THREADS:
                 self._vaults.popitem(last=False)
-            return dict(vault)
+            return {k: v for k, (v, _) in vault.items()}
 
     def _graph(self, user: User, pii: list[str], vault: dict[str, str] | None = None):
         return build_graph(
@@ -579,7 +612,7 @@ class AgentService:
                 seq = values.get("vault_seq", 0)
                 masked, types, hidden = require_mask_numbered(message, start=seq)
                 pii = sorted(set(values.get("pii", [])) | set(types))
-                vault = self._remember(thread_id, hidden)
+                vault = self._remember(thread_id, masked, hidden)
                 graph = self._graph(user, pii, vault)  # the vault never enters the state or the model
                 state = {
                     "messages": [HumanMessage(content=masked)],

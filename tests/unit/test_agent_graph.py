@@ -425,9 +425,8 @@ def test_amount_from_an_earlier_turn_resolves_until_a_restart(env):
     assert llm.calls[1][0][-1]["content"] == "12%/năm, 12 tháng, tài khoản <ACCOUNT_NUMBER_2>"  # numbering goes on
     assert "Khoản vay 100.000.000 đ" in result.answer
     restarted, _ = env["service"](MASKED_LOAN)  # memory is gone, the checkpoint never had the value
-    assert restarted.run(OWNER, "Tính lại với 12%, 12 tháng", thread_id).answer == (
-        "Chưa thực hiện được (tinh_lai_vay): số tiền này không còn trong bộ nhớ, anh/chị nhập lại số tiền giúp."
-    )
+    stale = restarted.run(OWNER, "Tính lại với 12%, 12 tháng", thread_id).answer
+    assert stale == f"Chưa thực hiện được (tinh_lai_vay): {agent_graph.STALE_AMOUNT}."
 
 
 def checkpoint_bytes(env):
@@ -543,3 +542,66 @@ def test_placeholder_the_thread_never_issued_asks_for_the_amount(env):
     assert svc.run(OWNER, "Khách SĐT 0912345678 muốn vay, lãi 12% 12 tháng").answer == (
         "Anh/chị cho biết số tiền vay của khoản vay giúp tôi."
     )
+
+
+# F-13 (review round 4): an account number is never used as the loan amount
+
+
+def loan_with(placeholder):
+    return json.dumps(
+        {"tool": "tinh_lai_vay", "args": {"principal": placeholder, "annual_rate_percent": 12, "months": 12}}
+    )
+
+
+@pytest.mark.parametrize(
+    "first",
+    [
+        "Vay 100.000.000, TK 87654321",
+        "Vay 100.000.000 đồng vào STK 87654321",
+        "Vay 100.000.000 đ, tài khoản số 87654321",
+    ],
+    ids=["tk", "stk", "tai-khoan"],
+)
+def test_account_number_is_never_the_principal(env, first):
+    svc, _ = env["service"](
+        '{"answer": "Lãi suất, kỳ hạn?"}', loan_with("<ACCOUNT_NUMBER_2>"), loan_with("<ACCOUNT_NUMBER_1>")
+    )
+    thread_id = svc.run(OWNER, first).thread_id
+    wrong = svc.run(OWNER, "12% 12 tháng", thread_id)
+    assert wrong.answer == f"Chưa thực hiện được (tinh_lai_vay): {agent_graph.STALE_AMOUNT}."
+    right = svc.run(OWNER, "12% 12 tháng", thread_id)
+    assert "Khoản vay 100.000.000 đ" in right.answer
+    assert b"87654321" not in checkpoint_bytes(env)
+
+
+@pytest.mark.parametrize(
+    ("message", "kept"),
+    [
+        ("Vay 100.000.000, TK 87654321", {"<ACCOUNT_NUMBER_1>": "100.000.000"}),
+        ("Khoản vay 250.000.000 VND", {"<ACCOUNT_NUMBER_1>": "250.000.000"}),
+        ("Tôi muốn vay số tiền là 300.000.000", {"<ACCOUNT_NUMBER_1>": "300.000.000"}),
+        ("Tiền gốc: 120.000.000", {"<ACCOUNT_NUMBER_1>": "120.000.000"}),
+        ("Số tài khoản 12345678 muốn vay", {}),
+        ("STK: 1234567890", {}),
+        ("Giao dịch 12345678 hôm qua", {}),
+        ("tk 12345678 đ", {}),
+    ],
+    ids=["vay-then-tk", "vnd", "so-tien-la", "tien-goc", "tai-khoan", "stk", "no-context", "tk-then-d"],
+)
+def test_only_values_marked_as_amounts_are_kept(message, kept):
+    from app.security.masking import require_mask_numbered
+
+    masked, _, hidden = require_mask_numbered(message)
+    assert agent_graph.amounts_in(masked, hidden) == kept
+
+
+def test_masked_amount_expires_after_thirty_minutes(env, monkeypatch):
+    clock = [1000.0]
+    monkeypatch.setattr(agent_graph.time, "monotonic", lambda: clock[0])
+    svc, _ = env["service"]('{"answer": "Lãi suất, kỳ hạn?"}', MASKED_LOAN, MASKED_LOAN)
+    thread_id = svc.run(OWNER, "Vay 100.000.000 đồng").thread_id
+    clock[0] += 29 * 60
+    assert "Khoản vay 100.000.000 đ" in svc.run(OWNER, "12% 12 tháng", thread_id).answer
+    clock[0] += 31 * 60
+    expired = svc.run(OWNER, "Tính lại 12% 12 tháng", thread_id).answer
+    assert expired == f"Chưa thực hiện được (tinh_lai_vay): {agent_graph.STALE_AMOUNT}."
