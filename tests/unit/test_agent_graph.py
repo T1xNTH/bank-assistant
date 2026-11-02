@@ -6,6 +6,7 @@ Real graph, real SqliteSaver, real synthetic core banking and ticket SQLite file
 import json
 import sqlite3
 import threading
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 
@@ -320,3 +321,81 @@ def test_decision_arguments_are_validated(env):
     with pytest.raises(ValueError):
         svc.decide(thread_id, APPROVER, True, "x" * 501)
     assert json.loads(json.dumps(svc.run(OWNER, "x", thread_id).pending_action))["tool"] == "tao_ticket"
+
+
+# Review claude-review-a round 1 (F-01..F-04)
+
+
+def test_rag_answer_from_confidential_chunks_keeps_later_turns_local(env):
+    # F-01: the Answerer routed local; its answer is in the history the next turn sends to the model.
+    env["answerer"].retriever.hits = [Hit("d2", "luong-noi-bo.pdf", 3, "Bậc 3", 0.9, "credit", "confidential")]
+    svc, llm = env["service"](DOCS, '{"answer": "Không có gì."}')
+    thread_id = svc.run(OWNER, "Lương bậc 3 là bao nhiêu?").thread_id
+    svc.run(OWNER, "Cảm ơn", thread_id)
+    assert [alias for _, alias in llm.calls] == ["cloud-chat", "local-chat"]
+
+
+def test_public_rag_answer_keeps_cloud(env):
+    svc, llm = env["service"](DOCS, '{"answer": "Không có gì."}')
+    thread_id = svc.run(OWNER, "Phí thẻ?").thread_id
+    svc.run(OWNER, "Cảm ơn", thread_id)
+    assert [alias for _, alias in llm.calls] == ["cloud-chat", "cloud-chat"]
+
+
+@pytest.mark.parametrize("ref", [["TK1"], {"a": 1}, 1])
+def test_non_text_account_ref_is_an_error_message(env, ref):
+    # F-02: a list from the model used to raise "unhashable type" (a 500).
+    reply = json.dumps({"tool": "tra_cuu_giao_dich", "args": {"account_ref": ref}})
+    svc, _ = env["service"](reply)
+    assert svc.run(OWNER, "Giao dịch").answer.startswith("Chưa thực hiện được (tra_cuu_giao_dich): account_ref")
+
+
+def test_lone_surrogates_never_reach_the_checkpoint(env):
+    # F-02: msgpack cannot store them; the client gets 422, model text is repaired.
+    svc, _ = env["service"](
+        '{"answer": "Chào \\ud800 bạn"}', '{"tool": "tao_ticket", "args": {"summary": "Lỗi \\udc00 app"}}'
+    )
+    with pytest.raises(ValueError):
+        svc.run(OWNER, "Xin chào \ud800")
+    assert svc.run(OWNER, "Xin chào").answer == "Chào ? bạn"
+    pending = svc.run(OWNER, "Tạo ticket")
+    assert pending.pending_action == {"tool": "tao_ticket", "args": {"summary": "Lỗi ? app"}}
+    with pytest.raises(ValueError):
+        svc.decide(pending.thread_id, APPROVER, False, "Không \ud800")
+
+
+class FlakyTickets(TicketStore):
+    def __init__(self, path, failures):
+        super().__init__(path)
+        self.failures = failures
+
+    def create(self, *args, **kwargs):
+        if self.failures:
+            self.failures -= 1
+            raise sqlite3.OperationalError("database is locked")
+        return super().create(*args, **kwargs)
+
+
+def test_failed_ticket_write_keeps_the_action_pending_for_a_retry(env, tmp_path):
+    # F-03: the decision used to be lost (409 on retry, no ticket, owner's next message dropped it).
+    thread_id = pending_thread(env)
+    flaky = FlakyTickets(tmp_path / "flaky.db", failures=1)
+    svc, _ = env["service"]()
+    svc.tickets = flaky
+    with pytest.raises(AgentUnavailable, match=r"\(ticket store\)"):
+        svc.decide(thread_id, APPROVER, True)
+    again = svc.run(OWNER, "Sao rồi?", thread_id)
+    assert again.status == "pending_approval"
+    assert again.pending_action == {"tool": "tao_ticket", "args": {"summary": "Khách báo mất thẻ, SĐT <PHONE_NUMBER>"}}
+    assert svc.decide(thread_id, APPROVER, True).answer.startswith("Đã tạo ticket #1")
+    assert len(ticket_rows(flaky)) == 1
+
+
+def test_thread_locks_are_released(env):
+    # F-04: random thread ids from any user used to grow the lock table for ever.
+    svc, _ = env["service"](DOCS)
+    svc.run(OWNER, "Phí thẻ?")
+    for _ in range(50):
+        with pytest.raises(ThreadNotFound):
+            svc.run(OWNER, "x", uuid.uuid4().hex)
+    assert svc._locks == {}

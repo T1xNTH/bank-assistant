@@ -98,6 +98,22 @@ class AgentState(TypedDict, total=False):
     sensitive: bool
     answer: str | None
     decision: dict | None
+    ticket_failed: bool  # the approved write failed; the thread waits for a decision again
+
+
+def _clean(text: str) -> str:
+    """Drop lone surrogates (e.g. a JSON "\\ud800" from the model): the checkpoint cannot store them."""
+    return text.encode("utf-8", "replace").decode("utf-8")
+
+
+def _is_text(value: Any, limit: int) -> bool:
+    if not isinstance(value, str) or not value.strip() or len(value) > limit:
+        return False
+    try:
+        value.encode("utf-8")
+    except UnicodeEncodeError:
+        return False
+    return True
 
 
 # Formatting
@@ -206,7 +222,7 @@ class _BoundTools:
         if type(limit) is not int or not 1 <= limit <= 100:
             return {"error": "limit must be an integer between 1 and 100"}
         refs = self._refs()
-        if account_ref is not None and account_ref not in refs:
+        if account_ref is not None and (not isinstance(account_ref, str) or account_ref not in refs):
             return {"error": f"account_ref must be one of: {', '.join(refs) or 'none'}"}
         rows = []
         for ref, account_id in refs.items():
@@ -222,7 +238,8 @@ class _BoundTools:
         masked, types = require_mask_content_types(question)
         result = self.answerer.answer(masked, self.user, force_local=bool(self.pii or types))
         citations = [{"n": c.n, "source": c.source, "page": c.page} for c in result.citations]
-        return {"ok": {"answer": result.answer, "found": result.found, "route": result.route, "citations": citations}}
+        answer = _clean(result.answer)
+        return {"ok": {"answer": answer, "found": result.found, "route": result.route, "citations": citations}}
 
     def as_langchain(self) -> list[StructuredTool]:
         return [StructuredTool.from_function(getattr(self, name), name=name, description=name) for name in READ_TOOLS]
@@ -239,10 +256,10 @@ def build_graph(
         reply = parse_reply(llm.chat(model_messages(state), alias).text)
         # app.llm masks replies already; mask again so no LLM implementation can put PII in the checkpoint.
         if isinstance(reply, str):
-            reply = require_mask_content(reply)
+            reply = require_mask_content(_clean(reply))  # after json.loads, which decodes "\ud800"
             return {"messages": [AIMessage(content=reply)], "answer": reply}
         name, args = reply
-        args = {key: require_mask_content(value) if isinstance(value, str) else value for key, value in args.items()}
+        args = {key: require_mask_content(_clean(v)) if isinstance(v, str) else v for key, v in args.items()}
         call = {"name": name, "args": args, "id": f"call_{uuid.uuid4().hex[:12]}", "type": "tool_call"}
         return {"messages": [AIMessage(content="", tool_calls=[call])]}
 
@@ -264,7 +281,12 @@ def build_graph(
         else:
             answer = render_rag(data["ok"])
         update: dict = {"messages": [AIMessage(content=answer)], "answer": answer}
-        if message.name == "tra_cuu_giao_dich" and "ok" in data:
+        # Customer transactions, or a RAG answer the Answerer routed local (confidential chunks), now sit in
+        # the history that later turns send to the model: keep those turns on local-chat (security-design).
+        if "ok" in data and (
+            message.name == "tra_cuu_giao_dich"
+            or (message.name == "tra_cuu_tai_lieu" and data["ok"]["route"] == "local")
+        ):
             update["sensitive"] = True
         return update
 
@@ -284,24 +306,38 @@ def build_graph(
     def after_propose(state: AgentState) -> str:
         return "create_ticket" if state.get("decision") else END
 
+    def after_create(state: AgentState) -> str:
+        return "propose" if state.get("ticket_failed") else END
+
     def create_ticket(state: AgentState) -> dict:
         decision = state["decision"]
         summary = decision["summary"]
         if decision["approve"] is True:
             approver = User(**decision["approver"])
-            row = tickets.create(
-                state["owner"],
-                summary,
-                approver.user_id,
-                decision=TicketDecision(created_by=state["owner"], summary=summary, approver=approver, approved=True),
-            )
+            try:
+                row = tickets.create(
+                    state["owner"],
+                    summary,
+                    approver.user_id,
+                    decision=TicketDecision(
+                        created_by=state["owner"], summary=summary, approver=approver, approved=True
+                    ),
+                )
+            except (sqlite3.Error, OSError):
+                # Nothing was written: ask again (propose interrupts anew) so the approver can retry.
+                return {"decision": None, "ticket_failed": True}
             answer = f"Đã tạo ticket #{row['id']} (trạng thái {row['status']}) sau khi người duyệt đồng ý."
         else:
             answer = "Người duyệt đã từ chối, không tạo ticket."
         if decision.get("comment"):
             answer += f" Ghi chú của người duyệt: {decision['comment']}"
         tool_message = ToolMessage(content=answer, tool_call_id=decision["call_id"], name="tao_ticket")
-        return {"messages": [tool_message, AIMessage(content=answer)], "answer": answer, "decision": None}
+        return {
+            "messages": [tool_message, AIMessage(content=answer)],
+            "answer": answer,
+            "decision": None,
+            "ticket_failed": False,
+        }
 
     graph = StateGraph(AgentState)
     graph.add_node("agent", agent)
@@ -314,7 +350,7 @@ def build_graph(
     graph.add_edge("tools", "render")
     graph.add_edge("render", END)
     graph.add_conditional_edges("propose", after_propose, ["create_ticket", END])
-    graph.add_edge("create_ticket", END)
+    graph.add_conditional_edges("create_ticket", after_create, ["propose", END])
     return graph.compile(checkpointer=checkpointer)
 
 
@@ -358,15 +394,22 @@ class AgentService:
         self.bank = bank if bank is not None else CoreBanking()
         self.tickets = tickets if tickets is not None else TicketStore()
         self.checkpointer = checkpointer if checkpointer is not None else sqlite_checkpointer()
-        self._locks: dict[str, threading.Lock] = {}
+        self._locks: dict[str, list] = {}  # thread_id -> [lock, users]; removed when no call holds or waits
         self._guard = threading.Lock()
 
     @contextmanager
     def _lock(self, thread_id: str) -> Iterator[None]:
         with self._guard:
-            lock = self._locks.setdefault(thread_id, threading.Lock())
-        with lock:
-            yield
+            entry = self._locks.setdefault(thread_id, [threading.Lock(), 0])
+            entry[1] += 1
+        try:
+            with entry[0]:
+                yield
+        finally:
+            with self._guard:
+                entry[1] -= 1
+                if entry[1] == 0:
+                    del self._locks[thread_id]
 
     def _graph(self, user: User, pii: list[str]):
         return build_graph(
@@ -403,8 +446,8 @@ class AgentService:
     def run(self, user: User, message: str, thread_id: str | None = None) -> AgentResult:
         if not isinstance(user, User) or not isinstance(user.user_id, str) or not user.user_id.strip():
             raise ValueError("Authenticated user required")
-        if not isinstance(message, str) or not message.strip() or len(message) > MAX_MESSAGE:
-            raise ValueError(f"message must be 1..{MAX_MESSAGE} characters")
+        if not _is_text(message, MAX_MESSAGE):
+            raise ValueError(f"message must be 1..{MAX_MESSAGE} characters of valid text")
         if thread_id is not None and (not isinstance(thread_id, str) or not THREAD_ID.fullmatch(thread_id)):
             raise ThreadNotFound("Unknown thread")  # ids are server-made; a client cannot pick one
         try:
@@ -439,7 +482,9 @@ class AgentService:
             raise PermissionError("Approver role required")
         if not isinstance(approve, bool):
             raise ValueError("approve must be a boolean")
-        if comment is not None and (not isinstance(comment, str) or len(comment) > MAX_COMMENT):
+        if comment is not None and (
+            not isinstance(comment, str) or len(comment) > MAX_COMMENT or _clean(comment) != comment
+        ):
             raise ValueError(f"comment must be at most {MAX_COMMENT} characters")
         if not isinstance(thread_id, str) or not THREAD_ID.fullmatch(thread_id):
             raise ThreadNotFound("Unknown thread")
@@ -462,6 +507,9 @@ class AgentService:
                     "approver": {"user_id": approver.user_id, "department": approver.department, "role": approver.role},
                 }
                 graph.invoke(Command(resume=decision), self._config(thread_id))
-                return self._result(thread_id, graph.get_state(self._config(thread_id)))
+                snapshot = graph.get_state(self._config(thread_id))
+                if snapshot.values.get("ticket_failed"):  # still pending: the approver may decide again
+                    raise AgentUnavailable("agent unavailable (ticket store)")
+                return self._result(thread_id, snapshot)
         except UNAVAILABLE as exc:
             raise AgentUnavailable(f"agent unavailable ({type(exc).__name__})") from None
