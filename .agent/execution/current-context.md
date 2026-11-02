@@ -22,7 +22,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `40`
+- **Context Revision**: `41`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-02`
 - **Updated By**: `trong-hung`
@@ -30,8 +30,8 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-010..E-016 (EPIC_READY; chuyển EPIC_IN_PROGRESS khi task đầu tiên của epic bắt đầu). E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `none (T-026..T-043 pending). Bắt đầu N6: T-026, T-035, T-037; N7–N8 theo dependency`
+- **Active Epic IDs**: `E-010 EPIC_IN_PROGRESS; E-011..E-016 (EPIC_READY; chuyển EPIC_IN_PROGRESS khi task đầu tiên của epic bắt đầu). E-001..E-009 EPIC_DONE`
+- **Active Task IDs**: `T-026 (review, nhánh feat/T-026-routing; chờ review độc lập claude-review-a và B approve CR-003 C-1 trên PR). T-027..T-043 pending; N6 còn T-035, T-037`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
@@ -39,6 +39,8 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Current Session ID**: `S-20261102-close-m001-open-m002`
 
 ## Revision Provenance
+
+Revision 41 (claude cho trong-hung, 2026-11-02) bắt đầu T-026 từ main 8f737da: E-010 EPIC_IN_PROGRESS; A duyệt CR-003 C-1 (force_local) trong hội thoại, B duyệt qua PR. Commit 9217697: make check 797 passed/50 deselected. T-026 chuyển review, chưa có review độc lập.
 
 Revision 40 (trong-hung, 2026-11-02) đóng M-001: review sau merge cho T-013, T-025 (claude-review-a), bản lưu review PR cho T-015, T-021, T-024; T-002, T-013, T-023, T-025 done; QA cấp epic E-001..E-009 pass trên main 3b778ea (make check 765 passed, pytest -m integration 50 passed, make up healthy); E-001..E-009 EPIC_DONE; M-001 completed; REL-001 v0.1 ready (tag sau merge). Mở M-002: milestone ready, R-001 ROADMAP_ACTIVE, E-010..E-016 EPIC_READY, 18 task T-026..T-043. ISSUE-027, ISSUE-028 mở, sửa ở T-037.
 
