@@ -90,3 +90,4 @@ priority: 3
 | `T-030` | `096727c` | `#94` | `.agent/reports/review/T-030.md` | `Sửa review vòng 3: F-09 chỉ ACCOUNT_NUMBER làm principal, F-10 định dạng số tiền chặt, F-11 test đọc WAL, F-12 kỳ hạn/lãi theo ngữ cảnh + nhớ số tiền theo thread trong bộ nhớ; make check 974 passed` |
 | `T-030` | `00a5676` | `#94` | `.agent/reports/implementation/T-030.md` | `F-13 (A chọn cách 2): số tài khoản không bao giờ thành số tiền vay (amounts_in theo ngữ cảnh), TTL 30 phút; make check 986 passed; chờ review vòng 5` |
 | `T-030` | `22ab6f9` | `#94` | `.agent/reports/review/T-030.md` | `F-15/F-16 (review vòng 5): số tiền xét theo mệnh đề, nhãn tài khoản ở đâu trong mệnh đề cũng loại, 'đồng thời/đồng ý' không phải tiền; make check 1002 passed` |
+| `T-030` | `14f32c7` | `#94` | `.agent/reports/review/T-030.md` | `F-17 (review vòng 6): từ chỉ số tiền phải gần số, loại số sau vào/qua/về số, nhãn hợp đồng/mã/CIF; make check 1011 passed` |
