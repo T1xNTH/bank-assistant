@@ -79,3 +79,6 @@ priority: 3
 | `T-026` | `9217697` | `feat/T-026-routing` | `.agent/reports/implementation/T-026.md` | `decide_route + force_local trong Answerer (CR-003 C-1); /ask và worker route local khi có PII/chunk confidential; make check 797 passed/50 deselected; review độc lập và B approve đang chờ` |
 
 | `T-026` | `e821c94` | `#88` | `.agent/reports/implementation/T-026-PR88-fixes.md` | `PR88 P2: worker fail-closed route local cho payload cũ có placeholder/PII sót; make check 802 passed/50 deselected; worker integration 5 passed; re-review pending` |
+| `T-028` | `ecc4293` | `feat/T-028-sqlite-stores; issue #69` | `.agent/reports/implementation/T-028.md` | `Deterministic synthetic seed, readonly user-scoped SQLite and matching approver decision required for ticket writes; 35 focused tests passed; independent Claude review pending` |
+| `T-028` | `53834e4` | `#87; issue #69` | `.agent/reports/implementation/T-028-PR87-fixes.md` | `Atomic no-overwrite seed publication and failure/concurrency regressions; document Docker seed setup ownership and synthetic-user key generation; self-approval policy awaits A` |
+| `T-028` | `ffebd22` | `#87; issue #69` | `.agent/reports/implementation/T-028-PR87-self-approval.md` | `Apply owner A decision: reject self-approval before DB access; no-new-DB and unchanged-existing-DB regressions; 41 focused tests passed; re-review pending` |
