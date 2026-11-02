@@ -39,7 +39,7 @@ def test_ticket_schema_and_durable_approved_row(tmp_path, decision):
 
 
 @pytest.mark.parametrize("kind", [
-    "missing", "reject", "staff", "service", "other-user", "other-summary", "other-approver", "dict",
+    "missing", "reject", "staff", "service", "other-user", "other-summary", "other-approver", "dict", "self-approval",
 ])
 def test_invalid_decision_does_not_even_create_database(tmp_path, decision, kind):
     path = tmp_path / "uncreated" / "tickets.db"
@@ -58,27 +58,32 @@ def test_invalid_decision_does_not_even_create_database(tmp_path, decision, kind
         supplied = replace(decision, approver=replace(decision.approver, user_id="another-reviewer"))
     elif kind == "dict":
         supplied = {"approved": True, "approved_by": "reviewer"}
+    elif kind == "self-approval":
+        decision = supplied = replace(decision, created_by="reviewer")
     with pytest.raises(PermissionError):
         TicketStore(path).create(decision.created_by, decision.summary, "reviewer", decision=supplied)
     assert not path.parent.exists()
 
 
-def test_rejected_write_preserves_existing_rows(tmp_path, decision):
+@pytest.mark.parametrize("self_approval", [False, True])
+def test_rejected_write_preserves_existing_rows(tmp_path, decision, self_approval):
     path = tmp_path / "tickets.db"
     store = TicketStore(path)
     create(store, decision)
     before = path.read_bytes()
     with pytest.raises(PermissionError):
-        create(store, replace(decision, approved=False))
+        create(store, replace(decision, created_by="reviewer") if self_approval else replace(decision, approved=False))
     assert path.read_bytes() == before
 
 
 def test_ticket_text_is_parameterized(tmp_path, decision):
     attack = "'); DROP TABLE tickets; --"
-    approved = replace(decision, created_by=attack, summary=attack, approver=replace(decision.approver, user_id=attack))
+    approved = replace(decision, created_by=attack, summary=attack,
+                       approver=replace(decision.approver, user_id=attack + " approver"))
     store = TicketStore(tmp_path / "tickets.db")
     row = create(store, approved)
-    assert row["summary"] == row["created_by"] == row["approved_by"] == attack
+    assert row["summary"] == row["created_by"] == attack
+    assert row["approved_by"] == attack + " approver"
     assert create(store, decision)["id"] == 2
 
 

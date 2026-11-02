@@ -47,7 +47,8 @@ layer must supply the trusted user and mask output before returning it to an LLM
 `app.agent.tickets.TicketStore.create(created_by, summary, approved_by, *, decision=...)`
 writes to `data/tickets.db` (`TICKETS_DB_PATH` overrides it). A `TicketDecision` must
 explicitly approve the exact creator and summary and identify an authenticated
-`User` with role `approver` matching `approved_by`. Missing, rejected or mismatched
+`User` with role `approver` matching `approved_by`. The approver must be a different
+user from `created_by`; users cannot approve their own tickets. Missing, rejected or mismatched
 decisions fail before a database is opened. Created tickets have status `open` and
 a UTC timestamp. Construct decisions only in the trusted approval handler after
 resolving the pending proposal, never from model or tool arguments. Persistent

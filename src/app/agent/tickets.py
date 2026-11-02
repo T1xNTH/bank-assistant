@@ -21,6 +21,7 @@ class TicketDecision:
 
     The graph/endpoint must authenticate approver and resolve its pending proposal
     before constructing this value. Pending proposals alone cannot write tickets.
+    The approver must be a different user from created_by; self-approval is denied.
     Thread ownership, decision persistence and replay prevention belong to T-030/31.
     """
 
@@ -42,6 +43,8 @@ class TicketStore:
         approved_by alone is insufficient. Validate before opening/creating a DB.
         No arbitrary SQL or write connection is exposed to the agent tool layer.
         """
+        if any(not isinstance(value, str) or not value.strip() for value in (created_by, summary, approved_by)):
+            raise ValueError("created_by, summary and approved_by must be non-empty strings")
         if (
             not isinstance(decision, TicketDecision)
             or decision.approved is not True
@@ -50,10 +53,9 @@ class TicketStore:
             or decision.approver.user_id != approved_by
             or decision.created_by != created_by
             or decision.summary != summary
+            or decision.approver.user_id == created_by
         ):
             raise PermissionError("A matching approver decision is required")
-        if any(not isinstance(value, str) or not value.strip() for value in (created_by, summary, approved_by)):
-            raise ValueError("created_by, summary and approved_by must be non-empty strings")
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with closing(sqlite3.connect(self.path, timeout=10)) as connection, connection:
             connection.row_factory = sqlite3.Row
