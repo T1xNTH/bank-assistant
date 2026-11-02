@@ -505,3 +505,7 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261102-130036` | `2026-11-02` | `2026-11-02` | `claude-review-a` | `T-026` | `completed` | `review started` | `.agent/reports/review/T-026.md` | `none` |
 | `S-20261102-130257` | `2026-11-02` | `2026-11-02` | `claude-review-a` | `T-026` | `completed` | `review approved` | `.agent/reports/review/T-026.md` | `none` |
 | `S-20261102-140540` | `2026-11-02` | `2026-11-02` | `trong-hung` | `T-026` | `completed` | `task review -> done` | `.agent/reports/review/T-026.md` | `none` |
+| `S-20261102-143558` | `2026-11-02` | `2026-11-02` | `trong-hung` | `T-027` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
+| `S-20261102-143840` | `2026-11-02` | `2026-11-02` | `claude` | `T-027` | `completed` | `verify '.venv/bin/python -m pytest -m integration tests/integration/test_rbac_leak.py -q' passed` | `.agent/reports/implementation/T-027.md` | `none` |
+| `S-20261102-143907` | `2026-11-02` | `2026-11-02` | `claude` | `T-027` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-027.md` | `none` |
+| `S-20261102-143907-2` | `2026-11-02` | `2026-11-02` | `claude` | `T-027` | `completed` | `review requested from teammate-b` | `.agent/reports/implementation/T-027.md` | `none` |
