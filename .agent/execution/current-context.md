@@ -22,23 +22,35 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `38`
+- **Context Revision**: `39`
 - **Context Status**: `current`
-- **Last Updated**: `2026-10-30`
+- **Last Updated**: `2026-10-31`
 - **Updated By**: `codex-b`
-- **Update Trigger**: `User-requested issue #25 implementation from main 8267cd6`
+- **Update Trigger**: `User-requested issue #26 T-025 implementation from main 4a2f481; T-024 closure from owner-approved merged PR63`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_APPROVED`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 merged in main); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 done, T-013 review); E-006 (EPIC_IN_PROGRESS; T-014 done, T-015 done); E-004 (EPIC_IN_PROGRESS; T-016 done, T-017 review); E-007 (EPIC_IN_PROGRESS; T-020 done, T-021 done); E-008 (EPIC_IN_PROGRESS; T-022 review); E-009 (EPIC_IN_PROGRESS; T-024 review)`
-- **Active Task IDs**: `T-002, T-013, T-017, T-022, T-024`
+- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 merged in main); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 done, T-013 review); E-006 (EPIC_IN_PROGRESS; T-014 done, T-015 done); E-004 (EPIC_IN_PROGRESS; T-016 done, T-017 review); E-007 (EPIC_IN_PROGRESS; T-020 done, T-021 done); E-008 (EPIC_IN_PROGRESS; T-022 review); E-009 (EPIC_IN_PROGRESS; T-024 done, T-025 review)`
+- **Active Task IDs**: `T-002, T-013, T-017, T-022, T-025`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261030-t024-implementation`
+- **Current Session ID**: `S-20261031-t025-implementation`
 
 ## Revision Provenance
+
+Revision 39 starts T-025 (issue 26) from main 4a2f481. T-024 closure is reconciled
+from the other owner's existing approval, separate Claude re-review and merged PR63;
+evidence is T-025-dependency-closure.md. E-009 remains in progress. T-025 implements
+worker token bucket, bounded 429 retries, priority queues, per-key enqueue limits,
+waiting TTL and Compose worker; no independent review or completion is claimed.
+
+T-025 implementation 285d749 is verified: full make check 665 passed/34 deselected,
+Ruff and framework passed; 8 integration checks passed against dedicated Redis/RQ,
+including 30 jobs recovering from two 429s each and the production worker process.
+Report is complete and lifecycle CLI requested claude-review-a. Task remains review;
+independent Claude session and counterpart approval are pending.
 
 Revision 5 có trong commit `8aa3324` và `f405739`; revision 6 nằm ở `34e54e9`. Diff gộp với main hiển thị 4 → 6 vì các revision trung gian nằm trong cùng PR #31; không mất record thực thi. Revision 7 ghi phản hồi sau approval của A.
 
