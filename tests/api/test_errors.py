@@ -87,7 +87,7 @@ def test_unhandled_failure_returns_safe_500_with_matching_log_id(application, ca
     secret = "provider-key-and-customer-015204000835"
 
     class BrokenAnswerer:
-        def answer(self, *args):
+        def answer(self, *args, **kwargs):
             raise RuntimeError(secret)
 
     application.dependency_overrides[get_answerer] = BrokenAnswerer

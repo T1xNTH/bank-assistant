@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import json
+import re
 from contextvars import ContextVar
 from uuid import UUID
 
 from app.security import pii
 
 REDACTED = "[REDACTED]"
+# Placeholders written by app.security.pii.mask_text; their presence means the original text had PII.
+_PII_PLACEHOLDER = re.compile(r"<(CCCD|ACCOUNT_NUMBER|PHONE_NUMBER)>")
 _MASKING: ContextVar[bool] = ContextVar("pii_masking", default=False)
 
 
@@ -31,20 +34,30 @@ class MaskingError(RuntimeError):
 
 
 def require_mask_text(text: str) -> str:
+    return require_mask(text)[0]
+
+
+def require_mask(text: str) -> tuple[str, list[str]]:
+    """Masked text and the PII types found (for routing, T-026); raises ``MaskingError``."""
     # Presidio itself emits logs. Never recursively invoke its analyzer from
     # the logging filter, including while the analyzer is being initialized.
     if _MASKING.get():
         raise MaskingError("Masking unavailable")
     token = _MASKING.set(True)
     try:
-        masked, _ = pii.mask_text(text)
+        masked, types = pii.mask_text(text)
         if not isinstance(masked, str):
             raise MaskingError("Masking unavailable")
-        return masked
+        return masked, [str(t) for t in types]
     except Exception:
         raise MaskingError("Masking unavailable") from None
     finally:
         _MASKING.reset(token)
+
+
+def masked_pii_types(text: str) -> list[str]:
+    """PII types whose placeholders appear in already masked text, in textual order."""
+    return list(dict.fromkeys(_PII_PLACEHOLDER.findall(text)))
 
 
 def mask_text(text: str) -> str:

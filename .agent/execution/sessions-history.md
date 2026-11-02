@@ -490,6 +490,11 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261102-095503-6` | `2026-11-02` | `2026-11-02` | `claude-qa-a` | `E-009` | `completed` | `qa start` | `.agent/reports/qa/E-009.md` | `none` |
 | `S-20261102-095503-7` | `2026-11-02` | `2026-11-02` | `claude-qa-a` | `E-009` | `completed` | `qa pass` | `.agent/reports/qa/E-009.md` | `none` |
 | `S-20261102-095503-8` | `2026-11-02` | `2026-11-02` | `trong-hung` | `E-009` | `completed` | `epic EPIC_IN_PROGRESS -> EPIC_DONE` | `.agent/planning/epics.md` | `none` |
+| `S-20261102-102622` | `2026-11-02` | `2026-11-02` | `trong-hung` | `E-010` | `completed` | `epic EPIC_READY -> EPIC_IN_PROGRESS` | `.agent/planning/epics.md` | `none` |
+| `S-20261102-102622-2` | `2026-11-02` | `2026-11-02` | `trong-hung` | `T-026` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
+| `S-20261102-103011` | `2026-11-02` | `2026-11-02` | `claude` | `T-026` | `completed` | `verify '.venv/bin/python -m pytest -q tests/unit/test_routing.py tests/api/test_ask_routing.py' passed` | `.agent/reports/implementation/T-026.md` | `none` |
+| `S-20261102-103035` | `2026-11-02` | `2026-11-02` | `claude` | `T-026` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-026.md` | `none` |
+| `S-20261102-103051` | `2026-11-02` | `2026-11-02` | `claude` | `T-026` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-026.md` | `none` |
 | `S-20261102-101428` | `2026-11-02` | `2026-11-02` | `codex-b` | `E-011` | `completed` | `epic EPIC_READY -> EPIC_IN_PROGRESS` | `.agent/planning/epics.md` | `none` |
 | `S-20261102-101428-2` | `2026-11-02` | `2026-11-02` | `codex-b` | `T-028` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
 | `S-20261102-101634` | `2026-11-02` | `2026-11-02` | `codex-b` | `T-028` | `completed` | `verify 'make' failed` | `.agent/reports/implementation/T-028.md` | `none` |

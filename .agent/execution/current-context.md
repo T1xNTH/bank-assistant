@@ -22,16 +22,16 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `43`
+- **Context Revision**: `44`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-02`
 - **Updated By**: `codex-b`
-- **Update Trigger**: `Apply A decision from PR87 re-check: deny self-approval before DB access; T-028 stays review`
+- **Update Trigger**: `Merge main into PR88; preserve T-026 and T-028 review state and both epic starts`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-011 EPIC_IN_PROGRESS; E-010, E-012..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-028 review; other M-002 tasks pending`
+- **Active Epic IDs**: `E-010, E-011 EPIC_IN_PROGRESS; E-012..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
+- **Active Task IDs**: `T-026 review (PR #88); T-028 review (PR #87 merged); other M-002 tasks pending`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
@@ -39,6 +39,8 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Current Session ID**: `S-20261102-t028`
 
 ## Revision Provenance
+
+Revision 44 (codex, 2026-11-02) merges main 1b22b70 into PR #88, preserving T-026 and T-028 review state and both epic starts. No approval or done transition is claimed.
 
 Revision 43 applies A's self-approval decision from PR87 comment 6568634202.
 Commit ffebd22 denies ticket creation when approver equals creator, after non-empty
@@ -65,6 +67,8 @@ Implementation ecc4293 passed WSL make check: 800 passed / 50 deselected,
 Ruff and FRAMEWORK_VALIDATION_PASS. Focused SQLite checks: 35 passed. Report
 T-028.md is complete; lifecycle CLI requested claude-review-a and moved the task
 to review. No independent review, peer approval or done transition is claimed.
+
+Parallel branch revision 41 (claude cho trong-hung, 2026-11-02) bắt đầu T-026 từ main 8f737da: E-010 EPIC_IN_PROGRESS; A duyệt CR-003 C-1 (force_local) trong hội thoại, B duyệt qua PR. Commit 9217697: make check 797 passed/50 deselected. T-026 chuyển review, chưa có review độc lập.
 
 Revision 40 (trong-hung, 2026-11-02) đóng M-001: review sau merge cho T-013, T-025 (claude-review-a), bản lưu review PR cho T-015, T-021, T-024; T-002, T-013, T-023, T-025 done; QA cấp epic E-001..E-009 pass trên main 3b778ea (make check 765 passed, pytest -m integration 50 passed, make up healthy); E-001..E-009 EPIC_DONE; M-001 completed; REL-001 v0.1 ready (tag sau merge). Mở M-002: milestone ready, R-001 ROADMAP_ACTIVE, E-010..E-016 EPIC_READY, 18 task T-026..T-043. ISSUE-027, ISSUE-028 mở, sửa ở T-037.
 

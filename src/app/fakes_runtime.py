@@ -7,14 +7,17 @@ from app.contracts import REFUSAL, AskResult, Citation, RetrievalMode, User
 
 
 class CannedAnswerer:
-    def answer(self, question: str, user: User, mode: RetrievalMode | None = None) -> AskResult:
+    def answer(
+        self, question: str, user: User, mode: RetrievalMode | None = None, force_local: bool = False
+    ) -> AskResult:
+        route = "local" if force_local else "cloud"
         if "ngoài phạm vi" in question.lower():
-            return AskResult(REFUSAL, False, [], mode or "hybrid_rerank", "cloud", 1)
+            return AskResult(REFUSAL, False, [], mode or "hybrid_rerank", route, 1)
         return AskResult(
             answer="Phí thường niên thẻ chuẩn là 100.000 VND [1].",
             found=True,
             citations=[Citation(n=1, source="bieu-phi-the.pdf", page=3, score=0.91)],
             retrieval_mode=mode or "hybrid_rerank",
-            route="cloud",
+            route=route,
             latency_ms=1,
         )

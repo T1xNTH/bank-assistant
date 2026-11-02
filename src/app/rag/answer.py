@@ -14,7 +14,9 @@ transport, gateway status and gateway configuration failures, so all of them are
 ``/chat``. Other Qdrant 4xx (a wrong vector name or filter: a bug) propagate and become 500.
 ``warm_up`` loads bge-m3 and the reranker so the first request does not wait for them.
 
-Routing sensitive questions to the local model is E-010; this always uses ``cloud-chat``.
+The model is chosen by ``decide_route`` (E-010) after retrieval: ``local-chat`` when the caller passes
+``force_local`` (``/ask`` and the worker set it when the original question had PII) or a retrieved chunk
+is ``confidential``, else ``cloud-chat``. ``AskResult.route`` is that decision, also for a refusal.
 
 Owner: A — Epic E-004. See docs/00-project/product-plan.md.
 """
@@ -33,8 +35,8 @@ from qdrant_client.http.exceptions import ResponseHandlingException, UnexpectedR
 from app.contracts import LLM, REFUSAL, AskResult, Citation, Hit, RetrievalMode, User
 from app.llm import LLMError
 from app.prompts import CANARY, SYSTEM, user_message
+from app.routing import decide_route
 
-ALIAS = "cloud-chat"
 DEFAULT_K = 5
 DEFAULT_MODE: RetrievalMode = "hybrid_rerank"
 # [1], [1, 2] and [1;2] all count: models write the grouped forms despite the prompt's example.
@@ -83,7 +85,9 @@ class RagAnswerer:
         self._llm = llm
         self.k = k
 
-    def answer(self, question: str, user: User, mode: RetrievalMode | None = None) -> AskResult:
+    def answer(
+        self, question: str, user: User, mode: RetrievalMode | None = None, force_local: bool = False
+    ) -> AskResult:
         started = time.monotonic()
         mode = mode or retrieval_mode()
         try:
@@ -94,6 +98,8 @@ class RagAnswerer:
             if exc.status_code != 404 and exc.status_code < 500:
                 raise
             raise AnswerUnavailable(f"retrieval unavailable (HTTP {exc.status_code})") from exc
+        # The question reaching here is already masked, so its PII arrives as force_local (CR-003 C-1).
+        decision = decide_route([], [h.classification for h in hits], force_local)
         text, citations = REFUSAL, []
         if hits:
             messages = [
@@ -101,12 +107,12 @@ class RagAnswerer:
                 {"role": "user", "content": user_message(question, hits)},
             ]
             try:
-                reply = self._llm.chat(messages, ALIAS, temperature=0.0).text
+                reply = self._llm.chat(messages, decision.alias, temperature=0.0).text
             except LLMError as exc:
                 raise AnswerUnavailable("LLM gateway unavailable") from exc
             text, citations = cite(reply, hits)
         latency_ms = round((time.monotonic() - started) * 1000)
-        return AskResult(text, bool(citations), citations, mode, "cloud", latency_ms)
+        return AskResult(text, bool(citations), citations, mode, decision.route, latency_ms)
 
 
 def _leaks_canary(text: str) -> bool:

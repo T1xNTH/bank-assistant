@@ -37,7 +37,7 @@ def test_request_output_logs_and_audit_are_masked(endpoint, failure, caplog):
     calls = []
 
     class Answerer:
-        def answer(self, question, user, mode):
+        def answer(self, question, user, mode, force_local=False):
             calls.append(question)
             logging.getLogger("app.boundary").info("received %s", question)
             if failure:
@@ -115,7 +115,7 @@ def test_masker_failure_never_passes_raw_input_to_backend(monkeypatch, invalid, 
     calls = []
 
     class Answerer:
-        def answer(self, question, user, mode):
+        def answer(self, question, user, mode, force_local=False):
             calls.append(question)
             return CannedAnswerer().answer(question, user, mode)
 
@@ -144,8 +144,8 @@ def test_uuid_trace_matches_response_audit_and_logs(caplog):
     app = create_app()
 
     class Answerer:
-        def answer(self, *args):
-            return replace(CannedAnswerer().answer(*args), trace_id=trace)
+        def answer(self, *args, **kwargs):
+            return replace(CannedAnswerer().answer(*args, **kwargs), trace_id=trace)
 
     app.dependency_overrides[get_answerer] = Answerer
     response = TestClient(app).post("/ask", json={"question": "hello"})
