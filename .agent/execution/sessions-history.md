@@ -520,3 +520,7 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261102-163708-2` | `2026-11-02` | `2026-11-02` | `claude` | `T-030` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-030.md` | `none` |
 | `S-20261102-164213` | `2026-11-02` | `2026-11-02` | `claude-review-a` | `T-030` | `completed` | `review started` | `.agent/reports/review/T-030.md` | `none` |
 | `S-20261102-164322` | `2026-11-02` | `2026-11-02` | `claude-review-a` | `T-030` | `completed` | `changes requested; task review -> in-progress` | `.agent/reports/review/T-030.md` | `none` |
+| `S-20261102-201900` | `2026-11-02` | `2026-11-02` | `claude` | `T-030` | `completed` | `verify '.venv/bin/python -m pytest -q -p no:cacheprovider tests/unit/test_agent_graph.py' passed` | `.agent/reports/implementation/T-030.md` | `none` |
+| `S-20261102-202003` | `2026-11-02` | `2026-11-02` | `claude` | `T-030` | `completed` | `verify 'make check' passed` | `.agent/reports/implementation/T-030.md` | `none` |
+| `S-20261102-202110` | `2026-11-02` | `2026-11-02` | `claude` | `T-030` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-030.md` | `none` |
+| `S-20261102-202110-2` | `2026-11-02` | `2026-11-02` | `claude` | `T-030` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-030.md` | `none` |
