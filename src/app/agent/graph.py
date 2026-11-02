@@ -80,12 +80,15 @@ BAD_AMOUNT = "không đọc chắc được số tiền, anh/chị viết riêng
 VAULT_THREADS = 1000  # threads whose masked amounts are kept in memory (least recently used dropped)
 VAULT_VALUES = 20  # amounts kept per thread
 VAULT_TTL_S = 30 * 60  # a masked amount is usable for 30 minutes
-# Amount or account? Both mask to <ACCOUNT_NUMBER_n> (review rounds 4-5, F-13/F-15). A value is kept as an
-# amount only when its clause (text since the last , ; ! ? or newline) marks it as money, and never
-# when an account label appears anywhere earlier in that clause ("TK của tôi là 87654321 đ").
+# Amount or account? Both mask to <ACCOUNT_NUMBER_n> (review rounds 4-6, F-13/F-15/F-17). A value is kept as
+# an amount only when a currency word follows it, or an amount word comes at most 3 words before it with no
+# other number between ("vay khoảng <n>", not "vay 100 triệu giải ngân vào <n>"). Never when an account or id
+# label is anywhere earlier in its clause (text since the last , ; ! ? or newline), or right after a transfer
+# preposition ("vào/qua/về/sang/tới/đến (số) <n>").
 _CLAUSE_BREAK = re.compile(r"[,;!?\n]")  # not ".": "account no. 87654321" must keep its label
 _ACCOUNT_LABEL = re.compile(
-    r"(?<!\w)(?:s?tk|t[aà]i\s*kho[aả]n|account(?:\s*(?:no\.?|number))?|a/c)(?!\w)", re.IGNORECASE
+    r"(?<!\w)(?:s?tk|t[aà]i\s*kho[aả]n|account(?:\s*(?:no\.?|number))?|a/c|h[oợ]p\s*[dđ][oồ]ng|m[aã]|cif)(?!\w)",
+    re.IGNORECASE,
 )
 _AMOUNT_WORD = re.compile(
     r"(?<!\w)(?:vay|m[uư][oợ]n|c[aầ]n|s[oố]\s*ti[eề]n|ti[eề]n\s*g[oố]c|g[oố]c|t[ií]nh\s*l[aã]i|tr[iị]\s*gi[aá])(?!\w)",
@@ -93,6 +96,10 @@ _AMOUNT_WORD = re.compile(
 )
 _LOAN_ACCOUNT_BEFORE = re.compile(r"kho[aả]n\s*vay\s*(?:s[oố])?\s*[:#]?\s*$", re.IGNORECASE)  # an id, unless "đồng"
 _CURRENCY_BEFORE = re.compile(r"(?<!\w)vn[dđ]\s*$", re.IGNORECASE)
+_TRANSFER_BEFORE = re.compile(
+    r"(?<!\w)(?:v[aà]o|qua|v[eề]|sang|t[oớ]i|[dđ][eế]n)\s*(?:s[oố])?\s*[:#]?\s*$", re.IGNORECASE
+)
+_NEAR_WORDS = 3  # words allowed between the amount word and the number ("vay mua nhà <n>")
 # "đồng" is also the first syllable of common words ("đồng thời", "đồng ý"): those are not a currency.
 _NOT_CURRENCY = r"(?!\s+(?:thời|ý|nghiệp|bộ|hồ|tình|thuận|loạt|nhất|đều|chí|hành|minh|phục|hương|lòng|nghĩa|đội)(?!\w))"
 _AMOUNT_AFTER = re.compile(rf"^\s*(?:đ|đồng{_NOT_CURRENCY}|dong|vnđ|vnd)(?!\w)", re.IGNORECASE)
@@ -252,11 +259,21 @@ def unstated_loan_terms(args: dict, messages: list[AnyMessage]) -> list[str]:
     return missing
 
 
+def _amount_word_near(clause: str) -> bool:
+    """An amount word ends at most _NEAR_WORDS words before the number, with no other number between."""
+    words = list(_AMOUNT_WORD.finditer(clause))
+    if not words:
+        return False
+    gap = clause[words[-1].end() :]
+    return not re.search(r"\d|\s(?:triệu|tỷ|tỉ|nghìn|ngàn)(?!\w)", gap) and len(gap.split()) <= _NEAR_WORDS
+
+
 def amounts_in(masked: str, hidden: dict[str, str]) -> dict[str, str]:
     """The hidden ACCOUNT_NUMBER values whose placeholder the message marks as an amount.
 
     Kept: "vay khoảng <ACCOUNT_NUMBER_1>", "cần <...>", "số tiền: <...>", "<...> đồng/đ/VND", "VND <...>".
-    Never: a clause with TK/STK/tài khoản/account/a/c before the number; "khoản vay <...>" needs "đồng" after.
+    Never: a clause with TK/STK/tài khoản/account/a/c/hợp đồng/mã/CIF before the number, "vào/qua <...>";
+    "khoản vay <...>" needs "đồng" after.
     """
     kept = {}
     for placeholder, value in hidden.items():
@@ -267,12 +284,12 @@ def amounts_in(masked: str, hidden: dict[str, str]) -> dict[str, str]:
         breaks = list(_CLAUSE_BREAK.finditer(head))
         clause = PLACEHOLDER.sub(" ", head[breaks[-1].end() :] if breaks else head)
         money_after = _AMOUNT_AFTER.match(masked[at + len(placeholder) :]) is not None
-        if _ACCOUNT_LABEL.search(clause):
+        if _ACCOUNT_LABEL.search(clause) or _TRANSFER_BEFORE.search(clause):
             continue
         if _LOAN_ACCOUNT_BEFORE.search(clause):
             if money_after:
                 kept[placeholder] = value
-        elif money_after or _AMOUNT_WORD.search(clause) or _CURRENCY_BEFORE.search(clause):
+        elif money_after or _CURRENCY_BEFORE.search(clause) or _amount_word_near(clause):
             kept[placeholder] = value
     return kept
 

@@ -603,6 +603,16 @@ def test_account_number_is_never_the_principal(env, first):
         ("Vay mua nhà 2.000.000.000", {"<ACCOUNT_NUMBER_1>": "2.000.000.000"}),
         ("khoản vay trị giá 100.000.000", {"<ACCOUNT_NUMBER_1>": "100.000.000"}),
         ("VND 100.000.000", {"<ACCOUNT_NUMBER_1>": "100.000.000"}),
+        # review round 6, F-17: an amount word far before, or a transfer preposition, is not this number's
+        ("Tôi muốn vay 100 triệu chuyển vào 87654321 lãi 12% 12 tháng", {}),
+        ("vay 100 triệu giải ngân vào 87654321", {}),
+        ("cần vay 100 triệu về số 87654321", {}),
+        ("Vay 100 triệu trả lương qua 87654321", {}),
+        ("vay rồi trả vào 87654321", {}),
+        ("Số hợp đồng vay 87654321", {}),
+        ("Mã KH 87654321 vay", {}),
+        ("Vay thêm 50.000.000", {"<ACCOUNT_NUMBER_1>": "50.000.000"}),
+        ("vay 1 khoản 100.000.000 đồng", {"<ACCOUNT_NUMBER_1>": "100.000.000"}),
     ],
     ids=[
         "vay-then-tk",
@@ -629,6 +639,15 @@ def test_account_number_is_never_the_principal(env, first):
         "vay-mua-nha",
         "tri-gia",
         "vnd-before",
+        "far-vay-chuyen-vao",
+        "giai-ngan-vao",
+        "ve-so",
+        "qua",
+        "tra-vao",
+        "hop-dong",
+        "ma-kh",
+        "vay-them",
+        "mot-khoan",
     ],
 )
 def test_only_values_marked_as_amounts_are_kept(message, kept):
