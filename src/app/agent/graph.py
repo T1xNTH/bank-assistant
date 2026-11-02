@@ -51,7 +51,7 @@ from app.llm import LLMError
 from app.prompts import AGENT_SYSTEM
 from app.rag.answer import AnswerUnavailable
 from app.routing import decide_route
-from app.security.masking import MaskingError, require_mask_content, require_mask_content_types
+from app.security.masking import MaskingError, require_mask_content, require_mask_content_types, require_mask_numbered
 
 READ_TOOLS = ("tinh_lai_vay", "tra_cuu_giao_dich", "tra_cuu_tai_lieu")
 TOOL_ARGS = {
@@ -64,6 +64,9 @@ MAX_MESSAGE = 4000
 MAX_COMMENT = 500
 HISTORY = 12  # messages of earlier turns sent to the model
 SENSITIVE = "confidential"  # customer banking data in the thread routes later turns to local-chat
+# A numbered placeholder from require_mask_numbered; only this turn's values are in the vault.
+PLACEHOLDER = re.compile(r"<(?:CCCD|ACCOUNT_NUMBER|PHONE_NUMBER)_\d+>")
+STALE_AMOUNT = "số tiền ở tin nhắn trước đã được che, anh/chị nhập lại số tiền trong tin nhắn này giúp"
 UNCLEAR = "Xin lỗi, tôi chưa hiểu yêu cầu. Anh/chị nói rõ hơn giúp tôi được không?"
 THREAD_ID = re.compile(r"[0-9a-f]{32}")
 UNAVAILABLE = (LLMError, AnswerUnavailable, ToolUnavailable, MaskingError, sqlite3.Error)
@@ -83,10 +86,16 @@ class AgentUnavailable(RuntimeError):
 
 @dataclass(frozen=True)
 class AgentResult:
+    """``answer_source``: ``"tool"`` means code wrote the answer from tool results whose text is already
+    masked (amounts, dates, TK refs, masked descriptions); the API must return it as is, because masking
+    again turns every 8+ digit amount into ``<ACCOUNT_NUMBER>``. ``"model"``: mask as usual. Logs and
+    audit mask both."""
+
     thread_id: str
     status: Literal["completed", "pending_approval"]
     answer: str | None = None
     pending_action: dict | None = None
+    answer_source: Literal["model", "tool"] | None = None
 
 
 class AgentState(TypedDict, total=False):
@@ -99,6 +108,8 @@ class AgentState(TypedDict, total=False):
     answer: str | None
     decision: dict | None
     ticket_failed: bool  # the approved write failed; the thread waits for a decision again
+    answer_source: Literal["model", "tool"]
+    vault_seq: int  # placeholders numbered so far, so each turn's numbers are new
 
 
 def _clean(text: str) -> str:
@@ -182,6 +193,33 @@ def parse_reply(text: str) -> tuple[str, dict] | str:
     return UNCLEAR
 
 
+_NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
+
+
+def _stated_numbers(messages: list[AnyMessage]) -> set[Decimal]:
+    numbers = set()
+    for message in messages:
+        if isinstance(message, HumanMessage):
+            numbers |= {Decimal(n.replace(",", ".")) for n in _NUMBER.findall(message.content)}
+    return numbers
+
+
+def unstated_loan_terms(args: dict, messages: list[AnyMessage]) -> list[str]:
+    """Rate and term the model passed but no user message of the thread contains (a term in years counts)."""
+    stated = _stated_numbers(messages)
+    missing = []
+    for key, label, also in (("annual_rate_percent", "lãi suất (%/năm)", None), ("months", "kỳ hạn", 12)):
+        try:
+            value = Decimal(str(args.get(key)))
+        except ArithmeticError:
+            continue  # not a number: the calculator rejects it with its own message
+        if not value.is_finite():
+            continue
+        if value not in stated and not (also and value / also in stated):
+            missing.append(label)
+    return missing
+
+
 def model_messages(state: AgentState) -> list[dict]:
     """System prompt plus earlier user messages and replies; tool-call steps are left out."""
     turns: list[dict] = []
@@ -199,14 +237,30 @@ def model_messages(state: AgentState) -> list[dict]:
 class _BoundTools:
     """Read-only tools bound to one authenticated user; ``ToolNode`` passes model arguments only."""
 
-    def __init__(self, user: User, pii: list[str], bank: CoreBanking, answerer: Answerer):
+    def __init__(
+        self, user: User, pii: list[str], bank: CoreBanking, answerer: Answerer, vault: dict[str, str] | None = None
+    ):
         self.user, self.pii, self.bank, self.answerer = user, pii, bank, answerer
+        self.vault = vault or {}  # placeholder -> value masked out of this turn's message; memory only
         self.agent_tools = AgentTools(user, bank)
+
+    def _amount(self, value: Any) -> Any:
+        """``"<ACCOUNT_NUMBER_1>"`` -> 100000000 when this turn's message hid that amount; else unchanged."""
+        if not isinstance(value, str) or not PLACEHOLDER.fullmatch(value):
+            return value
+        raw = self.vault.get(value)
+        if raw is None:
+            raise ValueError(STALE_AMOUNT)
+        digits = re.sub(r"[ .-]", "", raw)
+        if not digits.isdigit():
+            raise ValueError("Invalid principal")
+        return int(digits)
 
     def tinh_lai_vay(
         self, principal: Any = None, annual_rate_percent: Any = None, months: Any = None, method: Any = "annuity"
     ) -> dict:
         try:
+            principal = self._amount(principal)
             return {"ok": self.agent_tools.tinh_lai_vay(principal, annual_rate_percent, months, method)}
         except ValueError as exc:  # messages never include the input (T-029)
             return {"error": str(exc)}
@@ -246,9 +300,17 @@ class _BoundTools:
 
 
 def build_graph(
-    user: User, *, llm: LLM, answerer: Answerer, bank: CoreBanking, tickets: TicketStore, checkpointer, pii: list[str]
+    user: User,
+    *,
+    llm: LLM,
+    answerer: Answerer,
+    bank: CoreBanking,
+    tickets: TicketStore,
+    checkpointer,
+    pii: list[str],
+    vault: dict[str, str] | None = None,
 ):
-    bound = _BoundTools(user, pii, bank, answerer)
+    bound = _BoundTools(user, pii, bank, answerer, vault)
 
     def agent(state: AgentState) -> dict:
         classifications = [SENSITIVE] if state.get("sensitive") else []
@@ -257,9 +319,14 @@ def build_graph(
         # app.llm masks replies already; mask again so no LLM implementation can put PII in the checkpoint.
         if isinstance(reply, str):
             reply = require_mask_content(_clean(reply))  # after json.loads, which decodes "\ud800"
-            return {"messages": [AIMessage(content=reply)], "answer": reply}
+            return {"messages": [AIMessage(content=reply)], "answer": reply, "answer_source": "model"}
         name, args = reply
         args = {key: require_mask_content(_clean(v)) if isinstance(v, str) else v for key, v in args.items()}
+        if name == "tinh_lai_vay":
+            missing = unstated_loan_terms(args, state["messages"])
+            if missing:  # the model filled in a rate or term the user never gave (seen with qwen2.5:3b)
+                answer = f"Anh/chị cho biết {' và '.join(missing)} của khoản vay giúp tôi."
+                return {"messages": [AIMessage(content=answer)], "answer": answer, "answer_source": "tool"}
         call = {"name": name, "args": args, "id": f"call_{uuid.uuid4().hex[:12]}", "type": "tool_call"}
         return {"messages": [AIMessage(content="", tool_calls=[call])]}
 
@@ -280,7 +347,9 @@ def build_graph(
             answer = render_transactions(data["ok"])
         else:
             answer = render_rag(data["ok"])
-        update: dict = {"messages": [AIMessage(content=answer)], "answer": answer}
+        # A RAG answer is model text (app.llm masked it); the others are templates over tool output.
+        source = "model" if message.name == "tra_cuu_tai_lieu" and "ok" in data else "tool"
+        update: dict = {"messages": [AIMessage(content=answer)], "answer": answer, "answer_source": source}
         # Customer transactions, or a RAG answer the Answerer routed local (confidential chunks), now sit in
         # the history that later turns send to the model: keep those turns on local-chat (security-design).
         if "ok" in data and (
@@ -297,7 +366,7 @@ def build_graph(
         except ValueError as exc:
             answer = f"Chưa tạo được đề xuất ticket: {exc}."
             tool_message = ToolMessage(content=answer, tool_call_id=call["id"], name="tao_ticket")
-            return {"messages": [tool_message, AIMessage(content=answer)], "answer": answer}
+            return {"messages": [tool_message, AIMessage(content=answer)], "answer": answer, "answer_source": "tool"}
         # Execution stops here until AgentService.decide resumes the thread; the node then runs again
         # and interrupt returns the decision. Building the proposal twice is harmless: it is pure.
         decision = interrupt({"tool": "tao_ticket", "args": {"summary": proposal["summary"]}})
@@ -335,6 +404,7 @@ def build_graph(
         return {
             "messages": [tool_message, AIMessage(content=answer)],
             "answer": answer,
+            "answer_source": "tool",
             "decision": None,
             "ticket_failed": False,
         }
@@ -411,7 +481,7 @@ class AgentService:
                 if entry[1] == 0:
                     del self._locks[thread_id]
 
-    def _graph(self, user: User, pii: list[str]):
+    def _graph(self, user: User, pii: list[str], vault: dict[str, str] | None = None):
         return build_graph(
             user,
             llm=self.llm,
@@ -420,6 +490,7 @@ class AgentService:
             tickets=self.tickets,
             checkpointer=self.checkpointer,
             pii=pii,
+            vault=vault,
         )
 
     @staticmethod
@@ -441,7 +512,8 @@ class AgentService:
         pending = self._pending(snapshot)
         if pending is not None:
             return AgentResult(thread_id, "pending_approval", None, pending)
-        return AgentResult(thread_id, "completed", snapshot.values.get("answer"))
+        values = snapshot.values
+        return AgentResult(thread_id, "completed", values.get("answer"), None, values.get("answer_source", "model"))
 
     def run(self, user: User, message: str, thread_id: str | None = None) -> AgentResult:
         if not isinstance(user, User) or not isinstance(user.user_id, str) or not user.user_id.strip():
@@ -451,7 +523,6 @@ class AgentService:
         if thread_id is not None and (not isinstance(thread_id, str) or not THREAD_ID.fullmatch(thread_id)):
             raise ThreadNotFound("Unknown thread")  # ids are server-made; a client cannot pick one
         try:
-            masked, types = require_mask_content_types(message)
             new = thread_id is None
             thread_id = thread_id or uuid.uuid4().hex
             with self._lock(thread_id):
@@ -461,15 +532,19 @@ class AgentService:
                     raise ThreadNotFound("Unknown thread")
                 if self._pending(snapshot) is not None:  # the decision comes first; this message is not taken
                     return self._result(thread_id, snapshot)
+                seq = values.get("vault_seq", 0)
+                masked, types, vault = require_mask_numbered(message, start=seq)
                 pii = sorted(set(values.get("pii", [])) | set(types))
-                graph = self._graph(user, pii)
+                graph = self._graph(user, pii, vault)  # the vault lives for this call only, never in the state
                 state = {
                     "messages": [HumanMessage(content=masked)],
+                    "vault_seq": seq + len(vault),
                     "owner": user.user_id,
                     "department": user.department,
                     "role": user.role,
                     "pii": pii,
                     "answer": None,
+                    "answer_source": None,
                     "decision": None,
                 }
                 graph.invoke(state, self._config(thread_id))

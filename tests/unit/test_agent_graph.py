@@ -158,7 +158,7 @@ def test_pii_in_message_is_masked_and_routes_local(env):
     svc.run(OWNER, "Khách SĐT 0912345678 hỏi phí phát hành lại thẻ")
     messages, alias = llm.calls[0]
     assert alias == "local-chat"
-    assert messages[-1]["content"] == "Khách SĐT <PHONE_NUMBER> hỏi phí phát hành lại thẻ"
+    assert messages[-1]["content"] == "Khách SĐT <PHONE_NUMBER_1> hỏi phí phát hành lại thẻ"
     assert env["answerer"].calls[0][2] is True  # force_local for the RAG answer too
 
 
@@ -399,3 +399,90 @@ def test_thread_locks_are_released(env):
         with pytest.raises(ThreadNotFound):
             svc.run(OWNER, "x", uuid.uuid4().hex)
     assert svc._locks == {}
+
+
+# Amounts the masking hides (A's decision 2026-11-02: option c + answer_source for T-031)
+
+MASKED_LOAN = (
+    '{"tool": "tinh_lai_vay", "args": {"principal": "<ACCOUNT_NUMBER_1>", "annual_rate_percent": 12, "months": 12}}'
+)
+
+
+def test_masked_amount_reaches_the_calculator_but_never_the_model(env):
+    svc, llm = env["service"](MASKED_LOAN)
+    result = svc.run(OWNER, "Vay 100.000.000 đồng, lãi 12%/năm, 12 tháng trả góp đều")
+    sent = json.dumps([m for m, _ in llm.calls], ensure_ascii=False)
+    assert "100.000.000" not in sent and "<ACCOUNT_NUMBER_1>" in sent
+    assert "Khoản vay 100.000.000 đ" in result.answer and "Kỳ đầu trả 8.884.878,87 đ" in result.answer
+    assert result.answer_source == "tool"
+
+
+def test_placeholders_are_numbered_per_thread_and_old_ones_do_not_resolve(env):
+    stale = MASKED_LOAN  # the model reuses turn 1's placeholder in turn 2
+    svc, llm = env["service"]('{"answer": "Lãi suất bao nhiêu?"}', stale)
+    thread_id = svc.run(OWNER, "Vay 100.000.000 đồng").thread_id
+    result = svc.run(OWNER, "12%/năm, 12 tháng, tài khoản 12345678", thread_id)
+    assert llm.calls[1][0][-1]["content"] == "12%/năm, 12 tháng, tài khoản <ACCOUNT_NUMBER_2>"
+    assert result.answer == (
+        "Chưa thực hiện được (tinh_lai_vay): số tiền ở tin nhắn trước đã được che, "
+        "anh/chị nhập lại số tiền trong tin nhắn này giúp."
+    )
+
+
+def test_vault_is_not_stored_in_the_checkpoint(env):
+    svc, _ = env["service"]('{"answer": "Anh/chị cần gì thêm?"}')
+    svc.run(OWNER, "Số tài khoản 1234567890123 của tôi")
+    assert b"1234567890123" not in env["checkpoints"].read_bytes()
+
+
+@pytest.mark.parametrize(
+    ("reply", "source"),
+    [
+        (LOAN, "tool"),
+        (DOCS, "model"),
+        ('{"answer": "Chào"}', "model"),
+        ('{"tool": "tinh_lai_vay", "args": {"principal": -1, "annual_rate_percent": 1, "months": 1}}', "tool"),
+    ],
+    ids=["loan", "rag", "direct", "tool-error"],
+)
+def test_answer_source_tells_the_api_what_to_mask(env, reply, source):
+    svc, _ = env["service"](reply)
+    assert svc.run(OWNER, "x").answer_source == source
+
+
+def test_ticket_outcome_is_a_tool_answer_and_pending_has_no_source(env):
+    thread_id = pending_thread(env)
+    svc, _ = env["service"]()
+    assert svc.run(OWNER, "x", thread_id).answer_source is None
+    assert svc.decide(thread_id, APPROVER, False).answer_source == "tool"
+
+
+@pytest.mark.parametrize(
+    ("message", "args", "asked"),
+    [
+        ("Tôi muốn vay 1.500.000.000 đ", {"annual_rate_percent": 10, "months": 36}, "lãi suất (%/năm) và kỳ hạn"),
+        ("Vay 100 triệu, lãi 12%", {"annual_rate_percent": 12, "months": 36}, "kỳ hạn"),
+        ("Vay 100 triệu trong 2 năm", {"annual_rate_percent": 8, "months": 24}, "lãi suất (%/năm)"),
+    ],
+    ids=["both-invented", "term-invented", "rate-invented"],
+)
+def test_loan_terms_the_user_never_gave_are_asked_for(env, message, args, asked):
+    # Live run 2026-11-02: qwen2.5:3b filled in 10%/36 months for "Tôi muốn vay 1.500.000.000 đ".
+    reply = json.dumps({"tool": "tinh_lai_vay", "args": {"principal": 100000000, **args}})
+    svc, _ = env["service"](reply)
+    result = svc.run(OWNER, message)
+    assert result.answer == f"Anh/chị cho biết {asked} của khoản vay giúp tôi."
+    assert result.answer_source == "tool"
+
+
+@pytest.mark.parametrize(
+    ("message", "rate", "months"),
+    [("Vay 100 triệu, 9,5%/năm, 3 năm", 9.5, 36), ("Vay 100 triệu 12% 12 tháng", "12", 12)],
+    ids=["comma-rate-years", "string-rate"],
+)
+def test_stated_loan_terms_pass_the_check(env, message, rate, months):
+    reply = json.dumps(
+        {"tool": "tinh_lai_vay", "args": {"principal": 100000000, "annual_rate_percent": rate, "months": months}}
+    )
+    svc, _ = env["service"](reply)
+    assert svc.run(OWNER, message).answer.startswith("Khoản vay 100.000.000 đ")

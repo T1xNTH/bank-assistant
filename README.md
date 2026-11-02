@@ -94,6 +94,15 @@ the user identity, database path, SQL or approval decision.
   questions go to RAG and keep `[n]` plus a source list; loan and transaction
   replies are written by code, because masking turns 8+ digit amounts into
   `<ACCOUNT_NUMBER>`. Accounts appear as `TK1`, `TK2`, ...
+- Amounts typed as digits (`100.000.000 đ`) are masked with numbered
+  placeholders (`<ACCOUNT_NUMBER_1>`); the model passes the placeholder as
+  `principal` and the tool reads the real value from memory for that call only
+  (never the checkpoint, never the model). Such a message counts as PII, so the
+  thread routes to `local-chat`. A rate or term that no user message states is
+  asked for instead of computed.
+- `AgentResult.answer_source`: `"tool"` = written by code from tool results
+  whose text is already masked; the API returns it unmasked (masking again
+  would hide the amounts). `"model"` = mask as usual. Logs and audit mask both.
 - `tao_ticket` stops at `interrupt` with status `pending_approval`; nothing is
   written. `decide(thread_id, approver, approve, comment=None)` resumes it; only
   role `approver`, never the owner, and only once (`DecisionConflict` after that).
