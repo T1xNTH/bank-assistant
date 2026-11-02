@@ -83,6 +83,26 @@ the user identity, database path, SQL or approval decision.
   and call TicketStore only after resolving a valid decision. Role `approver` does
   not turn a proposal into a write or bypass the no-self-approval rule.
 
+## Agent graph (T-030)
+
+`AgentService` in `app.agent.graph` is what the `/agent` endpoints (T-031) call:
+
+- `run(user, message, thread_id=None)` masks the message (fail-closed), lets the
+  model pick one tool as JSON through `app.llm` (alias from `decide_route`: local
+  when the thread had PII or customer transactions), runs it with `ToolNode`, and
+  returns `AgentResult(thread_id, status, answer, pending_action)`. Document
+  questions go to RAG and keep `[n]` plus a source list; loan and transaction
+  replies are written by code, because masking turns 8+ digit amounts into
+  `<ACCOUNT_NUMBER>`. Accounts appear as `TK1`, `TK2`, ...
+- `tao_ticket` stops at `interrupt` with status `pending_approval`; nothing is
+  written. `decide(thread_id, approver, approve, comment=None)` resumes it; only
+  role `approver`, never the owner, and only once (`DecisionConflict` after that).
+  The ticket owner is the authenticated user stored in the thread.
+- Threads live in the SQLite checkpointer at `AGENT_CHECKPOINT_DB_PATH`
+  (masked text only) and survive restarts. Errors for T-031: `ThreadNotFound`
+  404 (also for another user's thread), `PermissionError` 403,
+  `DecisionConflict` 409, `AgentUnavailable` 503, `ValueError` 422.
+
 ## Quick start
 ```bash
 make setup                     # .venv + dev deps

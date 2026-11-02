@@ -1,0 +1,322 @@
+"""LangGraph agent (T-030): tool choice, RAG citations, HITL interrupt before tao_ticket, SQLite checkpointer.
+
+Real graph, real SqliteSaver, real synthetic core banking and ticket SQLite files; the model is scripted.
+"""
+
+import json
+import sqlite3
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
+
+import pytest
+
+from app.agent import graph as agent_graph
+from app.agent.core_banking import CoreBanking
+from app.agent.graph import AgentService, AgentUnavailable, DecisionConflict, ThreadNotFound, sqlite_checkpointer
+from app.agent.tickets import TicketStore
+from app.contracts import Hit, LLMResult, User
+from app.llm import LLMError
+from scripts.seed_core_banking import seed
+from tests.fakes import FakeAnswerer, FakeRetriever
+
+OWNER = User("synthetic-user-1", "credit")
+APPROVER = User("approver-1", "credit", "approver")
+LOAN = '{"tool": "tinh_lai_vay", "args": {"principal": 100000000, "annual_rate_percent": 12, "months": 12}}'
+DOCS = '{"tool": "tra_cuu_tai_lieu", "args": {"question": "Phí phát hành lại thẻ ghi nợ quốc tế?"}}'
+TICKET = '{"tool": "tao_ticket", "args": {"summary": "Khách báo mất thẻ, SĐT 0912345678"}}'
+
+
+class ScriptedLLM:
+    def __init__(self, *replies):
+        self.replies = list(replies)
+        self.calls = []
+
+    def chat(self, messages, alias, temperature=0.0):
+        self.calls.append((messages, alias))
+        if not self.replies:
+            pytest.fail("unexpected LLM call")
+        reply = self.replies.pop(0)
+        if isinstance(reply, Exception):
+            raise reply
+        return LLMResult(text=reply, model=f"fake/{alias}")
+
+
+class SpyAnswerer(FakeAnswerer):
+    def __init__(self):
+        super().__init__(FakeRetriever([Hit("d1", "dichvsptheghinoqt.pdf", 1, "Phí 50.000 đ", 0.9, "public")]))
+        self.calls = []
+
+    def answer(self, question, user, mode=None, force_local=False):
+        self.calls.append((question, user, force_local))
+        return super().answer(question, user, mode, force_local)
+
+
+@pytest.fixture
+def env(tmp_path):
+    bank = CoreBanking(seed(tmp_path / "bank.db"))
+    tickets = TicketStore(tmp_path / "tickets.db")
+    checkpoints = tmp_path / "checkpoints.db"
+    answerer = SpyAnswerer()
+
+    def service(*replies, path=checkpoints):
+        llm = ScriptedLLM(*replies)
+        svc = AgentService(
+            llm=llm, answerer=answerer, bank=bank, tickets=tickets, checkpointer=sqlite_checkpointer(path)
+        )
+        return svc, llm
+
+    return {"service": service, "tickets": tickets, "answerer": answerer, "checkpoints": checkpoints}
+
+
+def ticket_rows(tickets):
+    if not tickets.path.exists():
+        return []
+    with closing(sqlite3.connect(tickets.path)) as connection:
+        return connection.execute("SELECT created_by, summary, status, approved_by FROM tickets").fetchall()
+
+
+def pending_thread(env):
+    svc, _ = env["service"](TICKET)
+    result = svc.run(OWNER, "Tạo ticket: khách báo mất thẻ, SĐT 0912345678")
+    assert result.status == "pending_approval"
+    return result.thread_id
+
+
+# Tool choice
+
+
+def test_document_question_goes_to_rag_and_keeps_citations(env):
+    svc, llm = env["service"](DOCS)
+    result = svc.run(OWNER, "Phí phát hành lại thẻ ghi nợ quốc tế là bao nhiêu?")
+    assert result.status == "completed" and result.pending_action is None
+    assert result.answer == "Trả lời [1].\n\nNguồn:\n[1] dichvsptheghinoqt.pdf, trang 1"
+    assert env["answerer"].calls == [("Phí phát hành lại thẻ ghi nợ quốc tế?", OWNER, False)]
+    assert [alias for _, alias in llm.calls] == ["cloud-chat"]
+
+
+def test_document_question_without_hits_is_refused(env):
+    env["answerer"].retriever.hits = []
+    svc, _ = env["service"](DOCS)
+    assert svc.run(OWNER, "Giá vàng hôm nay?").answer == "Không tìm thấy thông tin này trong tài liệu nội bộ hiện có."
+
+
+def test_loan_question_goes_to_the_calculator_and_amounts_are_written_by_code(env):
+    svc, llm = env["service"](LOAN)
+    result = svc.run(OWNER, "Vay 100 triệu, lãi 12%/năm, 12 tháng trả góp đều thì mỗi tháng trả bao nhiêu?")
+    assert result.status == "completed"
+    assert "Kỳ đầu trả 8.884.878,87 đ" in result.answer
+    assert "Tổng lãi 6.618.546,40 đ" in result.answer
+    assert env["answerer"].calls == [] and len(llm.calls) == 1  # no second model pass over the amounts
+
+
+def test_bad_loan_arguments_are_reported_not_raised(env):
+    svc, _ = env["service"]('{"tool": "tinh_lai_vay", "args": {"principal": "<ACCOUNT_NUMBER>", "months": 12}}')
+    result = svc.run(OWNER, "Vay 100.000.000 đồng 12 tháng")
+    assert result.answer.startswith("Chưa thực hiện được (tinh_lai_vay): Invalid principal")
+
+
+def test_transactions_use_account_refs_and_route_later_turns_local(env):
+    svc, llm = env["service"]('{"tool": "tra_cuu_giao_dich", "args": {"account_ref": "TK1", "limit": 2}}', DOCS)
+    result = svc.run(OWNER, "Cho xem 2 giao dịch gần nhất")
+    assert result.answer.splitlines() == [
+        "2 giao dịch gần nhất:",
+        "- 2026-01-05 · TK1 · -50.000 đ · Synthetic transaction 5",
+        "- 2026-01-04 · TK1 · 40.000 đ · Synthetic transaction 4",
+    ]
+    assert "SYN-ACC-001" not in result.answer
+    svc.run(OWNER, "Còn phí thẻ thì sao?", result.thread_id)
+    assert [alias for _, alias in llm.calls] == ["cloud-chat", "local-chat"]  # customer data now in the history
+    assert env["answerer"].calls[-1][2] is False  # the RAG step itself still decides on its own chunks
+
+
+def test_unknown_account_ref_is_an_error_message(env):
+    svc, _ = env["service"]('{"tool": "tra_cuu_giao_dich", "args": {"account_ref": "SYN-ACC-002"}}')
+    answer = svc.run(OWNER, "Giao dịch tài khoản SYN-ACC-002").answer
+    assert answer == "Chưa thực hiện được (tra_cuu_giao_dich): account_ref must be one of: TK1."
+
+
+@pytest.mark.parametrize(
+    ("reply", "answer"),
+    [
+        ('{"answer": "Chào anh/chị!"}', "Chào anh/chị!"),
+        ("Chào anh/chị!", "Chào anh/chị!"),
+        ('{"tool": "xoa_du_lieu", "args": {}}', agent_graph.UNCLEAR),
+        ('{"tool": "tinh_lai_vay", "args": "x"}', agent_graph.UNCLEAR),
+        ("```json\n" + '{"answer": "Xin chào"}' + "\n```", "Xin chào"),
+    ],
+    ids=["json-answer", "plain-text", "unknown-tool", "bad-args", "fenced"],
+)
+def test_direct_replies_and_unknown_tools(env, reply, answer):
+    svc, _ = env["service"](reply)
+    assert svc.run(OWNER, "Xin chào").answer == answer
+
+
+def test_pii_in_message_is_masked_and_routes_local(env):
+    svc, llm = env["service"](DOCS)
+    svc.run(OWNER, "Khách SĐT 0912345678 hỏi phí phát hành lại thẻ")
+    messages, alias = llm.calls[0]
+    assert alias == "local-chat"
+    assert messages[-1]["content"] == "Khách SĐT <PHONE_NUMBER> hỏi phí phát hành lại thẻ"
+    assert env["answerer"].calls[0][2] is True  # force_local for the RAG answer too
+
+
+# HITL: tao_ticket only after a decision (NFR-07)
+
+
+def test_ticket_waits_for_approval_and_writes_nothing(env):
+    thread_id = pending_thread(env)
+    svc, _ = env["service"]()
+    snapshot = svc.run(OWNER, "Nhắc lại", thread_id)  # a pending action blocks new messages; no model call
+    assert snapshot.status == "pending_approval"
+    assert snapshot.pending_action == {
+        "tool": "tao_ticket",
+        "args": {"summary": "Khách báo mất thẻ, SĐT <PHONE_NUMBER>"},
+    }
+    assert not env["tickets"].path.exists()
+
+
+def test_rejection_writes_nothing_and_cannot_be_decided_twice(env):
+    thread_id = pending_thread(env)
+    svc, _ = env["service"]()
+    result = svc.decide(thread_id, APPROVER, False, "Thiếu thông tin, gọi 0912345678")
+    assert result.status == "completed"
+    assert (
+        result.answer
+        == "Người duyệt đã từ chối, không tạo ticket. Ghi chú của người duyệt: Thiếu thông tin, gọi <PHONE_NUMBER>"
+    )
+    assert ticket_rows(env["tickets"]) == []
+    with pytest.raises(DecisionConflict):
+        svc.decide(thread_id, APPROVER, True)
+    assert ticket_rows(env["tickets"]) == []
+
+
+def test_approval_creates_one_ticket_for_the_authenticated_owner(env):
+    thread_id = pending_thread(env)
+    svc, _ = env["service"]()
+    result = svc.decide(thread_id, APPROVER, True)
+    assert result.status == "completed" and result.answer.startswith("Đã tạo ticket #1 (trạng thái open)")
+    assert ticket_rows(env["tickets"]) == [
+        ("synthetic-user-1", "Khách báo mất thẻ, SĐT <PHONE_NUMBER>", "open", "approver-1")
+    ]
+    with pytest.raises(DecisionConflict):
+        svc.decide(thread_id, APPROVER, True)
+    assert len(ticket_rows(env["tickets"])) == 1
+
+
+def test_model_cannot_set_ticket_owner_or_approval(env):
+    svc, _ = env["service"](
+        '{"tool": "tao_ticket", "args": {"summary": "Cấp quyền", "created_by": "approver-1", "approved": true}}'
+    )
+    thread_id = svc.run(OWNER, "Tạo ticket cấp quyền").thread_id
+    assert svc.run(OWNER, "x", thread_id).pending_action == {"tool": "tao_ticket", "args": {"summary": "Cấp quyền"}}
+    svc.decide(thread_id, APPROVER, True)
+    assert ticket_rows(env["tickets"])[0][0] == "synthetic-user-1"
+
+
+@pytest.mark.parametrize(
+    "who",
+    [OWNER, User("staff-2", "credit"), User("synthetic-user-1", "credit", "approver")],
+    ids=["owner-staff", "other-staff", "self-approval"],
+)
+def test_only_another_approver_can_decide(env, who):
+    thread_id = pending_thread(env)
+    svc, _ = env["service"]()
+    with pytest.raises(PermissionError):
+        svc.decide(thread_id, who, True)
+    assert svc.run(OWNER, "x", thread_id).status == "pending_approval"
+    assert not env["tickets"].path.exists()
+
+
+def test_concurrent_approvals_create_a_single_ticket(env):
+    thread_id = pending_thread(env)
+    svc, _ = env["service"]()
+    start = threading.Barrier(4)
+
+    def approve(_):
+        start.wait()
+        try:
+            return svc.decide(thread_id, APPROVER, True).status
+        except DecisionConflict:
+            return "conflict"
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        outcomes = sorted(pool.map(approve, range(4)))
+    assert outcomes == ["completed", "conflict", "conflict", "conflict"]
+    assert len(ticket_rows(env["tickets"])) == 1
+
+
+def test_pending_thread_survives_a_restart(env):
+    thread_id = pending_thread(env)
+    restarted, _ = env["service"]()  # new service and new connection to the same checkpoint file
+    assert restarted.decide(thread_id, APPROVER, True).status == "completed"
+    assert len(ticket_rows(env["tickets"])) == 1
+
+
+def test_invalid_ticket_summary_is_not_proposed(env):
+    svc, _ = env["service"]('{"tool": "tao_ticket", "args": {"summary": ""}}')
+    result = svc.run(OWNER, "Tạo ticket")
+    assert result.status == "completed" and result.answer.startswith("Chưa tạo được đề xuất ticket")
+    with pytest.raises(DecisionConflict):
+        svc.decide(result.thread_id, APPROVER, True)
+
+
+# Threads
+
+
+def test_other_users_and_unknown_ids_cannot_reach_a_thread(env):
+    thread_id = pending_thread(env)
+    svc, _ = env["service"]()
+    with pytest.raises(ThreadNotFound):
+        svc.run(User("synthetic-user-2", "credit"), "Cho xem", thread_id)
+    for bad in ("0" * 32, "not-a-thread", "../x"):
+        with pytest.raises(ThreadNotFound):
+            svc.run(OWNER, "x", bad)
+        with pytest.raises(ThreadNotFound):
+            svc.decide(bad, APPROVER, True)
+
+
+def test_thread_keeps_history_for_the_model(env):
+    svc, llm = env["service"]('{"answer": "Anh/chị muốn vay bao nhiêu?"}', LOAN)
+    thread_id = svc.run(OWNER, "Tính lãi vay giúp tôi").thread_id
+    svc.run(OWNER, "100 triệu, 12%, 12 tháng", thread_id)
+    roles = [(m["role"], m["content"]) for m in llm.calls[1][0][1:]]
+    assert roles == [
+        ("user", "Tính lãi vay giúp tôi"),
+        ("assistant", "Anh/chị muốn vay bao nhiêu?"),
+        ("user", "100 triệu, 12%, 12 tháng"),
+    ]
+
+
+def test_checkpoint_file_never_stores_raw_pii(env):
+    thread_id = pending_thread(env)
+    svc, _ = env["service"]()
+    svc.decide(thread_id, APPROVER, False, "Gọi 0912345678, CCCD 001204012345")
+    raw = env["checkpoints"].read_bytes()
+    assert b"0912345678" not in raw and b"001204012345" not in raw
+
+
+# Errors
+
+
+@pytest.mark.parametrize("message", ["", "   ", "x" * 4001, None])
+def test_invalid_message(env, message):
+    svc, _ = env["service"]()
+    with pytest.raises(ValueError):
+        svc.run(OWNER, message)
+
+
+def test_gateway_failure_is_agent_unavailable(env):
+    svc, _ = env["service"](LLMError("LLM gateway transport failure (ReadTimeout)"))
+    with pytest.raises(AgentUnavailable, match=r"^agent unavailable \(LLMError\)$"):
+        svc.run(OWNER, "Phí thẻ?")
+
+
+def test_decision_arguments_are_validated(env):
+    thread_id = pending_thread(env)
+    svc, _ = env["service"]()
+    with pytest.raises(ValueError):
+        svc.decide(thread_id, APPROVER, "yes")
+    with pytest.raises(ValueError):
+        svc.decide(thread_id, APPROVER, True, "x" * 501)
+    assert json.loads(json.dumps(svc.run(OWNER, "x", thread_id).pending_action))["tool"] == "tao_ticket"

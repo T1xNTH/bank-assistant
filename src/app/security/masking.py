@@ -74,7 +74,12 @@ def require_mask_content(text: str) -> str:
     Escapes that JSON requires (quote, backslash, control, surrogate) stay escaped, so valid
     JSON stays valid and decodes to the same value with PII masked. Raises ``MaskingError``.
     """
-    return require_mask_text(_decode_escapes(text))
+    return require_mask_content_types(text)[0]
+
+
+def require_mask_content_types(text: str) -> tuple[str, list[str]]:
+    """``require_mask_content`` plus the PII types found (for routing)."""
+    return require_mask(_decode_escapes(text))
 
 
 def masked_pii_types(text: str) -> list[str]:

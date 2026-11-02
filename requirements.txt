@@ -19,3 +19,8 @@ presidio-analyzer==2.2.365  # supports Python 3.10 used by CI
 # E-009 durable asynchronous jobs.
 rq==2.12.0
 redis>=5,<9
+# E-011 agent graph. langgraph 1.x needs langchain-core >= 1, but ragas 0.4.3 in requirements-eval.txt needs < 1;
+# 0.6.11 has the same StateGraph/ToolNode/interrupt API and works with both.
+langgraph==0.6.11
+langgraph-checkpoint-sqlite==2.0.11
+langchain-core>=0.3,<1
