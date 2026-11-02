@@ -23,7 +23,14 @@ from app.log_config import configure_logging
 from app.queue.limits import TokenBucket
 from app.queue.worker import QUEUE_NAMES, positive_int, run_with_policy
 from app.schemas import AskRequest, AskResponse, JobAccepted, JobStatusResponse
-from app.security.masking import REDACTED, MaskingError, mask_identifier, mask_text, require_mask, require_mask_text
+from app.security.masking import (
+    REDACTED,
+    MaskingError,
+    mask_identifier,
+    mask_text,
+    masked_pii_types,
+    require_mask,
+)
 
 RESULT_TTL = 3600
 QUEUE_NAME = "ask-default"
@@ -53,11 +60,12 @@ def execute_ask(payload: dict, identity: dict) -> dict:
         user = User(**identity)
         current = get_current_job()
         connection = current.connection if current else get_job_queue().connection
+        question, pii_types = require_mask(req.question)
+        # Fail closed for payloads enqueued before T-026, which kept force_local=false next to a
+        # masked question: placeholders (or PII left unmasked) still force local (PR #88 review, P2).
+        force_local = req.force_local or bool(pii_types) or bool(masked_pii_types(question))
         result = run_with_policy(
-            lambda: get_answerer().answer(
-                require_mask_text(req.question), user, req.mode, force_local=req.force_local,
-            ),
-            connection,
+            lambda: get_answerer().answer(question, user, req.mode, force_local=force_local), connection,
         )
         return masked_result(asdict(result)).model_dump(mode="json")
     except Exception:

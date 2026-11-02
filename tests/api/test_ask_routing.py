@@ -147,3 +147,46 @@ def test_worker_routes_plain_question_cloud(queued):
     result, payload, llm = queued("Phí thường niên thẻ chuẩn?", classes=("public", "internal"))
     assert result["route"] == "cloud" and payload["force_local"] is False
     assert [alias for _, alias in llm.calls] == ["cloud-chat"]
+
+
+# Jobs enqueued before T-026 kept force_local=false next to a masked question (PR #88 review, P2).
+
+
+@pytest.fixture
+def legacy(monkeypatch):
+    connection = fakeredis.FakeRedis()
+    queue = jobs.JobQueue(connection, max_length=5)
+    llm = FakeLLM("Trả lời [1].")
+    monkeypatch.setattr(jobs, "get_answerer", lambda: RagAnswerer(Retrieve([hit("public")]), llm))
+
+    def run(question):
+        payload = {"question": question, "top_k": 5, "mode": None, "force_local": False}
+        identity = {"user_id": USER.user_id, "department": USER.department, "role": USER.role}
+        job = queue.queue.enqueue(jobs.execute_ask, payload, identity)
+        worker = SimpleWorker([queue.queue], connection=connection, serializer=JSONSerializer)
+        worker.death_penalty_class = TimerDeathPenalty
+        worker.work(burst=True, with_scheduler=False)
+        job = Job.fetch(job.id, connection=connection, serializer=JSONSerializer)
+        return job.return_value(), llm
+
+    yield run
+    connection.close()
+
+
+@pytest.mark.parametrize("kind", PII)
+def test_legacy_masked_payload_with_pii_placeholder_routes_local(legacy, kind):
+    result, llm = legacy(f"Tra cứu cho <{kind}> giúp tôi")
+    assert result["route"] == "local"
+    assert [alias for _, alias in llm.calls] == ["local-chat"]
+
+
+def test_legacy_payload_with_unmasked_pii_routes_local_and_masked(legacy):
+    result, llm = legacy(f"Tra cứu cho {PII['CCCD']}")
+    assert result["route"] == "local"
+    assert not any(raw in sent_to_llm(llm) for raw in RAW)
+
+
+def test_legacy_payload_without_pii_still_routes_cloud(legacy):
+    result, llm = legacy("Phí thường niên thẻ chuẩn?")
+    assert result["route"] == "cloud"
+    assert [alias for _, alias in llm.calls] == ["cloud-chat"]

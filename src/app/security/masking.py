@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import json
+import re
 from contextvars import ContextVar
 from uuid import UUID
 
 from app.security import pii
 
 REDACTED = "[REDACTED]"
+# Placeholders written by app.security.pii.mask_text; their presence means the original text had PII.
+_PII_PLACEHOLDER = re.compile(r"<(CCCD|ACCOUNT_NUMBER|PHONE_NUMBER)>")
 _MASKING: ContextVar[bool] = ContextVar("pii_masking", default=False)
 
 
@@ -50,6 +53,11 @@ def require_mask(text: str) -> tuple[str, list[str]]:
         raise MaskingError("Masking unavailable") from None
     finally:
         _MASKING.reset(token)
+
+
+def masked_pii_types(text: str) -> list[str]:
+    """PII types whose placeholders appear in already masked text, in textual order."""
+    return list(dict.fromkeys(_PII_PLACEHOLDER.findall(text)))
 
 
 def mask_text(text: str) -> str:
