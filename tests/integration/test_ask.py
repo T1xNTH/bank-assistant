@@ -93,7 +93,8 @@ CORPUS_POINTS = 2815  # release corpus-2026-10-28, scripts/ingest.py with the CR
 HR_DOCS = {"145.signed.pdf", "158-ndcp.signed.pdf", "293-cp.signed.pdf", "74-cp.signed.pdf"}
 SUPERSEDED = {"74-cp.signed.pdf", "06-vbhn-nhnn.pdf"}
 # T-027 synthetic labels (data/manifest.csv): a question retrieving these chunks is answered by local-chat.
-CONFIDENTIAL = {"293-cp.signed.pdf", "dkvadkcuadichvutragopquathetindungvtb.pdf"}
+# None of QUESTIONS retrieves them (checked 2026-11-02), so every answer here comes from cloud-chat.
+CONFIDENTIAL = {"158-ndcp.signed.pdf", "dkvadkcuadichvutragopquathetindungvtb.pdf"}
 
 
 def _gateway_up(base: str, key: str) -> bool:

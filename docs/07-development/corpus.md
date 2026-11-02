@@ -62,7 +62,7 @@ Cả 30 văn bản đều công khai. Để kiểm thử FR-04b và NFR-06, 4 t�
 
 | `doc_id` | Phòng ban | Nhãn | Hệ quả |
 |---|---|---|---|
-| `nd293-2025` | `hr` | `confidential` | câu hỏi lấy được chunk này đi `local-chat` |
+| `nd158-2025` | `hr` | `confidential` | câu hỏi lấy được chunk này đi `local-chat` |
 | `vtb-dkdk-tra-gop-the-tin-dung` | `credit` | `confidential` | câu hỏi lấy được chunk này đi `local-chat` |
 | `nd145-2020` | `hr` | `internal` | vẫn đi `cloud-chat` (`decide_route`) |
 | `tt39-2016-vbhn86` | `credit` | `internal` | vẫn đi `cloud-chat` |
@@ -70,5 +70,6 @@ Cả 30 văn bản đều công khai. Để kiểm thử FR-04b và NFR-06, 4 t�
 - Nhãn chỉ quyết định routing; quyền đọc vẫn theo `department` (`retrieve.access_filter`).
 - Không gắn `confidential` cho văn bản có `superseded_by`: văn bản đó không bao giờ được truy xuất nên không kiểm được routing.
 - Đổi nhãn trong manifest xong phải chạy `python scripts/ingest.py --only <doc_id>` (dùng cache nên mất vài giây). `tests/integration/test_rbac_leak.py` báo tài liệu nào có nhãn trong index khác manifest.
+- Chọn tài liệu `confidential` ít được hỏi khi demo: model local (qwen2.5:3b) trả lời kém, nên A quyết định (PR #93, 2026-11-02) chuyển nhãn từ `nd293-2025` (lương tối thiểu, trước đó trả lời chỉ có `[1]`) sang `nd158-2025`. Route local vẫn giữ theo FR-04b.
 - Golden eval hỏi về hai tài liệu `confidential` sẽ đi model local (Ollama) cả ở bước trả lời lẫn bước chấm faithfulness (`JUDGE_LOCAL_MODEL`, xem `docs/07-development/eval.md`), nên chậm hơn và chất lượng có thể khác khi chạy lại eval (T-038).
-- `tests/integration/test_ask.py` (live) tính route mong đợi từ chính các chunk được truy xuất; hai câu hỏi lương (`nd293-2025`) đi `local`.
+- `tests/integration/test_ask.py` (live) tính route mong đợi từ chính các chunk được truy xuất; với nhãn hiện tại cả 10 câu đều đi `cloud`; 3/50 câu golden (`hybrid_rerank`) đi `local`.

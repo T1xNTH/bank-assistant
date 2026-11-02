@@ -48,7 +48,7 @@ SUPERSEDED_QUESTIONS = [
 ]
 # (question, asker's department, confidential document it is about)
 CONFIDENTIAL_QUESTIONS = [
-    ("Mức lương tối thiểu tháng vùng I hiện nay là bao nhiêu?", "hr", "nd293-2025"),
+    ("Mức tham chiếu dùng để tính mức đóng bảo hiểm xã hội được xác định như thế nào?", "hr", "nd158-2025"),
     ("Điều kiện để đăng ký trả góp qua thẻ tín dụng VietinBank là gì?", "credit", "vtb-dkdk-tra-gop-the-tin-dung"),
 ]
 PUBLIC_QUESTION = ("Phí rút tiền mặt bằng thẻ tín dụng quốc tế VietinBank là bao nhiêu?", "public")
