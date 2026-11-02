@@ -218,3 +218,24 @@ def test_no_raw_values_in_logs(caplog):
         mask_text(raw)
     for value in ("000000000001", "10000001", "+84 900 000 001"):
         assert value not in caplog.text
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ('{"p": "\\u0030912345678"}', '{"p": "<PHONE_NUMBER>"}'),  # escaped digit decoded, then masked
+        ('{"q": "\\u0022x\\u005c"}', '{"q": "\\u0022x\\u005c"}'),  # quote/backslash stay escaped: JSON stays valid
+        ('{"q": "\\\\u0030"}', '{"q": "\\\\u0030"}'),  # an escaped backslash, not an escape: unchanged
+        ('"\\ud83d\\ude00\\u000a"', '"\\ud83d\\ude00\\u000a"'),  # surrogates and control characters kept
+        ("Tiền \\u0110\\u1ed3ng", "Tiền Đồng"),
+    ],
+    ids=["digit", "json-required", "escaped-backslash", "surrogate-control", "text"],
+)
+def test_require_mask_content_decodes_json_escapes(text, expected):
+    import json
+
+    from app.security.masking import require_mask_content
+
+    assert require_mask_content(text) == expected
+    if text.startswith(("{", '"')):
+        json.loads(expected)

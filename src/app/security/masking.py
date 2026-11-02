@@ -55,6 +55,28 @@ def require_mask(text: str) -> tuple[str, list[str]]:
         _MASKING.reset(token)
 
 
+# A JSON \uXXXX escape whose backslash is not itself escaped; "\u0030" decodes to the digit 0.
+_UNICODE_ESCAPE = re.compile(r"(?<!\\)((?:\\\\)*)\\u([0-9a-fA-F]{4})")
+_KEEP_ESCAPED = frozenset('"\\') | {chr(c) for c in range(0x20)} | {chr(c) for c in range(0xD800, 0xE000)}
+
+
+def _decode_escapes(text: str) -> str:
+    def decode(match: re.Match) -> str:
+        char = chr(int(match.group(2), 16))
+        return match.group(0) if char in _KEEP_ESCAPED else match.group(1) + char
+
+    return _UNICODE_ESCAPE.sub(decode, text)
+
+
+def require_mask_content(text: str) -> str:
+    """Fail-closed masking of text that may hold JSON: \\uXXXX escapes are decoded first.
+
+    Escapes that JSON requires (quote, backslash, control, surrogate) stay escaped, so valid
+    JSON stays valid and decodes to the same value with PII masked. Raises ``MaskingError``.
+    """
+    return require_mask_text(_decode_escapes(text))
+
+
 def masked_pii_types(text: str) -> list[str]:
     """PII types whose placeholders appear in already masked text, in textual order."""
     return list(dict.fromkeys(_PII_PLACEHOLDER.findall(text)))
