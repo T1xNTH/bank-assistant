@@ -22,23 +22,25 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `45`
+- **Context Revision**: `46`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-02`
-- **Updated By**: `codex-b`
-- **Update Trigger**: `User requested issue #70; reconcile approved merged T-028 and start T-029 agent tools`
+- **Updated By**: `claude`
+- **Update Trigger**: `A giao T-030; đóng T-029 sau merge PR #89`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-010, E-011 EPIC_IN_PROGRESS; E-012..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-029 review; T-026 done (PR #88 merged, QA PR #91); T-028 done; other M-002 tasks pending`
+- **Active Task IDs**: `T-030 review; T-029 done (PR #89, squash b0eed4c); T-026, T-028 done; other M-002 tasks pending`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261102-t029`
+- **Current Session ID**: `S-20261102-t030`
 
 ## Revision Provenance
+
+Revision 46 (claude cho trong-hung, 2026-11-02) đóng T-029 sau merge PR #89 (review approved, done, squash b0eed4c) và làm T-030 trên feat/T-030-agent-graph: StateGraph + ToolNode, interrupt trước tao_ticket, SqliteSaver; task ở review, chờ claude-review-a. Endpoint /agent là T-031 của B.
 
 Revision 45 starts T-029 from main 6dd93c5 on feat/T-029-agent-tools, authorized by
 the user request for issue #70. Owner trong-hung retained; E-011 is in progress.
