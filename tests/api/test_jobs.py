@@ -76,14 +76,14 @@ def test_enqueue_audits_exact_persisted_masked_question(api):
 
 def test_masker_called_once_before_persistence(api, monkeypatch):
     client, _, _ = api
-    original = jobs.require_mask_text
+    original = jobs.require_mask
     calls = []
 
     def mask(question):
         calls.append(question)
         return original(question)
 
-    monkeypatch.setattr(jobs, "require_mask_text", mask)
+    monkeypatch.setattr(jobs, "require_mask", mask)
     assert enqueue(client, question=f"CCCD {PII}").status_code == 202
     assert calls == [f"CCCD {PII}"]
 
@@ -235,7 +235,7 @@ def test_finished_result_masked_in_redis_and_http_with_one_hour_ttl(api, monkeyp
     calls = []
 
     class Answerer:
-        def answer(self, question, user, mode):
+        def answer(self, question, user, mode, force_local=False):
             calls.append((question, user, mode))
             return AskResult(
                 f"CCCD {PII}", True, [Citation(1, f"CCCD {PII}.pdf", 1, 0.9)],
@@ -268,7 +268,7 @@ def test_failure_does_not_persist_or_return_upstream_pii(api, monkeypatch):
     client, queue, _ = api
 
     class BrokenAnswerer:
-        def answer(self, *args):
+        def answer(self, *args, **kwargs):
             raise RuntimeError(f"Provider leaked {PII}")
 
     monkeypatch.setattr(jobs, "get_answerer", lambda: BrokenAnswerer())
@@ -292,7 +292,7 @@ def test_masking_failure_enqueues_nothing(api, monkeypatch):
     def unavailable(_):
         raise jobs.MaskingError("Unavailable")
 
-    monkeypatch.setattr(jobs, "require_mask_text", unavailable)
+    monkeypatch.setattr(jobs, "require_mask", unavailable)
     assert enqueue(client, question=f"CCCD {PII}").status_code == 503
     assert queue.queue.count == 0
     assert not list(queue.connection.scan_iter("rq:job:*"))

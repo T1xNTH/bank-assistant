@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 
 from app.contracts import REFUSAL, AskResult, Citation, Hit, LLMResult, RetrievalMode, User
+from app.routing import decide_route
 
 
 class FakeLLM:
@@ -30,12 +31,15 @@ class FakeAnswerer:
     def __init__(self, retriever: FakeRetriever | None = None) -> None:
         self.retriever = retriever or FakeRetriever()
 
-    def answer(self, question: str, user: User, mode: RetrievalMode | None = None) -> AskResult:
+    def answer(
+        self, question: str, user: User, mode: RetrievalMode | None = None, force_local: bool = False
+    ) -> AskResult:
         hits = self.retriever.retrieve(question, user, 5)
+        route = decide_route([], [h.classification for h in hits], force_local).route
         if not hits:
-            return AskResult(REFUSAL, False, [], mode or "hybrid_rerank", "cloud", 0)
+            return AskResult(REFUSAL, False, [], mode or "hybrid_rerank", route, 0)
         cites = [Citation(i + 1, h.source, h.page, h.score) for i, h in enumerate(hits)]
-        return AskResult("Trả lời [1].", True, cites, mode or "hybrid_rerank", "cloud", 0)
+        return AskResult("Trả lời [1].", True, cites, mode or "hybrid_rerank", route, 0)
 
 
 class FakeMasker:

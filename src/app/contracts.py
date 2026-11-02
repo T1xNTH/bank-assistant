@@ -71,7 +71,9 @@ class Retriever(Protocol):
 
 
 class Answerer(Protocol):
-    def answer(self, question: str, user: User, mode: RetrievalMode | None = None) -> AskResult: ...
+    def answer(
+        self, question: str, user: User, mode: RetrievalMode | None = None, force_local: bool = False
+    ) -> AskResult: ...
 
 
 class Masker(Protocol):

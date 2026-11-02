@@ -159,7 +159,7 @@ def test_actual_worker_consumes_high_before_default_and_legacy(redis_connection,
     from app.fakes_runtime import CannedAnswerer
 
     class RecordingAnswerer:
-        def answer(self, question, user, mode):
+        def answer(self, question, user, mode, force_local=False):
             calls.append(question)
             return CannedAnswerer().answer(question, user, mode)
 

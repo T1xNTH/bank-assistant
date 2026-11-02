@@ -23,7 +23,7 @@ from app.log_config import configure_logging
 from app.queue.limits import TokenBucket
 from app.queue.worker import QUEUE_NAMES, positive_int, run_with_policy
 from app.schemas import AskRequest, AskResponse, JobAccepted, JobStatusResponse
-from app.security.masking import REDACTED, MaskingError, mask_identifier, mask_text, require_mask_text
+from app.security.masking import REDACTED, MaskingError, mask_identifier, mask_text, require_mask, require_mask_text
 
 RESULT_TTL = 3600
 QUEUE_NAME = "ask-default"
@@ -54,7 +54,10 @@ def execute_ask(payload: dict, identity: dict) -> dict:
         current = get_current_job()
         connection = current.connection if current else get_job_queue().connection
         result = run_with_policy(
-            lambda: get_answerer().answer(require_mask_text(req.question), user, req.mode), connection,
+            lambda: get_answerer().answer(
+                require_mask_text(req.question), user, req.mode, force_local=req.force_local,
+            ),
+            connection,
         )
         return masked_result(asdict(result)).model_dump(mode="json")
     except Exception:
@@ -76,7 +79,10 @@ class JobQueue:
 
     def enqueue(self, req: AskRequest, user: User, *, audit_request: Request | None = None) -> JobAccepted:
         payload = req.model_dump(mode="json")
-        payload["question"] = require_mask_text(req.question)
+        payload["question"], pii_types = require_mask(req.question)
+        # The persisted question is masked, so record the routing signal now: the worker routes
+        # to local when the original question had PII (CR-003 C-1, T-026). No PII value is kept.
+        payload["force_local"] = req.force_local or bool(pii_types)
         if audit_request is not None:
             audit_request.state.audit_question = payload["question"]
         # Priority comes only from authenticated role, never from request fields.

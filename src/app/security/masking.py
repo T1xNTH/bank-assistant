@@ -31,16 +31,21 @@ class MaskingError(RuntimeError):
 
 
 def require_mask_text(text: str) -> str:
+    return require_mask(text)[0]
+
+
+def require_mask(text: str) -> tuple[str, list[str]]:
+    """Masked text and the PII types found (for routing, T-026); raises ``MaskingError``."""
     # Presidio itself emits logs. Never recursively invoke its analyzer from
     # the logging filter, including while the analyzer is being initialized.
     if _MASKING.get():
         raise MaskingError("Masking unavailable")
     token = _MASKING.set(True)
     try:
-        masked, _ = pii.mask_text(text)
+        masked, types = pii.mask_text(text)
         if not isinstance(masked, str):
             raise MaskingError("Masking unavailable")
-        return masked
+        return masked, [str(t) for t in types]
     except Exception:
         raise MaskingError("Masking unavailable") from None
     finally:

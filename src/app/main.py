@@ -19,7 +19,7 @@ from app.middleware import RequestContextMiddleware
 from app.queue.jobs import enqueue_job, get_job
 from app.rag.answer import AnswerUnavailable, retrieval_mode, warm_up
 from app.schemas import AskRequest, AskResponse, ChatRequest, ChatResponse, ErrorResponse
-from app.security.masking import REDACTED, MaskingError, mask_identifier, mask_text, require_mask_text
+from app.security.masking import REDACTED, MaskingError, mask_identifier, mask_text, require_mask
 
 logger = get_logger(__name__)
 
@@ -65,9 +65,10 @@ def health() -> dict:
     return {"status": "ok"}
 
 
-def _mask_input(text: str) -> str:
+def _mask_input(text: str) -> tuple[str, list[str]]:
+    """Masked text and its PII types; 503 when masking is unavailable (fail closed)."""
     try:
-        return require_mask_text(text)
+        return require_mask(text)
     except MaskingError:
         raise HTTPException(status_code=503, detail="Masking unavailable") from None
 
@@ -77,7 +78,7 @@ def chat(
     user: User = Depends(get_current_user),
     llm: LLM = Depends(get_llm),
 ) -> ChatResponse:
-    response = structured_chat(_mask_input(req.message), llm)
+    response = structured_chat(_mask_input(req.message)[0], llm)
     return response.model_copy(update={"answer": mask_text(response.answer), "model": mask_text(response.model)})
 
 
@@ -90,9 +91,11 @@ def ask(
     request.state.audit_user = user
     # Keep a safe audit value if input masking raises before the next assignment.
     request.state.audit_question = REDACTED
-    request.state.audit_question = _mask_input(req.question)
+    request.state.audit_question, pii_types = _mask_input(req.question)
+    # PII is detected before masking; the answerer only sees masked text (CR-003 C-1, T-026).
+    force_local = req.force_local or bool(pii_types)
     try:
-        result = answerer.answer(request.state.audit_question, user, req.mode)
+        result = answerer.answer(request.state.audit_question, user, req.mode, force_local=force_local)
     except AnswerUnavailable as exc:
         logger.warning("ask.unavailable: %s", exc, extra={"exception_type": type(exc.__cause__ or exc).__name__})
         raise HTTPException(status_code=503, detail="Answer unavailable") from None

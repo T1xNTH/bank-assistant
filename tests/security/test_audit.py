@@ -33,8 +33,8 @@ def test_one_ask_row_contains_masked_question_and_result_metadata(monkeypatch):
     app.dependency_overrides[get_current_user] = lambda: User("staff-1", "hr")
 
     class Answerer:
-        def answer(self, *args):
-            return replace(CannedAnswerer().answer(*args), route="local", trace_id="test-trace")
+        def answer(self, *args, **kwargs):
+            return replace(CannedAnswerer().answer(*args, **kwargs), route="local", trace_id="test-trace")
 
     app.dependency_overrides[get_answerer] = Answerer
     response = TestClient(app).post("/ask", json={"question": secret})
@@ -133,7 +133,7 @@ def test_answerer_failure_creates_one_row_without_inventing_a_route(caplog, ques
     app = create_app()
 
     class Broken:
-        def answer(self, *args):
+        def answer(self, *args, **kwargs):
             raise RuntimeError("private-provider-detail")
 
     app.dependency_overrides[get_answerer] = Broken
@@ -159,7 +159,7 @@ def test_audit_failure_returns_safe_503_without_retry_or_success(monkeypatch, ca
     app = create_app()
 
     class BrokenAnswerer:
-        def answer(self, *args):
+        def answer(self, *args, **kwargs):
             raise RuntimeError("private-answerer-error")
 
     app.dependency_overrides[get_answerer] = BrokenAnswerer

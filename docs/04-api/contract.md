@@ -42,6 +42,7 @@ Contract HTTP bên ngoài của dịch vụ API và các hợp đồng Python n�
 - **Từ chối** không phải là lỗi: trả `200` với `found: false` và `answer` = hằng `REFUSAL` (`"Không tìm thấy thông tin này trong tài liệu nội bộ hiện có."`).
 - **Trích dẫn**: mọi câu trả lời `found: true` có ≥ 1 trích dẫn `{n, source, page, score}`; `n` khớp với các marker `[n]` trong câu trả lời.
 - **PII**: văn bản của request được che trước khi ghi log, ghi trace hay đưa vào hàng chờ; response được che ở đầu ra.
+- **Routing** (`route`): `local` (alias `local-chat`) khi `force_local=true`, câu hỏi gốc có PII (CCCD, số tài khoản, số điện thoại; phát hiện lúc che, trước khi vào hàng chờ) hoặc có chunk `confidential`; ngược lại `cloud`. Answerer chỉ nhận câu hỏi đã che và `force_local = request.force_local OR có PII`.
 - **Versioning**: thay đổi chỉ thêm (trường optional mới) thì tăng minor của `info.version`; xoá/đổi tên trường hoặc đổi ngữ nghĩa cần change request đã duyệt và tăng major.
 
 ## Hợp đồng nội bộ (`src/app/contracts.py`)
@@ -50,7 +51,7 @@ Contract HTTP bên ngoài của dịch vụ API và các hợp đồng Python n�
 |---|---|---|---|---|
 | `LLM` | `chat(messages, alias, temperature=0.0) -> LLMResult` | B (`app/llm.py`) | A (answer, agent) | `tests/fakes.py::FakeLLM` |
 | `Retriever` | `retrieve(question, user, k) -> list[Hit]` | A (`app/rag/retrieve.py`) | A answer, B API | `FakeRetriever` |
-| `Answerer` | `answer(question, user, mode=None) -> AskResult` | A (`app/rag/answer.py`) | B API + worker | `FakeAnswerer` |
+| `Answerer` | `answer(question, user, mode=None, force_local=False) -> AskResult` (CR-003 C-1, T-026) | A (`app/rag/answer.py`) | B API + worker | `FakeAnswerer` |
 | `Masker` | `mask_text(text) -> tuple[str, list[str]]` | B (`app/security/pii.py`) | A + B | `FakeMasker` |
 | `User` | dataclass `user_id, department, role` | B (`app/security/auth.py`) | tất cả | — |
 
