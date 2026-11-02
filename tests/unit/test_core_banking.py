@@ -3,12 +3,14 @@
 import sqlite3
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 
 import pytest
 
 from app.agent.core_banking import CoreBanking
 from app.contracts import User
+from scripts import seed_core_banking
 from scripts.seed_core_banking import seed
 
 
@@ -86,6 +88,53 @@ def test_seed_cli(tmp_path):
     path = tmp_path / "cli.db"
     subprocess.run([sys.executable, "scripts/seed_core_banking.py", "--path", str(path)], check=True)
     assert len(CoreBanking(path).accounts(User("synthetic-user-1", "public"))) == 1
+
+
+@pytest.mark.parametrize("stage", ["connect", "insert", "publish"])
+def test_failed_seed_leaves_no_destination_and_can_retry(tmp_path, monkeypatch, stage):
+    path = tmp_path / "bank.db"
+    original_connect = sqlite3.connect
+
+    class FailingConnection(sqlite3.Connection):
+        def executemany(self, sql, parameters):
+            if sql.startswith("INSERT INTO transactions"):
+                raise sqlite3.OperationalError("synthetic insert failure")
+            return super().executemany(sql, parameters)
+
+    def fail(*args, **kwargs):
+        raise OSError("synthetic seed failure")
+
+    with monkeypatch.context() as patch:
+        if stage == "connect":
+            patch.setattr(seed_core_banking.sqlite3, "connect", fail)
+        elif stage == "insert":
+            patch.setattr(seed_core_banking.sqlite3, "connect", lambda path: original_connect(
+                path, factory=FailingConnection,
+            ))
+        else:
+            patch.setattr(seed_core_banking.os, "link", fail)
+        with pytest.raises((OSError, sqlite3.OperationalError)):
+            seed(path)
+    assert list(tmp_path.iterdir()) == []
+    seed(path)
+    assert len(CoreBanking(path).transactions(User("synthetic-user-1", "public"))) == 5
+    assert list(tmp_path.iterdir()) == [path]
+
+
+def test_concurrent_seed_publishes_exactly_once(tmp_path):
+    path = tmp_path / "bank.db"
+
+    def attempt(_):
+        try:
+            seed(path)
+            return "created"
+        except FileExistsError:
+            return "exists"
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        assert sorted(pool.map(attempt, range(2))) == ["created", "exists"]
+    assert list(tmp_path.iterdir()) == [path]
+    assert len(CoreBanking(path).transactions(User("synthetic-user-1", "public"))) == 5
 
 
 def test_default_path_from_environment(tmp_path, monkeypatch):

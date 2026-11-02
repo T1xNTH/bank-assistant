@@ -3,17 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sqlite3
+import tempfile
 from contextlib import closing
 from pathlib import Path
 
 
-def seed(path: str | Path = "data/core_banking.db") -> Path:
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    # Exclusive creation prevents accidental replacement of an existing database.
-    with path.open("xb"):
-        pass
+def _populate(path: Path) -> None:
     with closing(sqlite3.connect(path)) as connection, connection:
         connection.execute("PRAGMA foreign_keys = ON")
         connection.execute(
@@ -48,6 +45,20 @@ def seed(path: str | Path = "data/core_banking.db") -> Path:
                 for i, (account_id, _, _, _) in enumerate(accounts, 1) for j in range(1, 6)
             ],
         )
+
+
+def seed(path: str | Path = "data/core_banking.db") -> Path:
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # Build and commit off-path. Publish only a complete database, without ever
+    # replacing an existing destination (including one created concurrently).
+    with tempfile.NamedTemporaryFile(dir=path.parent, prefix=".core-banking-", suffix=".db", delete=False) as stream:
+        temporary = Path(stream.name)
+    try:
+        _populate(temporary)
+        os.link(temporary, path)
+    finally:
+        temporary.unlink()
     return path
 
 

@@ -10,7 +10,32 @@ Run `python scripts/seed_core_banking.py` from the repository root to create
 `data/core_banking.db` with three synthetic users (`synthetic-user-1` through
 `synthetic-user-3`), one account each and five transactions per account. No real
 customer data is used. `--path PATH` selects another file; existing files are never
-overwritten. Amounts and balances use integer VND; transaction amounts are signed.
+overwritten. Seeding commits a temporary database in the destination directory,
+then publishes it with an exclusive hard link. A failed seed removes its temporary
+file and leaves no incomplete destination; rerun the same command to retry.
+Amounts and balances use integer VND; transaction amounts are signed.
+
+For manual demos, create an API key whose identity matches the seed data:
+`python scripts/make_key.py --user-id synthetic-user-1 --department credit --role staff`.
+Keep the printed key for the `X-API-Key` header and enable `AUTH_BACKEND=apikey`;
+the registry stores its hash. This command does not change other users' identities.
+
+The current API image does not include `scripts/` and does not seed automatically.
+Its default database lives at `/app/data/core_banking.db` in the `audit_data` volume,
+separate from a host-side `data/core_banking.db`. After `make up`, seed that volume
+from the host checkout (Bash/WSL):
+
+```bash
+docker compose -f infrastructure/compose.yaml --env-file .env.local exec -T api \
+  python - --path /app/data/core_banking.db < scripts/seed_core_banking.py
+```
+
+This streams the script into the running API without requiring it in the image.
+An existing destination fails safely with `FileExistsError`; do not delete it just
+to rerun setup. Owner B will wire first-run container initialization when integrating
+the agent endpoints in T-031; T-041 (also B) must verify seeding and synthetic-user
+lookup from a clean clone/empty volume for NFR-10. Until then, the command above is
+the required manual setup step before enabling the transaction tool in Docker.
 
 `app.agent.core_banking.CoreBanking` opens SQLite with `mode=ro`; even SQL writes
 through its connection fail. `accounts(user)` and
