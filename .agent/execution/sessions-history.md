@@ -507,4 +507,7 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261102-125215` | `2026-11-02` | `2026-11-02` | `codex-b` | `T-029` | `completed` | `verify '.venv/verify-t029' passed` | `.agent/reports/implementation/T-029.md` | `none` |
 | `S-20261102-125235` | `2026-11-02` | `2026-11-02` | `codex-b` | `T-029` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-029.md` | `none` |
 | `S-20261102-125235-2` | `2026-11-02` | `2026-11-02` | `codex-b` | `T-029` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-029.md` | `none` |
+| `S-20261102-130036` | `2026-11-02` | `2026-11-02` | `claude-review-a` | `T-026` | `completed` | `review started` | `.agent/reports/review/T-026.md` | `none` |
+| `S-20261102-130257` | `2026-11-02` | `2026-11-02` | `claude-review-a` | `T-026` | `completed` | `review approved` | `.agent/reports/review/T-026.md` | `none` |
+| `S-20261102-140540` | `2026-11-02` | `2026-11-02` | `trong-hung` | `T-026` | `completed` | `task review -> done` | `.agent/reports/review/T-026.md` | `none` |
 | `S-20261102-143222` | `2026-11-02` | `2026-11-02` | `claude-review-a` | `T-029` | `completed` | `review started` | `.agent/reports/review/T-029.md` | `none` |
