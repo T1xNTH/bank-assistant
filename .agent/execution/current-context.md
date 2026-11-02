@@ -22,23 +22,35 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `44`
+- **Context Revision**: `45`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-02`
 - **Updated By**: `codex-b`
-- **Update Trigger**: `Merge main into PR88; preserve T-026 and T-028 review state and both epic starts`
+- **Update Trigger**: `User requested issue #70; reconcile approved merged T-028 and start T-029 agent tools`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-010, E-011 EPIC_IN_PROGRESS; E-012..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-026 review (PR #88); T-028 review (PR #87 merged); other M-002 tasks pending`
+- **Active Task IDs**: `T-029 review; T-026 review (PR #88 merged); T-028 done; other M-002 tasks pending`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261102-t028`
+- **Current Session ID**: `S-20261102-t029`
 
 ## Revision Provenance
+
+Revision 45 starts T-029 from main 6dd93c5 on feat/T-029-agent-tools, authorized by
+the user request for issue #70. Owner trong-hung retained; E-011 is in progress.
+T-028 reconciled to done from existing final-head counterpart approval and merged
+PR87, documented in T-029-dependency-closure.md; no new approval is claimed.
+Scope: Decimal loan schedules, user-bound readonly/masked transaction tool and
+pending-only ticket proposals. Contracts/graph/endpoints remain unchanged.
+
+Implementation fcbdc40 passed 55 focused tests and WSL make check: 898 passed /
+50 deselected, Ruff and framework pass. Report T-029.md complete; lifecycle CLI
+requested claude-review-a and moved the task to review. Actual independent Claude
+session and counterpart approval remain pending; no approval/done claim.
 
 Revision 44 (codex, 2026-11-02) merges main 1b22b70 into PR #88, preserving T-026 and T-028 review state and both epic starts. No approval or done transition is claimed.
 
