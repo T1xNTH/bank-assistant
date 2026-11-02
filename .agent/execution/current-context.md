@@ -22,23 +22,49 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `40`
+- **Context Revision**: `43`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-02`
-- **Updated By**: `trong-hung`
-- **Update Trigger**: `Đóng M-001 (QA E-001..E-009, REL-001 v0.1 ready) và mở M-002 (E-010..E-016 EPIC_READY, T-026..T-043)`
+- **Updated By**: `codex-b`
+- **Update Trigger**: `Apply A decision from PR87 re-check: deny self-approval before DB access; T-028 stays review`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-010..E-016 (EPIC_READY; chuyển EPIC_IN_PROGRESS khi task đầu tiên của epic bắt đầu). E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `none (T-026..T-043 pending). Bắt đầu N6: T-026, T-035, T-037; N7–N8 theo dependency`
+- **Active Epic IDs**: `E-011 EPIC_IN_PROGRESS; E-010, E-012..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
+- **Active Task IDs**: `T-028 review; other M-002 tasks pending`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261102-close-m001-open-m002`
+- **Current Session ID**: `S-20261102-t028`
 
 ## Revision Provenance
+
+Revision 43 applies A's self-approval decision from PR87 comment 6568634202.
+Commit ffebd22 denies ticket creation when approver equals creator, after non-empty
+input validation and before DB access. README/docstring and denial regressions are
+updated. WSL make check: 806 passed / 50 deselected; Ruff/framework pass.
+Supplement: T-028-PR87-self-approval.md. Original reports are preserved;
+the previous pending policy note is superseded by A's decision. Re-review pending.
+
+Revision 42 addresses PR87 review at d4fd83a. Commit 53834e4 publishes complete
+synthetic databases with an exclusive hard link and cleans temporary files on
+failure; documents Docker seed ownership/setup and synthetic-user API key creation.
+WSL make check: 804 passed / 50 deselected, Ruff and framework pass. Supplement:
+T-028-PR87-fixes.md. Self-approval policy is unchanged pending owner A's decision;
+independent re-review and counterpart PR approval remain pending.
+
+Revision 41 starts T-028 (issue #69) from main 8f737da on feat/T-028-sqlite-stores.
+E-011 started through the lifecycle CLI; owner teammate-b retained. Bounded context:
+task T-028, E-011 registry, schema.md, User contract, DEC-001/DEC-004 and T-029/30
+integration requirements. No contracts or baselined scope changed. Core banking is
+read-only and user-scoped; tickets require an explicit matching approver decision.
+Independent Claude review and counterpart PR approval remain pending.
+
+Implementation ecc4293 passed WSL make check: 800 passed / 50 deselected,
+Ruff and FRAMEWORK_VALIDATION_PASS. Focused SQLite checks: 35 passed. Report
+T-028.md is complete; lifecycle CLI requested claude-review-a and moved the task
+to review. No independent review, peer approval or done transition is claimed.
 
 Revision 40 (trong-hung, 2026-11-02) đóng M-001: review sau merge cho T-013, T-025 (claude-review-a), bản lưu review PR cho T-015, T-021, T-024; T-002, T-013, T-023, T-025 done; QA cấp epic E-001..E-009 pass trên main 3b778ea (make check 765 passed, pytest -m integration 50 passed, make up healthy); E-001..E-009 EPIC_DONE; M-001 completed; REL-001 v0.1 ready (tag sau merge). Mở M-002: milestone ready, R-001 ROADMAP_ACTIVE, E-010..E-016 EPIC_READY, 18 task T-026..T-043. ISSUE-027, ISSUE-028 mở, sửa ở T-037.
 
