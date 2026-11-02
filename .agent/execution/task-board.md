@@ -52,3 +52,21 @@ Lưu registry chính thức các task thực thi được và trạng thái life
 | `T-023` | `E-008` | `Eval runner: RAGAS + hit@5 + từ chối, 3 mode, báo cáo` | `trong-hung` | `done` | `T-022, T-019` | `none` | `.agent/execution/tasks/T-023.md, .agent/reports/implementation/T-023.md, .agent/reports/review/T-023.md` | `2026-11-02` |
 | `T-024` | `E-009` | `POST /ask/jobs + GET /ask/jobs/{id}` | `teammate-b` | `done` | `T-021, T-003` | `none` | `.agent/execution/tasks/T-024.md, .agent/reports/implementation/T-024.md, .agent/reports/implementation/T-025-dependency-closure.md` | `2026-10-31` |
 | `T-025` | `E-009` | `Worker: rate limit, retry/backoff, priority, giới hạn theo key` | `teammate-b` | `done` | `T-024` | `none` | `.agent/execution/tasks/T-025.md, .agent/reports/implementation/T-025.md, .agent/reports/review/T-025.md` | `2026-11-02` |
+| `T-026` | `E-010` | `decide_route: PII hoặc chunk confidential -> local-chat; nối vào /ask và worker` | `trong-hung` | `pending` | `none` | `none` | `.agent/execution/tasks/T-026.md` | `2026-11-02` |
+| `T-027` | `E-010` | `Nhãn classification cho corpus + test rò RBAC và tài liệu bị thay thế trên Qdrant thật` | `trong-hung` | `pending` | `T-026` | `none` | `.agent/execution/tasks/T-027.md` | `2026-11-02` |
+| `T-028` | `E-011` | `SQLite tổng hợp core_banking (mode=ro) + tickets store chỉ ghi sau khi duyệt` | `teammate-b` | `pending` | `none` | `none` | `.agent/execution/tasks/T-028.md` | `2026-11-02` |
+| `T-029` | `E-011` | `loan.py tinh_lai_vay + 3 tool gắn với user hiện tại` | `trong-hung` | `pending` | `T-028` | `none` | `.agent/execution/tasks/T-029.md` | `2026-11-02` |
+| `T-030` | `E-011` | `LangGraph agent: chọn RAG hoặc tool, interrupt trước tao_ticket, checkpointer` | `trong-hung` | `pending` | `T-029` | `none` | `.agent/execution/tasks/T-030.md` | `2026-11-02` |
+| `T-031` | `E-011` | `POST /agent và POST /agent/{thread_id}/decision (chỉ approver, 409 khi đã quyết)` | `teammate-b` | `pending` | `T-030` | `none` | `.agent/execution/tasks/T-031.md` | `2026-11-02` |
+| `T-032` | `E-012` | `Prompt phân loại intent/needs_human cho n8n + bộ 20 mẫu kiểm` | `trong-hung` | `pending` | `none` | `none` | `.agent/execution/tasks/T-032.md` | `2026-11-02` |
+| `T-033` | `E-012` | `n8n + Mailpit (profile automation) và workflow intake-to-reply` | `teammate-b` | `pending` | `T-032` | `none` | `.agent/execution/tasks/T-033.md` | `2026-11-02` |
+| `T-034` | `E-012` | `Workflow error-handler + tài liệu vận hành n8n` | `teammate-b` | `pending` | `T-033` | `none` | `.agent/execution/tasks/T-034.md` | `2026-11-02` |
+| `T-035` | `E-013` | `Langfuse (profile obs) + tracing.py cho /ask, /chat, worker (chờ vs xử lý)` | `teammate-b` | `pending` | `none` | `none` | `.agent/execution/tasks/T-035.md` | `2026-11-02` |
+| `T-036` | `E-013` | `llm_cost.cost_of + token/chi phí mỗi request vào trace và audit; POST /feedback` | `teammate-b` | `pending` | `T-035` | `none` | `.agent/execution/tasks/T-036.md` | `2026-11-02` |
+| `T-037` | `E-013` | `Sửa ISSUE-027 (rate limit theo key /chat, /ask) và ISSUE-028 (audit /chat)` | `teammate-b` | `pending` | `none` | `none` | `.agent/execution/tasks/T-037.md` | `2026-11-02` |
+| `T-038` | `E-014` | `Sửa 3 câu trả lời tệ nhất từ trace/eval, chạy lại eval 3 mode` | `trong-hung` | `pending` | `T-035, T-026` | `none` | `.agent/execution/tasks/T-038.md` | `2026-11-02` |
+| `T-039` | `E-015` | `CI eval gate (10 câu) + trivy scan image` | `teammate-b` | `pending` | `T-038` | `none` | `.agent/execution/tasks/T-039.md` | `2026-11-02` |
+| `T-040` | `E-015` | `Hoàn thiện compose profiles + make backup/restore Qdrant` | `teammate-b` | `pending` | `T-035, T-033` | `none` | `.agent/execution/tasks/T-040.md` | `2026-11-02` |
+| `T-041` | `E-015` | `Test clone sạch -> make up healthy (NFR-10) và release QA v1.0-mvp` | `teammate-b` | `pending` | `T-039, T-040, T-031, T-034` | `none` | `.agent/execution/tasks/T-041.md` | `2026-11-02` |
+| `T-042` | `E-016` | `Streamlit UI: chọn role, chat /ask có trích dẫn, agent + duyệt` | `trong-hung` | `pending` | `T-031` | `none` | `.agent/execution/tasks/T-042.md` | `2026-11-02` |
+| `T-043` | `E-016` | `README tiếng Anh, cập nhật kiến trúc, ADR 0001–0004, kịch bản demo` | `trong-hung` | `pending` | `T-042` | `none` | `.agent/execution/tasks/T-043.md` | `2026-11-02` |

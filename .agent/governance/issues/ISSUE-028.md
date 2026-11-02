@@ -46,7 +46,7 @@ Track review finding F-02 of T-013.
 ## Related Files
 
 - **Affected Files**: `src/app/main.py`, `tests/api/test_chat.py`
-- **Tasks or Epics**: `T-013`, `E-005`, `FR-05`
+- **Tasks or Epics**: `T-013`, `E-005`, `FR-05`; fix in `T-037` (`E-013`)
 - **Decisions**: `DEC-001`
 - **Risks**: `none`
 - **Blockers**: `none`

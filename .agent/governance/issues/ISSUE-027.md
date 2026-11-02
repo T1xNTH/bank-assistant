@@ -46,7 +46,7 @@ OpenAPI declares 429 `RateLimited` (with Retry-After) for POST /chat and POST /a
 ## Related Files
 
 - **Affected Files**: `src/app/main.py`, `src/app/queue/limits.py`, `tests/api/test_chat.py`, `tests/api/test_ask*.py`
-- **Tasks or Epics**: `T-013`, `T-025`, `E-005`, `E-009`
+- **Tasks or Epics**: `T-013`, `T-025`, `E-005`, `E-009`; fix in `T-037` (`E-013`)
 - **Decisions**: `DEC-001`
 - **Risks**: `none`
 - **Blockers**: `none`
