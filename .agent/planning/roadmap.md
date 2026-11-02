@@ -22,4 +22,4 @@ Lưu thứ tự đã duyệt của các roadmap item ở mức kết quả và k
 | Roadmap ID | Kết quả | Owner | Khung thời gian | Trạng thái | Milestone IDs | Change Request |
 |---|---|---|---|---|---|---|
 
-| `R-001` | `Giao MVP bank-assistant (FR-01..FR-12, NFR-01..NFR-10) trong 10 ngày làm việc` | `trong-hung` | `2026-10-26..2026-11-06` | `ROADMAP_APPROVED` | `M-001, M-002` | `none` |
+| `R-001` | `Giao MVP bank-assistant (FR-01..FR-12, NFR-01..NFR-10) trong 10 ngày làm việc` | `trong-hung` | `2026-10-26..2026-11-06` | `ROADMAP_ACTIVE` | `M-001, M-002` | `none` |

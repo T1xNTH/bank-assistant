@@ -22,23 +22,25 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `39`
+- **Context Revision**: `40`
 - **Context Status**: `current`
-- **Last Updated**: `2026-10-31`
-- **Updated By**: `codex-b`
-- **Update Trigger**: `User-requested issue #26 T-025 implementation from main 4a2f481; T-024 closure from owner-approved merged PR63`
+- **Last Updated**: `2026-11-02`
+- **Updated By**: `trong-hung`
+- **Update Trigger**: `Đóng M-001 (QA E-001..E-009, REL-001 v0.1 ready) và mở M-002 (E-010..E-016 EPIC_READY, T-026..T-043)`
 - **Planning Roadmap ID**: `R-001`
-- **Planning Roadmap Status**: `ROADMAP_APPROVED`
+- **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-001 (EPIC_IN_PROGRESS; T-001 done, T-002 review theo board); E-002 (EPIC_IN_PROGRESS; T-003 done, T-004 done; branch protection pending); E-003 (EPIC_IN_PROGRESS; T-005..T-010 done; CR-009 merged in main); E-005 (EPIC_IN_PROGRESS; T-011 done, T-012 done, T-013 review); E-006 (EPIC_IN_PROGRESS; T-014 done, T-015 done); E-004 (EPIC_IN_PROGRESS; T-016 done, T-017 review); E-007 (EPIC_IN_PROGRESS; T-020 done, T-021 done); E-008 (EPIC_IN_PROGRESS; T-022 review); E-009 (EPIC_IN_PROGRESS; T-024 done, T-025 review)`
-- **Active Task IDs**: `T-002, T-013, T-017, T-022, T-025`
+- **Active Epic IDs**: `E-010..E-016 (EPIC_READY; chuyển EPIC_IN_PROGRESS khi task đầu tiên của epic bắt đầu). E-001..E-009 EPIC_DONE`
+- **Active Task IDs**: `none (T-026..T-043 pending). Bắt đầu N6: T-026, T-035, T-037; N7–N8 theo dependency`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261031-t025-implementation`
+- **Current Session ID**: `S-20261102-close-m001-open-m002`
 
 ## Revision Provenance
+
+Revision 40 (trong-hung, 2026-11-02) đóng M-001: review sau merge cho T-013, T-025 (claude-review-a), bản lưu review PR cho T-015, T-021, T-024; T-002, T-013, T-023, T-025 done; QA cấp epic E-001..E-009 pass trên main 3b778ea (make check 765 passed, pytest -m integration 50 passed, make up healthy); E-001..E-009 EPIC_DONE; M-001 completed; REL-001 v0.1 ready (tag sau merge). Mở M-002: milestone ready, R-001 ROADMAP_ACTIVE, E-010..E-016 EPIC_READY, 18 task T-026..T-043. ISSUE-027, ISSUE-028 mở, sửa ở T-037.
 
 Revision 39 starts T-025 (issue 26) from main 4a2f481. T-024 closure is reconciled
 from the other owner's existing approval, separate Claude re-review and merged PR63;
