@@ -17,6 +17,7 @@ priority: 1
 | Chat (cloud) | alias `cloud-chat` → `openai/<OPENAI_MODEL>` | LiteLLM |
 | Chat (local) | alias `local-chat` → `ollama_chat/qwen2.5:3b` (`local-chat-7b` tuỳ chọn) | LiteLLM |
 | Judge | `JUDGE_MODEL` (mặc định = alias `cloud-chat`) | RAGAS qua LiteLLM |
+| Judge cho câu đi local | `JUDGE_LOCAL_MODEL` (mặc định = alias `local-chat`, chỉ nhận `local-*`) | RAGAS qua LiteLLM; context `confidential` không đi cloud |
 
 ## Các mode retrieval
 `dense`, `hybrid` (RRF của dense + sparse), `hybrid_rerank` (mặc định). `REFUSAL_THRESHOLD` áp lên điểm rerank; dưới ngưỡng → từ chối.

@@ -70,4 +70,5 @@ Cả 30 văn bản đều công khai. Để kiểm thử FR-04b và NFR-06, 4 t�
 - Nhãn chỉ quyết định routing; quyền đọc vẫn theo `department` (`retrieve.access_filter`).
 - Không gắn `confidential` cho văn bản có `superseded_by`: văn bản đó không bao giờ được truy xuất nên không kiểm được routing.
 - Đổi nhãn trong manifest xong phải chạy `python scripts/ingest.py --only <doc_id>` (dùng cache nên mất vài giây). `tests/integration/test_rbac_leak.py` báo tài liệu nào có nhãn trong index khác manifest.
-- Golden eval hỏi về hai tài liệu `confidential` sẽ đi model local (Ollama), nên chậm hơn và chất lượng có thể khác khi chạy lại eval (T-038).
+- Golden eval hỏi về hai tài liệu `confidential` sẽ đi model local (Ollama) cả ở bước trả lời lẫn bước chấm faithfulness (`JUDGE_LOCAL_MODEL`, xem `docs/07-development/eval.md`), nên chậm hơn và chất lượng có thể khác khi chạy lại eval (T-038).
+- `tests/integration/test_ask.py` (live) tính route mong đợi từ chính các chunk được truy xuất; hai câu hỏi lương (`nd293-2025`) đi `local`.

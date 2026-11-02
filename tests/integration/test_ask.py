@@ -26,7 +26,9 @@ from qdrant_client import QdrantClient
 
 from app import deps
 from app.config import Settings
-from app.contracts import REFUSAL
+from app.contracts import REFUSAL, User
+from app.rag.retrieve import retrieve
+from app.routing import decide_route
 
 pytestmark = pytest.mark.integration
 
@@ -90,6 +92,8 @@ OUT_OF_SCOPE = [
 CORPUS_POINTS = 2815  # release corpus-2026-10-28, scripts/ingest.py with the CR-009 chunker
 HR_DOCS = {"145.signed.pdf", "158-ndcp.signed.pdf", "293-cp.signed.pdf", "74-cp.signed.pdf"}
 SUPERSEDED = {"74-cp.signed.pdf", "06-vbhn-nhnn.pdf"}
+# T-027 synthetic labels (data/manifest.csv): a question retrieving these chunks is answered by local-chat.
+CONFIDENTIAL = {"293-cp.signed.pdf", "dkvadkcuadichvutragopquathetindungvtb.pdf"}
 
 
 def _gateway_up(base: str, key: str) -> bool:
@@ -162,7 +166,13 @@ def test_in_scope_question_cites_the_right_file_and_page(api, department, questi
     cited = [(c["source"], c["page"]) for c in body["citations"]]
     print(f"\n[{department}] {question}\n  {body['answer']}\n  {cited} {body['latency_ms']} ms")
     assert body["found"] is True
-    assert body["retrieval_mode"] == "hybrid_rerank" and body["route"] == "cloud"
+    assert body["retrieval_mode"] == "hybrid_rerank"
+    # The route follows the retrieved chunks' classification (T-026/T-027), recomputed here from the same
+    # deterministic retrieval the answer used: local when a chunk is confidential, cloud otherwise.
+    hits = retrieve(question, User("route-check", department), 5, "hybrid_rerank")
+    assert body["route"] == decide_route([], [h.classification for h in hits]).route
+    if source in CONFIDENTIAL:
+        assert body["route"] == "local"
     assert any(s == source and p in pages for s, p in cited), cited
     assert re.search(fact, body["answer"], re.IGNORECASE), body["answer"]
     assert not SUPERSEDED & {s for s, _ in cited}
