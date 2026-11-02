@@ -22,11 +22,11 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `42`
+- **Context Revision**: `43`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-02`
 - **Updated By**: `codex-b`
-- **Update Trigger**: `Address PR87 review: atomic seed failure cleanup and Docker/demo documentation; T-028 stays review`
+- **Update Trigger**: `Apply A decision from PR87 re-check: deny self-approval before DB access; T-028 stays review`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
@@ -39,6 +39,13 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Current Session ID**: `S-20261102-t028`
 
 ## Revision Provenance
+
+Revision 43 applies A's self-approval decision from PR87 comment 6568634202.
+Commit ffebd22 denies ticket creation when approver equals creator, after non-empty
+input validation and before DB access. README/docstring and denial regressions are
+updated. WSL make check: 806 passed / 50 deselected; Ruff/framework pass.
+Supplement: T-028-PR87-self-approval.md. Original reports are preserved;
+the previous pending policy note is superseded by A's decision. Re-review pending.
 
 Revision 42 addresses PR87 review at d4fd83a. Commit 53834e4 publishes complete
 synthetic databases with an exclusive hard link and cleans temporary files on
