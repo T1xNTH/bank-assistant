@@ -54,7 +54,7 @@ Lưu registry chính thức các task thực thi được và trạng thái life
 | `T-025` | `E-009` | `Worker: rate limit, retry/backoff, priority, giới hạn theo key` | `teammate-b` | `done` | `T-024` | `none` | `.agent/execution/tasks/T-025.md, .agent/reports/implementation/T-025.md, .agent/reports/review/T-025.md` | `2026-11-02` |
 | `T-026` | `E-010` | `decide_route: PII hoặc chunk confidential -> local-chat; nối vào /ask và worker` | `trong-hung` | `pending` | `none` | `none` | `.agent/execution/tasks/T-026.md` | `2026-11-02` |
 | `T-027` | `E-010` | `Nhãn classification cho corpus + test rò RBAC và tài liệu bị thay thế trên Qdrant thật` | `trong-hung` | `pending` | `T-026` | `none` | `.agent/execution/tasks/T-027.md` | `2026-11-02` |
-| `T-028` | `E-011` | `SQLite tổng hợp core_banking (mode=ro) + tickets store chỉ ghi sau khi duyệt` | `teammate-b` | `pending` | `none` | `none` | `.agent/execution/tasks/T-028.md` | `2026-11-02` |
+| `T-028` | `E-011` | `SQLite tổng hợp core_banking (mode=ro) + tickets store chỉ ghi sau khi duyệt` | `teammate-b` | `review` | `none` | `none` | `.agent/execution/tasks/T-028.md, .agent/reports/implementation/T-028.md` | `2026-11-02` |
 | `T-029` | `E-011` | `loan.py tinh_lai_vay + 3 tool gắn với user hiện tại` | `trong-hung` | `pending` | `T-028` | `none` | `.agent/execution/tasks/T-029.md` | `2026-11-02` |
 | `T-030` | `E-011` | `LangGraph agent: chọn RAG hoặc tool, interrupt trước tao_ticket, checkpointer` | `trong-hung` | `pending` | `T-029` | `none` | `.agent/execution/tasks/T-030.md` | `2026-11-02` |
 | `T-031` | `E-011` | `POST /agent và POST /agent/{thread_id}/decision (chỉ approver, 409 khi đã quyết)` | `teammate-b` | `pending` | `T-030` | `none` | `.agent/execution/tasks/T-031.md` | `2026-11-02` |

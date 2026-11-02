@@ -75,3 +75,5 @@ priority: 3
 | `T-025` | `183c8dd` | `#65` | `.agent/reports/implementation/T-025-pr65-fixes.md` | `Review follow-up: remove worker config/audit mounts, add own-worker heartbeat healthcheck and document 503 attempt token consumption; independent re-review pending` |
 
 | `T-025` | `d926943` | `#65` | `.agent/reports/implementation/T-025-pr65-restart.md` | `Use random RQ worker names to survive undeclared death; healthcheck matches hostname and live PID; 674 passed/34 deselected, real Redis integration 8 passed; independent re-review pending` |
+
+| `T-028` | `ecc4293` | `feat/T-028-sqlite-stores; issue #69` | `.agent/reports/implementation/T-028.md` | `Deterministic synthetic seed, readonly user-scoped SQLite and matching approver decision required for ticket writes; 35 focused tests passed; independent Claude review pending` |
