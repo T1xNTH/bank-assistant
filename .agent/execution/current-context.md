@@ -22,11 +22,11 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `41`
+- **Context Revision**: `42`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-02`
 - **Updated By**: `codex-b`
-- **Update Trigger**: `User authorized issue #69 / T-028; start E-011 and implement SQLite stores`
+- **Update Trigger**: `Address PR87 review: atomic seed failure cleanup and Docker/demo documentation; T-028 stays review`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
@@ -39,6 +39,13 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Current Session ID**: `S-20261102-t028`
 
 ## Revision Provenance
+
+Revision 42 addresses PR87 review at d4fd83a. Commit 53834e4 publishes complete
+synthetic databases with an exclusive hard link and cleans temporary files on
+failure; documents Docker seed ownership/setup and synthetic-user API key creation.
+WSL make check: 804 passed / 50 deselected, Ruff and framework pass. Supplement:
+T-028-PR87-fixes.md. Self-approval policy is unchanged pending owner A's decision;
+independent re-review and counterpart PR approval remain pending.
 
 Revision 41 starts T-028 (issue #69) from main 8f737da on feat/T-028-sqlite-stores.
 E-011 started through the lifecycle CLI; owner teammate-b retained. Bounded context:

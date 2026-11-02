@@ -77,3 +77,4 @@ priority: 3
 | `T-025` | `d926943` | `#65` | `.agent/reports/implementation/T-025-pr65-restart.md` | `Use random RQ worker names to survive undeclared death; healthcheck matches hostname and live PID; 674 passed/34 deselected, real Redis integration 8 passed; independent re-review pending` |
 
 | `T-028` | `ecc4293` | `feat/T-028-sqlite-stores; issue #69` | `.agent/reports/implementation/T-028.md` | `Deterministic synthetic seed, readonly user-scoped SQLite and matching approver decision required for ticket writes; 35 focused tests passed; independent Claude review pending` |
+| `T-028` | `53834e4` | `#87; issue #69` | `.agent/reports/implementation/T-028-PR87-fixes.md` | `Atomic no-overwrite seed publication and failure/concurrency regressions; document Docker seed setup ownership and synthetic-user key generation; self-approval policy awaits A` |
