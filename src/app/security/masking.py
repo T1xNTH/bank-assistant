@@ -82,6 +82,9 @@ def require_mask_content_types(text: str) -> tuple[str, list[str]]:
     return require_mask(_decode_escapes(text))
 
 
+_TYPED_PLACEHOLDER = re.compile(r"<(?:CCCD|ACCOUNT_NUMBER|PHONE_NUMBER)(?:_\d+)?>")
+
+
 def require_mask_numbered(text: str, start: int = 0) -> tuple[str, list[str], dict[str, str]]:
     """``require_mask_content_types`` with numbered placeholders and the values they hide.
 
@@ -90,7 +93,8 @@ def require_mask_numbered(text: str, start: int = 0) -> tuple[str, list[str], di
     model never sees; callers keep the mapping in memory only. When the placeholders cannot be lined up
     with the input (two of them touching), the plain masked text and no values are returned.
     """
-    decoded = _decode_escapes(text)
+    # Placeholder look-alikes the user typed become ‹TYPE_n›, so every <TYPE_n> in the output is ours.
+    decoded = _TYPED_PLACEHOLDER.sub(lambda m: f"‹{m.group(0)[1:-1]}›", _decode_escapes(text))
     masked, types = require_mask(decoded)
     parts = _PII_PLACEHOLDER.split(masked)  # literal, TYPE, literal, TYPE, ..., literal
     literals, kinds = parts[0::2], parts[1::2]

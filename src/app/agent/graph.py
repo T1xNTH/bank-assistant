@@ -73,23 +73,29 @@ AMOUNT_PLACEHOLDER = re.compile(r"<ACCOUNT_NUMBER_\d+>")
 # "100 000 000" into one span; reading those as a principal gave 5.000.000.012 đ (review round 3, F-10).
 AMOUNT_TEXT = re.compile(r"\d+|\d{1,3}(?:\.\d{3})+")
 STALE_AMOUNT = (
-    "không dùng được số này làm số tiền vay (là số tài khoản, đã quá 30 phút hoặc hệ thống vừa khởi động lại), "
-    "anh/chị nhập lại số tiền, ví dụ '100.000.000 đồng'"
+    "chưa xác định được số tiền vay (số này có thể là số tài khoản, hoặc đã quá 30 phút), "
+    "anh/chị nhập lại, ví dụ 'vay 100.000.000 đồng'"
 )
 BAD_AMOUNT = "không đọc chắc được số tiền, anh/chị viết riêng số tiền, ví dụ '50.000.000 đồng' hoặc '50 triệu'"
 VAULT_THREADS = 1000  # threads whose masked amounts are kept in memory (least recently used dropped)
 VAULT_VALUES = 20  # amounts kept per thread
 VAULT_TTL_S = 30 * 60  # a masked amount is usable for 30 minutes
-# Amount or account? Both mask to <ACCOUNT_NUMBER_n> (review round 4, F-13). A value is kept as an amount
-# only when the text around its placeholder says so, and never right after an account label.
-_ACCOUNT_BEFORE = re.compile(
-    r"(?:\b(?:s[oố]\s*)?(?:stk|tk)|t[aà]i\s*kho[aả]n|account)\s*(?:s[oố])?\s*[:.#]?\s*$", re.IGNORECASE
+# Amount or account? Both mask to <ACCOUNT_NUMBER_n> (review rounds 4-5, F-13/F-15). A value is kept as an
+# amount only when its clause (text since the last , ; ! ? or newline) marks it as money, and never
+# when an account label appears anywhere earlier in that clause ("TK của tôi là 87654321 đ").
+_CLAUSE_BREAK = re.compile(r"[,;!?\n]")  # not ".": "account no. 87654321" must keep its label
+_ACCOUNT_LABEL = re.compile(
+    r"(?<!\w)(?:s?tk|t[aà]i\s*kho[aả]n|account(?:\s*(?:no\.?|number))?|a/c)(?!\w)", re.IGNORECASE
 )
-_AMOUNT_BEFORE = re.compile(
-    r"(?:vay|s[oố]\s*ti[eề]n|ti[eề]n\s*g[oố]c|g[oố]c|t[ií]nh\s*l[aã]i(?:\s*cho)?)\s*(?:l[aà])?\s*[:=]?\s*$",
+_AMOUNT_WORD = re.compile(
+    r"(?<!\w)(?:vay|m[uư][oợ]n|c[aầ]n|s[oố]\s*ti[eề]n|ti[eề]n\s*g[oố]c|g[oố]c|t[ií]nh\s*l[aã]i|tr[iị]\s*gi[aá])(?!\w)",
     re.IGNORECASE,
 )
-_AMOUNT_AFTER = re.compile(r"^\s*(?:đ(?!\w)|đồng|dong\b|vnđ|vnd\b)", re.IGNORECASE)
+_LOAN_ACCOUNT_BEFORE = re.compile(r"kho[aả]n\s*vay\s*(?:s[oố])?\s*[:#]?\s*$", re.IGNORECASE)  # an id, unless "đồng"
+_CURRENCY_BEFORE = re.compile(r"(?<!\w)vn[dđ]\s*$", re.IGNORECASE)
+# "đồng" is also the first syllable of common words ("đồng thời", "đồng ý"): those are not a currency.
+_NOT_CURRENCY = r"(?!\s+(?:thời|ý|nghiệp|bộ|hồ|tình|thuận|loạt|nhất|đều|chí|hành|minh|phục|hương|lòng|nghĩa|đội)(?!\w))"
+_AMOUNT_AFTER = re.compile(rf"^\s*(?:đ|đồng{_NOT_CURRENCY}|dong|vnđ|vnd)(?!\w)", re.IGNORECASE)
 UNCLEAR = "Xin lỗi, tôi chưa hiểu yêu cầu. Anh/chị nói rõ hơn giúp tôi được không?"
 THREAD_ID = re.compile(r"[0-9a-f]{32}")
 UNAVAILABLE = (LLMError, AnswerUnavailable, ToolUnavailable, MaskingError, sqlite3.Error)
@@ -249,17 +255,24 @@ def unstated_loan_terms(args: dict, messages: list[AnyMessage]) -> list[str]:
 def amounts_in(masked: str, hidden: dict[str, str]) -> dict[str, str]:
     """The hidden ACCOUNT_NUMBER values whose placeholder the message marks as an amount.
 
-    Kept: "vay <ACCOUNT_NUMBER_1>", "số tiền: <...>", "<...> đồng/đ/VND". Never: "TK/STK/tài khoản <...>".
+    Kept: "vay khoảng <ACCOUNT_NUMBER_1>", "cần <...>", "số tiền: <...>", "<...> đồng/đ/VND", "VND <...>".
+    Never: a clause with TK/STK/tài khoản/account/a/c before the number; "khoản vay <...>" needs "đồng" after.
     """
     kept = {}
     for placeholder, value in hidden.items():
         at = masked.find(placeholder)
         if not AMOUNT_PLACEHOLDER.fullmatch(placeholder) or at < 0:
             continue
-        before, after = masked[max(0, at - 40) : at], masked[at + len(placeholder) :]
-        if _ACCOUNT_BEFORE.search(before):
+        head = masked[max(0, at - 200) : at]
+        breaks = list(_CLAUSE_BREAK.finditer(head))
+        clause = PLACEHOLDER.sub(" ", head[breaks[-1].end() :] if breaks else head)
+        money_after = _AMOUNT_AFTER.match(masked[at + len(placeholder) :]) is not None
+        if _ACCOUNT_LABEL.search(clause):
             continue
-        if _AMOUNT_BEFORE.search(before) or _AMOUNT_AFTER.match(after):
+        if _LOAN_ACCOUNT_BEFORE.search(clause):
+            if money_after:
+                kept[placeholder] = value
+        elif money_after or _AMOUNT_WORD.search(clause) or _CURRENCY_BEFORE.search(clause):
             kept[placeholder] = value
     return kept
 
