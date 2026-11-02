@@ -77,3 +77,5 @@ priority: 3
 | `T-025` | `d926943` | `#65` | `.agent/reports/implementation/T-025-pr65-restart.md` | `Use random RQ worker names to survive undeclared death; healthcheck matches hostname and live PID; 674 passed/34 deselected, real Redis integration 8 passed; independent re-review pending` |
 
 | `T-026` | `9217697` | `feat/T-026-routing` | `.agent/reports/implementation/T-026.md` | `decide_route + force_local trong Answerer (CR-003 C-1); /ask và worker route local khi có PII/chunk confidential; make check 797 passed/50 deselected; review độc lập và B approve đang chờ` |
+
+| `T-026` | `e821c94` | `#88` | `.agent/reports/implementation/T-026-PR88-fixes.md` | `PR88 P2: worker fail-closed route local cho payload cũ có placeholder/PII sót; make check 802 passed/50 deselected; worker integration 5 passed; re-review pending` |
