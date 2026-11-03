@@ -22,16 +22,16 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `47`
+- **Context Revision**: `48`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-03`
 - **Updated By**: `claude`
-- **Update Trigger**: `T-032 bắt đầu và chuyển review (E-012 EPIC_IN_PROGRESS)`
+- **Update Trigger**: `Merge main 3d7f292 (T-030 #94) vào PR #95 (T-032); giữ T-032 review, T-030 review, T-029 done`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-010, E-011, E-012 EPIC_IN_PROGRESS; E-013..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-032 review (reviewer teammate-b); T-027 review (PR #93, reviewer teammate-b); T-029 review; T-026 done; T-028 done; other M-002 tasks pending`
+- **Active Task IDs**: `T-032 review (PR #95, reviewer teammate-b); T-027 review (PR #93); T-030 review (PR #94); T-029 done (PR #89, squash b0eed4c); T-026, T-028 done; other M-002 tasks pending`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
@@ -40,7 +40,13 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Revision Provenance
 
-Revision 47 (claude cho trong-hung, 2026-11-03) bắt đầu T-032 từ main d6e8e76 trên feat/T-032-classify; E-012 chuyển EPIC_IN_PROGRESS. Commit 5f5bd85: CHAT_SYSTEM định nghĩa 4 intent và tiêu chí needs_human, eval/classify.jsonl 20 mẫu, eval/classify.py; độ đúng intent 20/20 và needs_human 20/20 qua cloud-chat (baseline 19/20, 19/20); make check 938 passed/77 deselected. T-032 chuyển review, reviewer teammate-b. Chưa có review hay done.
+Revision 48 (claude cho trong-hung, 2026-11-03) merges main 3d7f292 (T-030 PR #94) vào PR #95 (T-032). Hai nhánh cùng ghi revision 47: giữ cả hai đoạn bên dưới. E-012 EPIC_IN_PROGRESS và T-032 review từ nhánh này; T-030 review và T-029 done từ main. Không có review, approval hay done mới.
+
+Parallel revision 47 (nhánh T-032, claude cho trong-hung, 2026-11-03) bắt đầu T-032 từ main d6e8e76 trên feat/T-032-classify; E-012 chuyển EPIC_IN_PROGRESS. Commit 5f5bd85: CHAT_SYSTEM định nghĩa 4 intent và tiêu chí needs_human, eval/classify.jsonl 20 mẫu, eval/classify.py; độ đúng intent 20/20 và needs_human 20/20 qua cloud-chat (baseline 19/20, 19/20); make check 938 passed/77 deselected. T-032 chuyển review, reviewer teammate-b. Chưa có review hay done.
+
+Revision 47 (codex, 2026-11-03) resolves PR #94 against main d6e8e76. Preserve parallel revision 46 histories, T-027/T-030 review and existing T-029 done from the branch. No new approval or task closure is claimed.
+
+Revision 46 (claude cho trong-hung, 2026-11-02) đóng T-029 sau merge PR #89 (review approved, done, squash b0eed4c) và làm T-030 trên feat/T-030-agent-graph: StateGraph + ToolNode, interrupt trước tao_ticket, SqliteSaver; task ở review, chờ claude-review-a. Endpoint /agent là T-031 của B.
 
 Revision 46 (claude cho trong-hung, 2026-11-02) merges main b0eed4c (T-029 PR #89) into PR #93 (T-027). Hai nhánh cùng ghi revision 45: giữ cả hai đoạn bên dưới. Task board: T-027 review từ nhánh này; T-028 done và T-029 review từ main. Không có review, approval hay done mới.
 

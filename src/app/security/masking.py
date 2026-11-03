@@ -74,7 +74,42 @@ def require_mask_content(text: str) -> str:
     Escapes that JSON requires (quote, backslash, control, surrogate) stay escaped, so valid
     JSON stays valid and decodes to the same value with PII masked. Raises ``MaskingError``.
     """
-    return require_mask_text(_decode_escapes(text))
+    return require_mask_content_types(text)[0]
+
+
+def require_mask_content_types(text: str) -> tuple[str, list[str]]:
+    """``require_mask_content`` plus the PII types found (for routing)."""
+    return require_mask(_decode_escapes(text))
+
+
+_TYPED_PLACEHOLDER = re.compile(r"<(?:CCCD|ACCOUNT_NUMBER|PHONE_NUMBER)(?:_\d+)?>")
+
+
+def require_mask_numbered(text: str, start: int = 0) -> tuple[str, list[str], dict[str, str]]:
+    """``require_mask_content_types`` with numbered placeholders and the values they hide.
+
+    ``"Vay 100.000.000 đ"`` -> ``("Vay <ACCOUNT_NUMBER_1> đ", ["ACCOUNT_NUMBER"], {"<ACCOUNT_NUMBER_1>":
+    "100.000.000"})``, counting from ``start + 1``. Trusted code (the agent's tools) can use a value the
+    model never sees; callers keep the mapping in memory only. When the placeholders cannot be lined up
+    with the input (two of them touching), the plain masked text and no values are returned.
+    """
+    # Placeholder look-alikes the user typed become ‹TYPE_n›, so every <TYPE_n> in the output is ours.
+    decoded = _TYPED_PLACEHOLDER.sub(lambda m: f"‹{m.group(0)[1:-1]}›", _decode_escapes(text))
+    masked, types = require_mask(decoded)
+    parts = _PII_PLACEHOLDER.split(masked)  # literal, TYPE, literal, TYPE, ..., literal
+    literals, kinds = parts[0::2], parts[1::2]
+    if not kinds or any(not literal for literal in literals[1:-1]):
+        return masked, types, {}
+    pattern = "(.+?)".join(re.escape(literal) for literal in literals)
+    match = re.fullmatch(pattern, decoded, re.DOTALL)
+    if match is None:
+        return masked, types, {}
+    numbered, values = [literals[0]], {}
+    for i, (kind, literal) in enumerate(zip(kinds, literals[1:], strict=True)):
+        placeholder = f"<{kind}_{start + i + 1}>"
+        values[placeholder] = match.group(i + 1)
+        numbered += [placeholder, literal]
+    return "".join(numbered), types, values
 
 
 def masked_pii_types(text: str) -> list[str]:
