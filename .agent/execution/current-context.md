@@ -40,7 +40,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Revision Provenance
 
-Revision 56 (claude cho trong-hung, 2026-11-03) merges main 381566e (T-035 PR #99, T-032 PR #100) vào PR #97 (T-042). Nhánh T-042 ở revision 52, main ở revision 55: giữ cả hai chuỗi bên dưới. Task board: T-031 done và T-042 review từ nhánh này; T-032 done và T-035 review từ main. Không có review, approval hay done mới.
+Revision 56 (claude cho trong-hung, 2026-11-03) sửa review của B trên PR #97 (F-01 ở e1c1cf8, F-02; supplement T-042-PR97-fixes.md) và merges main 381566e (T-035 PR #99, T-032 PR #100) vào PR #97 (T-042). Nhánh T-042 ở revision 52, main ở revision 55: giữ cả hai chuỗi bên dưới. Task board: T-031 done và T-042 review từ nhánh này; T-032 done và T-035 review từ main. Không có review, approval hay done mới.
 
 Parallel revision 52 (nhánh T-042, claude cho trong-hung, 2026-11-03) merges main 7f4eb73 (T-032 PR #95) vào PR #97 (T-042). Main ở revision 51, nhánh T-042 ghi revision 49 song song: giữ cả hai chuỗi bên dưới. Task board: T-031 done và T-042 review từ nhánh này; T-032 review từ main. Không có review, approval hay done mới.
 
