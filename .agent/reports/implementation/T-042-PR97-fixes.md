@@ -28,4 +28,10 @@ priority: 2
 
 - `pytest tests/unit/test_ui.py`: 13 passed (10 cũ + 3 mới).
 - `make check` sau merge main `381566e`: 1104 passed, 79 deselected; Ruff; `FRAMEWORK_VALIDATION_PASS`.
-- Chưa giải quyết: AC "Kịch bản demo chạy trọn trên UI — verify: docs/00-project/demo-script.md" tham chiếu file thuộc T-043 chưa có; chờ A (owner) chốt cách kiểm chứng.
+- AC demo-script: A chốt kiểm theo luồng FR-12 (xem mục bên dưới).
+
+## Quyết định của A về AC demo-script (2026-11-03)
+
+- A (owner T-042) chốt phương án 1: AC "Kịch bản demo chạy trọn trên UI" của T-042 được kiểm theo luồng FR-12 đã ghi trong `.agent/reports/implementation/T-042.md` (chọn vai trò, `/ask` có trích dẫn và route, agent tạo ticket chờ duyệt, approver duyệt/từ chối), cộng 13 test AppTest với FastAPI thật.
+- `docs/00-project/demo-script.md` thuộc T-043; khi T-043 viết xong kịch bản, chạy lại trọn kịch bản trên UI và ghi kết quả trong report của T-043.
+- Không đổi acceptance criteria trong file task; đây là cách kiểm chứng được owner chấp nhận cho PR này.
