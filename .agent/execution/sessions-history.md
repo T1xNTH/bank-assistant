@@ -543,3 +543,6 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261103-100348` | `2026-11-03` | `2026-11-03` | `codex` | `T-031` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
 | `S-20261103-100348-2` | `2026-11-03` | `2026-11-03` | `codex` | `T-031` | `completed` | `implementation report draft` | `.agent/reports/implementation/T-031.md` | `none` |
 | `S-20261103-101420` | `2026-11-03` | `2026-11-03` | `codex` | `T-031` | `completed` | `verify 'make check PY=/home/viet_anh/.venvs/bank-t011/bin/python' passed` | `.agent/reports/implementation/T-031.md` | `none` |
+| `S-20261103-101435` | `2026-11-03` | `2026-11-03` | `codex` | `T-031` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-031.md` | `none` |
+| `S-20261103-101435-2` | `2026-11-03` | `2026-11-03` | `codex` | `T-031` | `completed` | `review requested from claude-review-t031` | `.agent/reports/implementation/T-031.md` | `none` |
+| `S-20261103-101435-3` | `2026-11-03` | `2026-11-03` | `claude-review-t031` | `T-031` | `completed` | `review started` | `.agent/reports/review/T-031.md` | `none` |
