@@ -70,3 +70,19 @@ def test_ci_merge_publishes_no_ports_and_uses_no_cloud_key():
     assert all(not service.get("ports") for service in services.values())
     assert services["litellm"]["environment"]["OPENAI_API_KEY"] == ""
     assert services["api"]["environment"]["LLM_BACKEND"] == "fake"
+
+
+def test_obs_profile_is_optional_local_and_persistent():
+    core = config()
+    assert not any(name.startswith("obs-") or name.startswith("langfuse") for name in core)
+    services = config("--profile", "obs")
+    assert services["langfuse"]["image"] == "langfuse/langfuse:3.225.15"
+    assert services["langfuse-worker"]["image"] == "langfuse/langfuse-worker:3.225.15"
+    assert services["langfuse"]["ports"][0]["host_ip"] == "127.0.0.1"
+    assert services["langfuse"]["healthcheck"]["test"]
+    for name in ("obs-postgres", "obs-clickhouse", "obs-minio", "obs-redis"):
+        assert services[name]["volumes"]
+        assert services[name]["healthcheck"]
+        assert not services[name].get("ports")
+    assert not services["langfuse-worker"].get("ports")
+    assert "LANGFUSE_DB_PASSWORD" not in services["api"]["environment"]

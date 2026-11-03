@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, StringConstraints, ValidationError
 from app.contracts import LLM
 from app.llm import LLMError
 from app.schemas import ChatResponse
+from app.tracing import observation
 
 CHAT_SYSTEM = """You assist internal bank staff. Reply in the user's language.
 Return only a JSON object with exactly these fields:
@@ -47,11 +48,12 @@ class _ChatOutput(BaseModel):
 def structured_chat(message: str, llm: LLM) -> ChatResponse:
     started = perf_counter()
     try:
-        result = llm.chat(
-            [{"role": "system", "content": CHAT_SYSTEM}, {"role": "user", "content": message}],
-            alias="cloud-chat",
-            temperature=0.0,
-        )
+        with observation("llm"):
+            result = llm.chat(
+                [{"role": "system", "content": CHAT_SYSTEM}, {"role": "user", "content": message}],
+                alias="cloud-chat",
+                temperature=0.0,
+            )
         output = _ChatOutput.model_validate_json(result.text)
     except (LLMError, ValidationError):
         raise HTTPException(status_code=503, detail="Chat unavailable") from None
