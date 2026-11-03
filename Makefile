@@ -2,7 +2,7 @@ PY ?= .venv/bin/python
 COMPOSE = docker compose -f infrastructure/compose.yaml --env-file .env.local
 COMPOSE_WAIT_TIMEOUT ?= 120
 
-.PHONY: setup check test lint validate up smoke down logs
+.PHONY: setup check test lint validate up smoke down logs n8n-up n8n-import
 
 setup:
 	python3 -m venv .venv && $(PY) -m pip install -q -r requirements-dev.txt
@@ -31,3 +31,10 @@ down:
 
 logs:
 	$(COMPOSE) logs -f --tail=100
+
+n8n-up:
+	$(COMPOSE) --profile automation up -d --wait --wait-timeout $(COMPOSE_WAIT_TIMEOUT) n8n mailpit
+
+# The stable workflow ID makes re-import update the same, unpublished workflow.
+n8n-import:
+	$(COMPOSE) --profile automation run --rm --no-deps n8n import:workflow --input=/workflows/intake-to-reply.json
