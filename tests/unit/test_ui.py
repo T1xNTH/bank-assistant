@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import sqlite3
 import sys
 from pathlib import Path
 
@@ -210,7 +211,6 @@ def test_external_thread_approve_shows_the_agent_result(api, tmp_path):
     assert f"Thread `{thread_id}`: đã duyệt · trạng thái: hoàn tất." in shown
     answer = at.session_state["decided"]["answer"]
     assert answer and f"**Kết quả từ agent:** {answer}" in shown
-    import sqlite3
     with sqlite3.connect(tmp_path / "tickets.db") as db:
         [(ticket_id,)] = db.execute("SELECT id FROM tickets").fetchall()
     assert str(ticket_id) in answer  # the created ticket is visible to the approver

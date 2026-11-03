@@ -132,7 +132,10 @@ def decide(api: ui_api.Api, thread_id: str, approve: bool, comment: str) -> None
         return
     record(thread_id, state()["threads"].get(thread_id, {}).get("role", "phiên khác"), reply, None)
     state()["decided"] = {
-        "thread_id": thread_id, "approve": approve, "status": reply["status"], "answer": reply.get("answer"),
+        "thread_id": thread_id,
+        "approve": approve,
+        "status": reply["status"],
+        "answer": reply.get("answer"),
     }
     st.rerun()
 
