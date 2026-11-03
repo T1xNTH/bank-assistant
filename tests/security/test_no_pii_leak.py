@@ -136,7 +136,7 @@ def test_masker_failure_never_passes_raw_input_to_backend(monkeypatch, invalid, 
     assert_clean(Path(os.environ["AUDIT_DB_PATH"]).read_bytes().decode("latin1"))
     with sqlite3.connect(os.environ["AUDIT_DB_PATH"]) as connection:
         rows = connection.execute("SELECT question_masked, route, refused FROM audit_log").fetchall()
-    assert rows == [(audit.REDACTED if endpoint == "/ask" else None, None, None)]
+    assert rows == [(audit.REDACTED, None, None)]
 
 
 def test_uuid_trace_matches_response_audit_and_logs(caplog):

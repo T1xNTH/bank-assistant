@@ -2,6 +2,8 @@
 
 import json
 import logging
+import os
+import sqlite3
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -14,6 +16,41 @@ from app.llm import LLMError
 from app.log_config import JsonFormatter
 from app.main import create_app
 from tests.fakes import FakeLLM
+
+
+@pytest.mark.parametrize("failure", [None, "masking", "llm"])
+def test_chat_audits_user_and_masked_message(application, monkeypatch, failure):
+    from app.contracts import User
+    from app.deps import get_current_user
+    from app.security import pii
+    from app.security.masking import REDACTED
+
+    user = User("staff-chat", "credit")
+    application.dependency_overrides[get_current_user] = lambda: user
+    secret = "synthetic-private-chat-input"
+    masked = "[MASKED]"
+
+    def mask(text):
+        if failure == "masking" and secret in text:
+            raise RuntimeError("private masking diagnostic")
+        return text.replace(secret, masked), ["TEST"] if secret in text else []
+
+    monkeypatch.setattr(pii, "mask_text", mask)
+    fake = install_fake(application, {"answer": "ok", "intent": "other", "needs_human": False})
+    if failure == "llm":
+        def unavailable(*args, **kwargs):
+            raise LLMError("private llm diagnostic")
+        monkeypatch.setattr(fake, "chat", unavailable)
+    response = TestClient(application).post("/chat", json={"message": secret})
+    assert response.status_code == (200 if failure is None else 503)
+    with sqlite3.connect(os.environ["AUDIT_DB_PATH"]) as connection:
+        rows = connection.execute("SELECT endpoint, user_id, department, question_masked FROM audit_log").fetchall()
+    assert rows == [("/chat", user.user_id, user.department, REDACTED if failure == "masking" else masked)]
+    assert secret not in json.dumps(rows)
+    if failure == "masking":
+        assert fake.calls == []
+    elif failure is None:
+        assert fake.calls[0][0][1]["content"] == masked
 
 
 @pytest.fixture
