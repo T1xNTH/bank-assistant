@@ -91,6 +91,44 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:2.45.7
+    profiles: [automation]
+    environment:
+      N8N_HOST: 127.0.0.1
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      N8N_WEBHOOK_URL: http://127.0.0.1:5678/
+      N8N_EDITOR_BASE_URL: http://127.0.0.1:5678/
+      N8N_SECURE_COOKIE: "false"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+      GENERIC_TIMEZONE: Asia/Ho_Chi_Minh
+      # 25h workflow budget: 24h approval plus intake, polling and delivery.
+      EXECUTIONS_TIMEOUT_MAX: 90000
+      EXECUTIONS_DATA_MAX_AGE: 24
+    ports: ["127.0.0.1:5678:5678"]
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/workflows:ro
+    depends_on: [mailpit]
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:5678/healthz"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 12
+  mailpit:
+    image: axllent/mailpit:v1.33.0
+    profiles: [automation]
+    ports: ["127.0.0.1:8025:8025", "127.0.0.1:1025:1025"]
+    environment:
+      MP_MAX_MESSAGES: 500
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   # Optional local observability. Adapted from Langfuse v3.225.15 docker-compose.yml.
   langfuse:
     image: langfuse/langfuse:3.225.15
@@ -197,6 +235,7 @@ services:
       timeout: 5s
       retries: 20
 volumes:
+  n8n_data:
   obs_postgres:
   obs_clickhouse:
   obs_minio:
