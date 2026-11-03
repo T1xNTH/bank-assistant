@@ -538,7 +538,7 @@ class AgentService:
     authenticated request, refuses self-approval, and answers each pending action once. One lock per
     thread serializes calls inside this process (the API runs one process; several would need a
     database lock). Errors: ``ThreadNotFound`` (404), ``PermissionError`` (403), ``DecisionConflict``
-    (409), ``AgentUnavailable`` (503), ``ValueError`` for bad input (422).
+    (409), ``AgentUnavailable`` (503), ``ValueError`` for bad input (400).
     """
 
     def __init__(

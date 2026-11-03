@@ -539,6 +539,13 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261102-214929` | `2026-11-02` | `2026-11-02` | `claude-review-a` | `T-030` | `completed` | `review approved` | `.agent/reports/review/T-030.md` | `none` |
 | `S-20261103-093150` | `2026-11-03` | `2026-11-03` | `claude-review-a` | `T-030` | `completed` | `review approved` | `.agent/reports/review/T-030.md` | `none` |
 | `S-20261103-094014` | `2026-11-03` | `2026-11-03` | `claude-review-a` | `T-030` | `completed` | `review approved` | `.agent/reports/review/T-030.md` | `none` |
+| `S-20261103-100347` | `2026-11-03` | `2026-11-03` | `codex` | `T-030` | `completed` | `task review -> done` | `.agent/reports/review/T-030.md` | `none` |
+| `S-20261103-100348` | `2026-11-03` | `2026-11-03` | `codex` | `T-031` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
+| `S-20261103-100348-2` | `2026-11-03` | `2026-11-03` | `codex` | `T-031` | `completed` | `implementation report draft` | `.agent/reports/implementation/T-031.md` | `none` |
+| `S-20261103-101420` | `2026-11-03` | `2026-11-03` | `codex` | `T-031` | `completed` | `verify 'make check PY=/home/viet_anh/.venvs/bank-t011/bin/python' passed` | `.agent/reports/implementation/T-031.md` | `none` |
+| `S-20261103-101435` | `2026-11-03` | `2026-11-03` | `codex` | `T-031` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-031.md` | `none` |
+| `S-20261103-101435-2` | `2026-11-03` | `2026-11-03` | `codex` | `T-031` | `completed` | `review requested from claude-review-t031` | `.agent/reports/implementation/T-031.md` | `none` |
+| `S-20261103-101435-3` | `2026-11-03` | `2026-11-03` | `claude-review-t031` | `T-031` | `completed` | `review started` | `.agent/reports/review/T-031.md` | `none` |
 | `S-20261103-094917` | `2026-11-03` | `2026-11-03` | `trong-hung` | `T-032` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
 | `S-20261103-095546` | `2026-11-03` | `2026-11-03` | `trong-hung` | `T-032` | `completed` | `verify '.venv/bin/pytest -q tests/api/test_chat.py tests/unit/test_classify.py' passed` | `.agent/reports/implementation/T-032.md` | `none` |
 | `S-20261103-095616` | `2026-11-03` | `2026-11-03` | `claude` | `T-032` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-032.md` | `none` |

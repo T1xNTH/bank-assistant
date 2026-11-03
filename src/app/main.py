@@ -9,6 +9,7 @@ from dataclasses import asdict
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 
+from app.agent.api import decide_agent, run_agent
 from app.chat import structured_chat
 from app.config import get_settings
 from app.contracts import LLM, Answerer, User
@@ -18,7 +19,7 @@ from app.log_config import configure_logging, get_logger
 from app.middleware import RequestContextMiddleware
 from app.queue.jobs import enqueue_job, get_job
 from app.rag.answer import AnswerUnavailable, retrieval_mode, warm_up
-from app.schemas import AskRequest, AskResponse, ChatRequest, ChatResponse, ErrorResponse
+from app.schemas import AgentResponse, AskRequest, AskResponse, ChatRequest, ChatResponse, ErrorResponse
 from app.security.masking import REDACTED, MaskingError, mask_identifier, mask_text, require_mask
 
 logger = get_logger(__name__)
@@ -39,12 +40,19 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
         retrieval_mode()  # a bad RETRIEVAL_MODE stops startup instead of failing every /ask
         # In the background so /health answers while the models load; /ask waits on the same lock.
         threading.Thread(target=_warm_up, name="rag-warm-up", daemon=True).start()
-    yield
+    try:
+        yield
+    finally:
+        service = application.state.agent_service
+        if service is not None:
+            service.checkpointer.conn.close()
 
 
 def create_app() -> FastAPI:
     configure_logging()
     application = FastAPI(title="bank-assistant", version="0.1.0", lifespan=lifespan)
+    application.state.agent_service = None
+    application.state.agent_service_lock = threading.Lock()
     install_error_handlers(application)
     application.add_middleware(RequestContextMiddleware)
     application.add_api_route("/health", health, methods=["GET"])
@@ -57,6 +65,14 @@ def create_app() -> FastAPI:
     application.add_api_route(
         "/chat", chat, methods=["POST"], response_model=ChatResponse,
         responses={503: {"model": ErrorResponse, "description": "Dependency unavailable"}},
+    )
+    application.add_api_route(
+        "/agent", run_agent, methods=["POST"], response_model=AgentResponse,
+        responses={status: {"model": ErrorResponse} for status in (400, 401, 404, 503)},
+    )
+    application.add_api_route(
+        "/agent/{thread_id}/decision", decide_agent, methods=["POST"], response_model=AgentResponse,
+        responses={status: {"model": ErrorResponse} for status in (400, 401, 403, 404, 409, 503)},
     )
     return application
 

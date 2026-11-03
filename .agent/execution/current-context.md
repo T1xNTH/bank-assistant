@@ -22,16 +22,16 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `50`
+- **Context Revision**: `51`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-03`
 - **Updated By**: `claude`
-- **Update Trigger**: `T-032: A chốt quy tắc needs_human cho câu hỏi bảo mật (PR #95 góp ý B)`
+- **Update Trigger**: `Merge main 7b3f736 (T-031 #96) vào PR #95 (T-032); giữ T-032 review, T-031 review, T-030 done`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-010, E-011, E-012 EPIC_IN_PROGRESS; E-013..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-032 review (PR #95, reviewer teammate-b); T-027 review (PR #93); T-030 review (PR #94); T-029 done (PR #89, squash b0eed4c); T-026, T-028 done; other M-002 tasks pending`
+- **Active Task IDs**: `T-032 review (PR #95, reviewer teammate-b); T-031 review; T-027 review; T-026, T-028, T-029, T-030 done; other M-002 tasks pending`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
@@ -40,13 +40,17 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Revision Provenance
 
+Revision 51 (claude cho trong-hung, 2026-11-03) merges main 7b3f736 (T-031 PR #96) vào PR #95 (T-032). Nhánh T-032 ở revision 50, main ghi revision 48 song song: giữ cả hai chuỗi bên dưới. Task board: T-032 review và E-012 EPIC_IN_PROGRESS từ nhánh này; T-030 done và T-031 review từ main. Không có review, approval hay done mới.
+
 Revision 50 (claude cho trong-hung, 2026-11-03) xử lý góp ý không chặn của B tại 4af8a1a: A chốt câu hỏi phòng ngừa chung needs_human false, sự cố bảo mật thật/nghi ngờ true. Commit 02ce54b: CHAT_SYSTEM, docs n8n, held-out 22 câu; bộ chính 20/20, held-out intent 19/22 và needs_human 22/22. T-032 vẫn review, chưa có approval hay done.
 
 Revision 49 (claude cho trong-hung, 2026-11-03) xử lý review COMMENTED của B tại ba18035 trên PR #95: eval/classify_heldout.jsonl 18 câu (thêm khiếu nại kèm đề nghị xử lý, câu hỏi bảo mật/khẩn cấp); chạy lại qua cloud-chat: bộ 20 mẫu 20/20, held-out intent 16/18 và needs_human 18/18; prompt không đổi. Supplement T-032-PR95-fixes.md. T-032 vẫn review, chưa có approval hay done.
 
-Revision 48 (claude cho trong-hung, 2026-11-03) merges main 3d7f292 (T-030 PR #94) vào PR #95 (T-032). Hai nhánh cùng ghi revision 47: giữ cả hai đoạn bên dưới. E-012 EPIC_IN_PROGRESS và T-032 review từ nhánh này; T-030 review và T-029 done từ main. Không có review, approval hay done mới.
+Parallel revision 48 (nhánh T-032, claude cho trong-hung, 2026-11-03) merges main 3d7f292 (T-030 PR #94) vào PR #95 (T-032). Hai nhánh cùng ghi revision 47: giữ cả hai đoạn bên dưới. E-012 EPIC_IN_PROGRESS và T-032 review từ nhánh này; T-030 review và T-029 done từ main. Không có review, approval hay done mới.
 
 Parallel revision 47 (nhánh T-032, claude cho trong-hung, 2026-11-03) bắt đầu T-032 từ main d6e8e76 trên feat/T-032-classify; E-012 chuyển EPIC_IN_PROGRESS. Commit 5f5bd85: CHAT_SYSTEM định nghĩa 4 intent và tiêu chí needs_human, eval/classify.jsonl 20 mẫu, eval/classify.py; độ đúng intent 20/20 và needs_human 20/20 qua cloud-chat (baseline 19/20, 19/20); make check 938 passed/77 deselected. T-032 chuyển review, reviewer teammate-b. Chưa có review hay done.
+
+Revision 48 (codex, 2026-11-03) starts user-authorized T-031 from main 3d7f292 in feat/T-031-agent-api. T-030 closure uses existing PR94 counterpart approval, separate Claude review, Codex QA and merge; evidence is implementation/T-031-dependency-closure.md. E-011 remains in progress; no new approval is claimed. Scope is authenticated agent endpoints, masking and audit; contracts remain unchanged. Implementation db59e85 passes make check (1058 passed, 77 deselected; Ruff/framework pass). Task is review. Separate Claude sessions failed OAuth before source review, but A independently reviewed 181c440 on PR #96 and explicitly authorized that review as the task-specific replacement. BLOCKER-006 is resolved; four minor review fixes verified: Ruff clean, 1060 passed/77 deselected, FRAMEWORK_VALIDATION_PASS; final head recheck and counterpart PR approval pending.
 
 Revision 47 (codex, 2026-11-03) resolves PR #94 against main d6e8e76. Preserve parallel revision 46 histories, T-027/T-030 review and existing T-029 done from the branch. No new approval or task closure is claimed.
 
@@ -189,3 +193,5 @@ Revision 38 records user-authorized issue #25 / T-024 on feat/T-024-ask-jobs fro
 T-024 handoff: source 6656369; full WSL make check 583 passed/29 deselected, Ruff and framework passed; final focused API rerun 19 passed without warnings. Complete implementation report recorded and lifecycle CLI requested claude-review-a, moving task/board to review. Independent review, counterpart PR approval and merge remain pending.
 
 Draft PR: https://github.com/caitoithap/bank-assistant/pull/63 (feat/T-024-ask-jobs). Independent review and counterpart approval pending; issue #25 remains open.
+
+PR #96 follow-up (2026-11-03): A independently reviewed head 181c440 and reported no merge-blocking findings; https://github.com/T1xNTH/bank-assistant/pull/96#issuecomment-6595001657. A explicitly authorized this peer review to replace the failed Claude session for T-031. BLOCKER-006 resolved; four minor comments addressed. Task remains review pending A recheck/PR approval and final QA; no merge or done transition.
