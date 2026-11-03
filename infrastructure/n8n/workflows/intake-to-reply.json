@@ -1,0 +1,632 @@
+{
+  "id": "bankIntakeToReply",
+  "name": "Bank Assistant - intake to reply",
+  "active": false,
+  "nodes": [
+    {
+      "id": "intake-form",
+      "name": "Intake form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "formTitle": "Bank Assistant",
+        "formDescription": "Gửi câu hỏi để được kiểm tra tài liệu và duyệt phản hồi. Chỉ dùng dữ liệu mẫu trong môi trường local.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Message",
+              "fieldType": "textarea",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "options": {"path": "bank-intake"}
+      },
+      "webhookId": "b90dff25-7677-4540-8d6b-e9aab770d033"
+    },
+    {
+      "id": "validate-intake",
+      "name": "Validate intake",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const email = String($json.Email ?? '').trim();\nconst message = String($json.Message ?? '').trim();\nif (!/^[^\\s@<>,;\\r\\n]+@[^\\s@<>,;\\r\\n]+\\.[^\\s@<>,;\\r\\n]+$/.test(email) || email.length > 254) throw new Error('Invalid single recipient');\nif (!message || message.length > 2000) throw new Error('Message must contain 1-2000 characters');\nreturn [{json: {email, message}}];"
+      }
+    },
+    {
+      "id": "classify",
+      "name": "Classify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "url": "http://api:8000/chat",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 15000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { message: $('Validate intake').first().json.message } }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bank-public-service",
+          "name": "Bank Assistant public service"
+        }
+      }
+    },
+    {
+      "id": "validate-classification",
+      "name": "Validate classification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "jsCode": "if (!['question','complaint','request','other'].includes($json.intent) || typeof $json.needs_human !== 'boolean') throw new Error('Invalid classification');\nreturn $input.all();"
+      }
+    },
+    {
+      "id": "document-question",
+      "name": "Document question",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "Document question",
+              "leftValue": "={{ $json.intent === 'question' && $json.needs_human === false }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "enqueue",
+      "name": "Enqueue",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "url": "http://api:8000/ask/jobs",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 15000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { question: $('Validate intake').first().json.message } }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bank-public-service",
+          "name": "Bank Assistant public service"
+        }
+      }
+    },
+    {
+      "id": "poll-budget",
+      "name": "Poll budget",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "jsCode": "if ($runIndex >= 60) throw new Error('Job polling timed out');\nreturn $input.all();"
+      }
+    },
+    {
+      "id": "wait-for-job",
+      "name": "Wait for job",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1540,
+        0
+      ],
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "webhookId": "ad04db3a-8716-4a8f-bb44-ef171fe0d033"
+    },
+    {
+      "id": "poll-job",
+      "name": "Poll job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        0
+      ],
+      "parameters": {
+        "url": "={{ 'http://api:8000/ask/jobs/' + encodeURIComponent($('Enqueue').first().json.job_id) }}",
+        "method": "GET",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bank-public-service",
+          "name": "Bank Assistant public service"
+        }
+      }
+    },
+    {
+      "id": "validate-job",
+      "name": "Validate job",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        0
+      ],
+      "parameters": {
+        "jsCode": "if (!['queued','running','done','failed'].includes($json.status)) throw new Error('Invalid job status');\nreturn $input.all();"
+      }
+    },
+    {
+      "id": "job-done",
+      "name": "Job done",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2200,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "Job done",
+              "leftValue": "={{ $json.status === 'done' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "job-failed",
+      "name": "Job failed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2420,
+        240
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "Job failed",
+              "leftValue": "={{ $json.status === 'failed' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "stop-failed-job",
+      "name": "Stop failed job",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        2640,
+        240
+      ],
+      "parameters": {
+        "errorMessage": "Ask job failed; no reply sent"
+      }
+    },
+    {
+      "id": "prepare-draft",
+      "name": "Prepare draft",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const classification = $('Validate classification').first().json;\nlet text;\nif ($json.status === 'done') {\n  const r = $json.result;\n  if (!r || typeof r.found !== 'boolean') throw new Error('Missing job result');\n  if (r.found) {\n    if (typeof r.answer !== 'string' || !r.answer.trim() || !Array.isArray(r.citations) || !r.citations.length) throw new Error('Answer requires citations');\n    const citations = r.citations.map(c => {\n      if (!Number.isInteger(c.n) || !Number.isInteger(c.page) || c.page < 1 || typeof c.source !== 'string' || !c.source.trim()) throw new Error('Invalid citation');\n      return `[${c.n}] ${c.source} — trang ${c.page}`;\n    });\n    text = r.answer + '\\n\\nNguồn:\\n' + citations.join('\\n');\n  } else text = 'Chưa tìm thấy thông tin phù hợp trong tài liệu. Vui lòng liên hệ nhân viên để được hỗ trợ.';\n} else if (classification.needs_human || ['complaint','request'].includes(classification.intent)) {\n  text = 'Yêu cầu cần nhân viên xử lý trực tiếp. Vui lòng liên hệ bộ phận hỗ trợ ngân hàng qua kênh chính thức.';\n} else text = 'Vui lòng gửi câu hỏi về sản phẩm, phí hoặc thủ tục ngân hàng để được tra cứu tài liệu.';\nreturn [{json: {text, intent: classification.intent, needs_human: classification.needs_human}}];"
+      }
+    },
+    {
+      "id": "review-draft",
+      "name": "Review draft",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2860,
+        0
+      ],
+      "parameters": {
+        "operation": "sendAndWait",
+        "fromEmail": "assistant@example.test",
+        "toEmail": "approver@example.test",
+        "subject": "[Bank Assistant] Duyệt phản hồi",
+        "message": "={{ ('Gửi tới: ' + $('Validate intake').first().json.email + '\\nCâu hỏi: ' + $('Validate intake').first().json.message + '\\nIntent: ' + $json.intent + '\\nNeeds human: ' + $json.needs_human + '\\n\\n' + $json.text).replaceAll('&', '&#38;').replaceAll('<', '&#60;').replaceAll('>', '&#62;') }}",
+        "responseType": "approval",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double",
+            "approveLabel": "Duyệt gửi",
+            "disapproveLabel": "Từ chối"
+          }
+        },
+        "options": {
+          "appendAttribution": false,
+          "limitWaitTime": {
+            "values": {
+              "limitType": "afterTimeInterval",
+              "resumeAmount": 24,
+              "resumeUnit": "hours"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "smtp": {
+          "id": "mailpit-smtp",
+          "name": "Mailpit SMTP"
+        }
+      },
+      "webhookId": "13d0787d-90ce-478e-bbee-ee35fc25d033"
+    },
+    {
+      "id": "approved",
+      "name": "Approved",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3080,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "Approved",
+              "leftValue": "={{ $json.data?.approved === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "send-reply",
+      "name": "Send reply",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        3300,
+        0
+      ],
+      "parameters": {
+        "operation": "send",
+        "fromEmail": "assistant@example.test",
+        "toEmail": "={{ $('Validate intake').first().json.email }}",
+        "subject": "[Bank Assistant] Phản hồi yêu cầu",
+        "emailFormat": "text",
+        "text": "={{ $('Prepare draft').first().json.text }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "smtp": {
+          "id": "mailpit-smtp",
+          "name": "Mailpit SMTP"
+        }
+      }
+    },
+    {
+      "id": "no-reply",
+      "name": "No reply",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3300,
+        240
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Intake form": {
+      "main": [
+        [
+          {
+            "node": "Validate intake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate intake": {
+      "main": [
+        [
+          {
+            "node": "Classify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify": {
+      "main": [
+        [
+          {
+            "node": "Validate classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate classification": {
+      "main": [
+        [
+          {
+            "node": "Document question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Document question": {
+      "main": [
+        [
+          {
+            "node": "Enqueue",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enqueue": {
+      "main": [
+        [
+          {
+            "node": "Poll budget",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll budget": {
+      "main": [
+        [
+          {
+            "node": "Wait for job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for job": {
+      "main": [
+        [
+          {
+            "node": "Poll job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll job": {
+      "main": [
+        [
+          {
+            "node": "Validate job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate job": {
+      "main": [
+        [
+          {
+            "node": "Job done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job done": {
+      "main": [
+        [
+          {
+            "node": "Prepare draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Job failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job failed": {
+      "main": [
+        [
+          {
+            "node": "Stop failed job",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Poll budget",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare draft": {
+      "main": [
+        [
+          {
+            "node": "Review draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review draft": {
+      "main": [
+        [
+          {
+            "node": "Approved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approved": {
+      "main": [
+        [
+          {
+            "node": "Send reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "executionTimeout": 90000,
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "all",
+    "saveManualExecutions": false
+  },
+  "pinData": {},
+  "tags": []
+}
