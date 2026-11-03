@@ -1,9 +1,13 @@
 {"message": "Lãi suất tiết kiệm kỳ hạn 12 tháng hiện nay là bao nhiêu?", "intent": "question", "needs_human": false, "predicted_intent": "question", "predicted_needs_human": false, "error": null}
 {"message": "Quy trình thẩm định khoản vay tiêu dùng gồm mấy bước?", "intent": "question", "needs_human": false, "predicted_intent": "question", "predicted_needs_human": false, "error": null}
 {"message": "Khoản vay của khách hàng mã KH0012 đã được giải ngân chưa?", "intent": "question", "needs_human": true, "predicted_intent": "question", "predicted_needs_human": true, "error": null}
-{"message": "Tôi vừa bấm vào một đường link lạ và nhập mã OTP, giờ tôi phải làm gì?", "intent": "question", "needs_human": true, "predicted_intent": "request", "predicted_needs_human": true, "error": null}
+{"message": "Tôi vừa bấm vào một đường link lạ và nhập mã OTP, giờ tôi phải làm gì?", "intent": "question", "needs_human": true, "predicted_intent": "complaint", "predicted_needs_human": true, "error": null}
 {"message": "Có người gọi tự xưng nhân viên ngân hàng hỏi mã OTP, có phải lừa đảo không?", "intent": "question", "needs_human": true, "predicted_intent": "question", "predicted_needs_human": true, "error": null}
 {"message": "Mất điện thoại có cài ứng dụng ngân hàng thì làm sao bảo vệ tài khoản ngay?", "intent": "question", "needs_human": true, "predicted_intent": "request", "predicted_needs_human": true, "error": null}
+{"message": "Hướng dẫn phòng tránh lừa đảo khi chuyển khoản?", "intent": "question", "needs_human": false, "predicted_intent": "question", "predicted_needs_human": false, "error": null}
+{"message": "Làm sao nhận biết tin nhắn giả mạo ngân hàng?", "intent": "question", "needs_human": false, "predicted_intent": "question", "predicted_needs_human": false, "error": null}
+{"message": "Ngân hàng có bao giờ yêu cầu khách hàng cung cấp mã OTP không?", "intent": "question", "needs_human": false, "predicted_intent": "question", "predicted_needs_human": false, "error": null}
+{"message": "Tôi vừa thấy một giao dịch 5 triệu mà tôi không thực hiện, giờ phải làm gì?", "intent": "question", "needs_human": true, "predicted_intent": "complaint", "predicted_needs_human": true, "error": null}
 {"message": "Thẻ của tôi bị nuốt tại ATM ở Hai Bà Trưng, quá bực mình.", "intent": "complaint", "needs_human": true, "predicted_intent": "complaint", "predicted_needs_human": true, "error": null}
 {"message": "Phí SMS banking tăng mà không thông báo gì cả.", "intent": "complaint", "needs_human": true, "predicted_intent": "complaint", "predicted_needs_human": true, "error": null}
 {"message": "Tôi bị trừ tiền hai lần cho cùng một giao dịch, đề nghị hoàn lại ngay.", "intent": "complaint", "needs_human": true, "predicted_intent": "complaint", "predicted_needs_human": true, "error": null}

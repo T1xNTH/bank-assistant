@@ -129,8 +129,12 @@ def test_main_refuses_the_fake_backend(tmp_path, monkeypatch):
 
 def test_committed_heldout_set_is_valid_and_covers_the_review_cases():
     samples = load_samples(ROOT / "eval/classify_heldout.jsonl", per_intent=None)
-    assert len(samples) == 18
+    assert len(samples) == 22
     assert {s["message"] for s in samples}.isdisjoint(
         s["message"] for s in load_samples(ROOT / "eval/classify.jsonl", per_intent=5))
     assert sum(s["intent"] == "complaint" for s in samples) == 5
-    assert sum(s["intent"] == "question" and s["needs_human"] for s in samples) == 4
+    assert sum(s["intent"] == "question" and s["needs_human"] for s in samples) == 5
+    # PR #95, A's decision: general fraud-prevention advice is self-service, a reported incident goes to a human.
+    messages = {s["message"]: s["needs_human"] for s in samples}
+    assert messages["Hướng dẫn phòng tránh lừa đảo khi chuyển khoản?"] is False
+    assert messages["Tôi vừa thấy một giao dịch 5 triệu mà tôi không thực hiện, giờ phải làm gì?"] is True

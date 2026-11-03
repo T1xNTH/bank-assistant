@@ -4,6 +4,10 @@
 {"message": "Tôi vừa bấm vào một đường link lạ và nhập mã OTP, giờ tôi phải làm gì?", "intent": "question", "needs_human": true}
 {"message": "Có người gọi tự xưng nhân viên ngân hàng hỏi mã OTP, có phải lừa đảo không?", "intent": "question", "needs_human": true}
 {"message": "Mất điện thoại có cài ứng dụng ngân hàng thì làm sao bảo vệ tài khoản ngay?", "intent": "question", "needs_human": true}
+{"message": "Hướng dẫn phòng tránh lừa đảo khi chuyển khoản?", "intent": "question", "needs_human": false}
+{"message": "Làm sao nhận biết tin nhắn giả mạo ngân hàng?", "intent": "question", "needs_human": false}
+{"message": "Ngân hàng có bao giờ yêu cầu khách hàng cung cấp mã OTP không?", "intent": "question", "needs_human": false}
+{"message": "Tôi vừa thấy một giao dịch 5 triệu mà tôi không thực hiện, giờ phải làm gì?", "intent": "question", "needs_human": true}
 {"message": "Thẻ của tôi bị nuốt tại ATM ở Hai Bà Trưng, quá bực mình.", "intent": "complaint", "needs_human": true}
 {"message": "Phí SMS banking tăng mà không thông báo gì cả.", "intent": "complaint", "needs_human": true}
 {"message": "Tôi bị trừ tiền hai lần cho cùng một giao dịch, đề nghị hoàn lại ngay.", "intent": "complaint", "needs_human": true}
