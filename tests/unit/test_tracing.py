@@ -1,6 +1,11 @@
 """Real SDK + in-memory OTEL export: assert sink contents, hierarchy and HTTP/RQ correlation."""
 
 import json
+import os
+import subprocess
+import sys
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
@@ -201,3 +206,87 @@ def test_worker_error_exports_only_generic_failure(sink, monkeypatch):
     assert PII not in contents(spans) and all(not s.events for s in spans)
     assert {s.name for s in spans} == {"/ask/jobs", "queue_wait", "processing"}
     connection.close()
+
+
+@pytest.mark.parametrize("failure_at", [1, 2])
+def test_initial_attribute_failure_closes_span_and_restores_context(sink, monkeypatch, failure_at):
+    from opentelemetry.trace import get_current_span
+
+    client, tracer = tracing._runtime()
+    span = tracer.start_span("initialization-failure")
+    original = span.set_attribute
+    calls = 0
+
+    def broken(key, value):
+        nonlocal calls
+        calls += 1
+        if calls == failure_at:
+            raise RuntimeError(PII)
+        return original(key, value)
+
+    monkeypatch.setattr(span, "set_attribute", broken)
+    monkeypatch.setattr(tracing, "_runtime", lambda: (client, SimpleNamespace(start_span=lambda *a, **kw: span)))
+    before = get_current_span()
+    with tracing.observation("/ask", root=True) as trace:
+        assert trace.trace_id is None
+    assert not span.is_recording()
+    assert get_current_span() is before and tracing._CURRENT.get() is None
+    exported = sink()
+    assert len(exported) == 1 and not exported[0].events
+    assert PII not in contents(exported)
+
+
+def test_concurrent_first_requests_construct_and_flush_one_backend(monkeypatch):
+    monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk-lf-concurrent-test")
+    monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk-lf-test")
+    created, flushed = [], []
+
+    def factory(**kwargs):
+        created.append(kwargs["tracer_provider"])
+        time.sleep(.05)  # Release the GIL while other threads miss the same cache key.
+        return SimpleNamespace(flush=lambda: flushed.append(True))
+
+    monkeypatch.setattr("langfuse.Langfuse", factory)
+    tracing._backend.cache_clear()
+    start = threading.Barrier(4)
+
+    def initialize(_):
+        start.wait(timeout=5)
+        return tracing._runtime()
+
+    try:
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            runtimes = list(pool.map(initialize, range(4)))
+        assert len(created) == 1
+        assert all(runtime is runtimes[0] for runtime in runtimes)
+        tracing.flush()
+        assert flushed == [True]
+    finally:
+        tracing._backend.cache_clear()
+        for provider in created:
+            provider.shutdown()
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="RQ fork behavior requires POSIX")
+def test_forked_worker_does_not_inherit_a_locked_backend():
+    # An isolated process bounds a potential deadlock and avoids forking pytest's SDK threads.
+    script = '''
+import os
+import signal
+from app import tracing
+os.environ["LANGFUSE_PUBLIC_KEY"] = "pk-lf-fork-test"
+os.environ["LANGFUSE_SECRET_KEY"] = "sk-lf-test"
+tracing._backend = lambda *args: args[0]
+tracing._BACKEND_LOCK.acquire()
+pid = os.fork()
+if pid == 0:
+    signal.alarm(3)
+    os._exit(0 if tracing._runtime() == os.getpid() else 1)
+_, status = os.waitpid(pid, 0)
+tracing._BACKEND_LOCK.release()
+raise SystemExit(os.waitstatus_to_exitcode(status))
+'''
+    subprocess.run(
+        [sys.executable, "-c", script], check=True, timeout=15,
+        env={**os.environ, "PYTHONPATH": os.pathsep.join(sys.path)},
+    )

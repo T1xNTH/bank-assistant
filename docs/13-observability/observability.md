@@ -64,6 +64,12 @@ enqueued_at không tạo span wait. Root worker được backdate về enqueue �
 Timestamp RQ dùng UTC; các máy chạy API/worker cần đồng bộ đồng hồ. HTTP root không gồm
 xác thực, masking ban đầu, serialize hoặc audit sau handler; dùng log HTTP cho end-to-end latency.
 Flushing ở shutdown API và cuối mỗi job vì RQ work horse có thể thoát ngay sau job.
+Nếu đặt key nhưng không bật profile `obs`, hoặc Langfuse không truy cập được, flush cuối
+job có thể cộng khoảng 1–2 giây vào thời gian hoàn tất RQ (SDK timeout 2s và overhead),
+kèm log export lỗi. Khoảng này nằm sau span root/processing nên không hiện trong p95
+của các span đó; theo dõi thời gian hoàn tất job để thấy toàn bộ overhead. Tắt tracing
+bằng cách bỏ key khi không chạy Langfuse. Mỗi work horse RQ mới cũng phải khởi tạo SDK
+lại; lock chỉ bảo đảm một lần khởi tạo cho các request đồng thời trong cùng process.
 
 ## Kiểm chứng
 

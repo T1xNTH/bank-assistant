@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import lru_cache
@@ -14,6 +15,16 @@ from functools import lru_cache
 from app.security.masking import REDACTED, MaskingError, require_mask_content
 
 _CURRENT: ContextVar[Observation | None] = ContextVar("bank_trace", default=None)
+_BACKEND_LOCK = threading.Lock()
+
+
+def _after_fork() -> None:
+    global _BACKEND_LOCK
+    _BACKEND_LOCK = threading.Lock()  # A child must not inherit a lock held by a vanished thread.
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_after_fork)
 
 
 def _safe(value):
@@ -50,7 +61,9 @@ def _runtime():
     if not public or not secret:
         return None  # No SDK import, thread or network activity without both keys.
     try:
-        return _backend(os.getpid(), public, secret, os.getenv("LANGFUSE_BASE_URL", "http://localhost:3000"))
+        # lru_cache allows concurrent cache misses; serialize construction as well as cache access.
+        with _BACKEND_LOCK:
+            return _backend(os.getpid(), public, secret, os.getenv("LANGFUSE_BASE_URL", "http://localhost:3000"))
     except Exception:
         return None  # Telemetry must never change the answer's availability.
 
@@ -89,7 +102,7 @@ def observation(name: str, *, root: bool = False, input=None, start_time: int | 
     parent = _CURRENT.get()
     runtime = _runtime() if root or parent is not None else None
     active, token = Observation(), None
-    context = None
+    context, span = None, None
     try:
         if runtime is not None:
             from opentelemetry.trace import use_span
@@ -122,9 +135,9 @@ def observation(name: str, *, root: bool = False, input=None, start_time: int | 
                 context.__exit__(None, None, None)  # Never hand the SDK an unsanitized exception.
             except Exception:
                 pass
-        if active.span is not None:
+        if span is not None:
             try:
-                active.span.end()
+                span.end()
             except Exception:
                 pass
 
