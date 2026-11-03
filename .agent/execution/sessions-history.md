@@ -570,3 +570,9 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261103-152847-2` | `2026-11-03` | `2026-11-03` | `claude` | `T-042` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-042.md` | `none` |
 | `S-20261103-231350` | `2026-11-03` | `2026-11-03` | `codex` | `T-042` | `completed` | `review started` | `.agent/reports/review/T-042.md` | `none` |
 | `S-20261103-232009` | `2026-11-03` | `2026-11-03` | `codex` | `T-042` | `completed` | `review approved` | `.agent/reports/review/T-042.md` | `none` |
+| `S-20261103-235521` | `2026-11-03` | `2026-11-03` | `teammate-b` | `T-035` | `completed` | `task review -> done` | `.agent/reports/review/T-035.md` | `none` |
+| `S-20261103-235521-2` | `2026-11-03` | `2026-11-03` | `teammate-b` | `T-036` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
+| `S-20261104-000304` | `2026-11-04` | `2026-11-04` | `codex` | `T-036` | `completed` | `implementation report draft` | `.agent/reports/implementation/T-036.md` | `none` |
+| `S-20261104-000456` | `2026-11-04` | `2026-11-04` | `teammate-b` | `T-036` | `completed` | `verify '/home/viet_anh/.venvs/bank-t011/bin/python -m pytest tests/unit/test_llm_cost.py tests/api/test_feedback.py tests/api/test_request_cost.py tests/unit/test_tracing.py tests/unit/test_llm.py tes` | `.agent/reports/implementation/T-036.md` | `none` |
+| `S-20261104-000803` | `2026-11-04` | `2026-11-04` | `codex` | `T-036` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-036.md` | `none` |
+| `S-20261104-000803-2` | `2026-11-04` | `2026-11-04` | `codex` | `T-036` | `completed` | `review requested from claude-review-t036` | `.agent/reports/implementation/T-036.md` | `none` |
