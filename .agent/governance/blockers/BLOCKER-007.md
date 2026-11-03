@@ -19,7 +19,7 @@ Track the authentication failure blocking independent review of implemented T-03
 - **Title**: `T-035 independent reviewer authentication unavailable`
 - **Owner**: `teammate-b`
 - **Reporter**: `codex`
-- **Status**: `open`
+- **Status**: `resolved`
 - **Blocker Type**: `access`
 - **Priority**: `2`
 - **Created Date**: `2026-11-03`
@@ -58,9 +58,9 @@ No credentials are included in this record.
 
 ## Completion Criteria
 
-- [ ] Authentication no longer blocks actual independent review.
-- [ ] Reviewer findings and decision linked to final source head.
-- [ ] Task/board/context and QA handoff synchronized using actual evidence.
+- [x] Authentication no longer blocks actual independent review.
+- [x] Reviewer findings and decision linked to final source head.
+- [x] Task/board/context and QA handoff synchronized using actual evidence.
 
 ## Forbidden Actions
 
@@ -81,3 +81,7 @@ technical checks. A fresh Claude session `85fc26de-9bf9-408c-9cf1-2383bc28a0db`
 again failed OAuth before any source/model work (is_error=true, duration_api_ms=0,
 zero model tokens). Evidence: output/t035-r2-review-attempt.json in the shared workspace.
 Blocker remains open; no executor review approval, formal QA pass or task done is claimed.
+
+## Resolution 2026-11-03
+
+Resolved by explicit instruction of counterpart/decision owner A (trong-hung) on 2026-11-03: A's Claude Code session, reviewer identity `claude-review-a` (distinct from executor `codex`), is the independent reviewer for T-035 under DEC-004 in place of B's fresh Claude session that failed OAuth. The review is an actual source review: round 1 at `7ae9279` ([PR #99 review](https://github.com/T1xNTH/bank-assistant/pull/99#pullrequestreview-5749622651)) read the full diff, ran the full suite with real `langfuse==4.18.0` (1087 passed) and measured flush against an unreachable Langfuse; round 2 at final head `84bb33f` re-checked fixes F-01..F-03 from `eb00db1`, ran the full suite (1091 passed, 79 deselected) and its own probes (concurrent cold start, setup failure). Decision APPROVED with no open critical/major finding; report `.agent/reports/review/T-035.md`. OAuth itself was not repaired. As with BLOCKER-006, this is a task-specific disposition, not a rewrite of DEC-004. Counterpart PR approval is given by A on PR #99; QA handoff and merge follow the normal process.

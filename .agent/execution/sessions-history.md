@@ -557,3 +557,5 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261103-155925` | `2026-11-03` | `2026-11-03` | `codex` | `T-035` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-035.md` | `none` |
 | `S-20261103-155925-2` | `2026-11-03` | `2026-11-03` | `codex` | `T-035` | `completed` | `review requested from claude-review-t035` | `.agent/reports/implementation/T-035.md` | `none` |
 | `S-20261103-163612` | `2026-11-03` | `2026-11-03` | `codex` | `T-035` | `completed` | `user-requested technical recheck: 1091 tests pass; A minor findings fixed; formal review/QA blocked by OAuth` | `.agent/reports/implementation/T-035-review-followup.md; .agent/reports/qa/T-035-recheck.md` | `BLOCKER-007` |
+| `S-20261103-170650` | `2026-11-03` | `2026-11-03` | `claude-review-a` | `T-035` | `completed` | `review started` | `.agent/reports/review/T-035.md` | `none` |
+| `S-20261103-170723` | `2026-11-03` | `2026-11-03` | `claude-review-a` | `T-035` | `completed` | `review approved` | `.agent/reports/review/T-035.md` | `none` |

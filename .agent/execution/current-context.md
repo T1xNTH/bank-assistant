@@ -22,23 +22,25 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `53`
+- **Context Revision**: `54`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-03`
 - **Updated By**: `codex`
-- **Update Trigger**: `User issue #76: T-035 implementation verified and review requested; BLOCKER-007 authentication`
+- **Update Trigger**: `A: review độc lập T-035 (claude-review-a) APPROVED tại 84bb33f; BLOCKER-007 resolved`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-010, E-011, E-012, E-013 EPIC_IN_PROGRESS; E-014..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-035 review (issue #76; BLOCKER-007); T-032 review (PR #95, reviewer teammate-b); T-031 review; T-027 review; T-026, T-028, T-029, T-030 done; other M-002 tasks pending`
-- **Active Blocker IDs**: `BLOCKER-007`
+- **Active Task IDs**: `T-035 review (PR #99; review APPROVED bởi claude-review-a, chờ QA và counterpart approval); T-032 review (PR #95, reviewer teammate-b); T-031 review; T-027 review; T-026, T-028, T-029, T-030 done; other M-002 tasks pending`
+- **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
 - **Current Session ID**: `S-20261103-163612`
 
 ## Revision Provenance
+
+Revision 54 (claude cho trong-hung, 2026-11-03): theo chỉ đạo của A, phiên Claude Code của A (reviewer `claude-review-a`, khác executor `codex`) là reviewer độc lập của T-035 theo DEC-004. Review thật 2 vòng: `7ae9279` (1087 passed, 3 minor) và head `84bb33f` (F-01..F-03 đã sửa ở `eb00db1`, 1091 passed, thăm dò riêng). `agent review approve T-035` APPROVED; report `.agent/reports/review/T-035.md`. BLOCKER-007 resolved (OAuth không được sửa; quyết định riêng cho task, như BLOCKER-006). T-035 vẫn review; chưa QA pass hay done.
 
 Revision 52 (codex, 2026-11-03): user authorized issue #76 / T-035; E-013 READY -> IN_PROGRESS and T-035 pending -> in-progress via lifecycle CLI. Isolated feat/T-035-langfuse-tracing from main 7f4eb73. Scope: optional local Langfuse obs stack, masked manual request/RAG/job spans and real trace IDs; no contract, pricing/feedback or baseline changes.
 
