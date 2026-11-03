@@ -42,7 +42,7 @@ from langchain_core.tools import StructuredTool
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
-from langgraph.prebuilt import ToolNode
+from langgraph.prebuilt import InjectedState, ToolNode
 from langgraph.types import Command, interrupt
 
 from app.agent.core_banking import CoreBanking
@@ -365,11 +365,16 @@ class _BoundTools:
         keep = ("ts", "account_ref", "amount", "description")
         return {"ok": [{key: row[key] for key in keep} for row in rows[:limit]]}
 
-    def tra_cuu_tai_lieu(self, question: Any = None) -> dict:
+    def tra_cuu_tai_lieu(self, question: Any = None, state: Annotated[dict, InjectedState] = None) -> dict:
         if not isinstance(question, str) or not question.strip() or len(question) > MAX_MESSAGE:
             return {"error": "question must be non-empty text"}
         masked, types = require_mask_content_types(question)
-        result = self.answerer.answer(masked, self.user, force_local=bool(self.pii or types))
+        # The model writes this question from the history. Once the thread holds customer data or a
+        # confidential answer, the question may quote it, so the RAG answer stays local whatever chunks
+        # come back (PR #94 QA F-01). The flag comes from the checkpointed state, so it survives restarts.
+        state = state or {}
+        local = bool(self.pii or state.get("pii") or state.get("sensitive") or types)
+        result = self.answerer.answer(masked, self.user, force_local=local)
         citations = [{"n": c.n, "source": c.source, "page": c.page} for c in result.citations]
         answer = _clean(result.answer)
         return {"ok": {"answer": answer, "found": result.found, "route": result.route, "citations": citations}}

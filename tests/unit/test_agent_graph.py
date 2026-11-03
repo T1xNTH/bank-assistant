@@ -128,7 +128,7 @@ def test_transactions_use_account_refs_and_route_later_turns_local(env):
     assert "SYN-ACC-001" not in result.answer
     svc.run(OWNER, "Còn phí thẻ thì sao?", result.thread_id)
     assert [alias for _, alias in llm.calls] == ["cloud-chat", "local-chat"]  # customer data now in the history
-    assert env["answerer"].calls[-1][2] is False  # the RAG step itself still decides on its own chunks
+    assert env["answerer"].calls[-1][2] is True  # the RAG question may quote that data (PR #94 QA F-01)
 
 
 def test_unknown_account_ref_is_an_error_message(env):
@@ -667,3 +667,25 @@ def test_masked_amount_expires_after_thirty_minutes(env, monkeypatch):
     clock[0] += 31 * 60
     expired = svc.run(OWNER, "Tính lại 12% 12 tháng", thread_id).answer
     assert expired == f"Chưa thực hiện được (tinh_lai_vay): {agent_graph.STALE_AMOUNT}."
+
+
+# PR #94 QA by B (Codex), F-01: a sensitive history must not reach cloud through the RAG tool's question
+
+
+@pytest.mark.parametrize("first", ["confidential", "transactions"])
+def test_sensitive_history_never_reaches_cloud_through_a_later_rag_question(env, first):
+    if first == "confidential":
+        secret = Hit("d2", "noi-bo.pdf", 3, "Dự án SYN-ORION-7 giảm phí 0,5%", 0.9, "credit", "confidential")
+        env["answerer"].retriever.hits = [secret]
+        opener = '{"tool": "tra_cuu_tai_lieu", "args": {"question": "Ưu đãi dự án nội bộ?"}}'
+    else:
+        opener = '{"tool": "tra_cuu_giao_dich", "args": {"account_ref": "TK1", "limit": 2}}'
+    svc, _ = env["service"](opener)
+    thread_id = svc.run(OWNER, "Câu hỏi đầu").thread_id
+    env["answerer"].retriever.hits = [Hit("d1", "phi-the.pdf", 1, "Phí thẻ 50.000 đ", 0.9, "public")]
+    follow = '{"tool": "tra_cuu_tai_lieu", "args": {"question": "Phí thẻ cho SYN-ORION-7, Synthetic transaction 5?"}}'
+    restarted, llm = env["service"](follow)  # a new service over the same checkpoint file
+    result = restarted.run(OWNER, "Còn phí thẻ thì sao?", thread_id)
+    assert [alias for _, alias in llm.calls] == ["local-chat"]
+    assert env["answerer"].calls[-1][2] is True
+    assert result.status == "completed"
