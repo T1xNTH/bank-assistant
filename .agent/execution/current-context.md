@@ -22,11 +22,11 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `49`
+- **Context Revision**: `50`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-03`
 - **Updated By**: `claude`
-- **Update Trigger**: `T-032 xử lý review B trên PR #95: bộ held-out vào repo, chạy lại eval qua LiteLLM`
+- **Update Trigger**: `T-032: A chốt quy tắc needs_human cho câu hỏi bảo mật (PR #95 góp ý B)`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
@@ -39,6 +39,8 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Current Session ID**: `S-20261103-t032`
 
 ## Revision Provenance
+
+Revision 50 (claude cho trong-hung, 2026-11-03) xử lý góp ý không chặn của B tại 4af8a1a: A chốt câu hỏi phòng ngừa chung needs_human false, sự cố bảo mật thật/nghi ngờ true. Commit 02ce54b: CHAT_SYSTEM, docs n8n, held-out 22 câu; bộ chính 20/20, held-out intent 19/22 và needs_human 22/22. T-032 vẫn review, chưa có approval hay done.
 
 Revision 49 (claude cho trong-hung, 2026-11-03) xử lý review COMMENTED của B tại ba18035 trên PR #95: eval/classify_heldout.jsonl 18 câu (thêm khiếu nại kèm đề nghị xử lý, câu hỏi bảo mật/khẩn cấp); chạy lại qua cloud-chat: bộ 20 mẫu 20/20, held-out intent 16/18 và needs_human 18/18; prompt không đổi. Supplement T-032-PR95-fixes.md. T-032 vẫn review, chưa có approval hay done.
 
