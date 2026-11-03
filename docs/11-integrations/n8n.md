@@ -29,3 +29,5 @@ Bước phân loại gọi `POST /chat` với nội dung tin nhắn và rẽ nh�
 Nghi gian lận, vấn đề bảo mật hay việc khẩn cấp luôn có `needs_human: true`. Gợi ý rẽ nhánh: `question` và `needs_human: false` thì gọi `/ask/jobs`; `needs_human: true` thì đưa sang bước duyệt; `other` thì không cần gọi `/ask`.
 
 Đo độ đúng: `LLM_BACKEND=litellm python eval/classify.py` chạy 20 mẫu trong `eval/classify.jsonl` (5 mẫu mỗi intent) qua alias `cloud-chat` và báo lỗi nếu độ đúng intent dưới 0,85.
+
+Bộ held-out `eval/classify_heldout.jsonl` (18 câu không dùng khi viết prompt, gồm khiếu nại kèm đề nghị xử lý và câu hỏi bảo mật/khẩn cấp) chạy bằng `python eval/classify.py --samples eval/classify_heldout.jsonl --per-intent 0 --results eval/results/classify_heldout.jsonl`. Lần đo 2026-11-03: intent 16/18, needs_human 18/18; 2 câu hỏi khẩn về bảo mật ("giờ tôi phải làm gì?") bị xếp `request` nhưng vẫn `needs_human: true`, nên n8n vẫn chuyển cho người.

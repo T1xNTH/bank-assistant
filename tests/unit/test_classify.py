@@ -125,3 +125,12 @@ def test_main_refuses_the_fake_backend(tmp_path, monkeypatch):
     monkeypatch.setenv("LLM_BACKEND", "fake")
     with pytest.raises(SystemExit):
         main(["--samples", str(write(tmp_path, balanced())), "--per-intent", "1"])
+
+
+def test_committed_heldout_set_is_valid_and_covers_the_review_cases():
+    samples = load_samples(ROOT / "eval/classify_heldout.jsonl", per_intent=None)
+    assert len(samples) == 18
+    assert {s["message"] for s in samples}.isdisjoint(
+        s["message"] for s in load_samples(ROOT / "eval/classify.jsonl", per_intent=5))
+    assert sum(s["intent"] == "complaint" for s in samples) == 5
+    assert sum(s["intent"] == "question" and s["needs_human"] for s in samples) == 4
