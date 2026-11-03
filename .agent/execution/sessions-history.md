@@ -570,3 +570,8 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261103-152847-2` | `2026-11-03` | `2026-11-03` | `claude` | `T-042` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-042.md` | `none` |
 | `S-20261103-231350` | `2026-11-03` | `2026-11-03` | `codex` | `T-042` | `completed` | `review started` | `.agent/reports/review/T-042.md` | `none` |
 | `S-20261103-232009` | `2026-11-03` | `2026-11-03` | `codex` | `T-042` | `completed` | `review approved` | `.agent/reports/review/T-042.md` | `none` |
+| `S-20261103-235333` | `2026-11-03` | `2026-11-03` | `codex` | `T-037` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
+| `S-20261103-235624` | `2026-11-03` | `2026-11-03` | `codex` | `T-037` | `completed` | `implementation report draft` | `.agent/reports/implementation/T-037.md` | `none` |
+| `S-20261104-000347` | `2026-11-04` | `2026-11-04` | `codex` | `T-037` | `completed` | `verify 'wsl -e make check PY=/home/viet_anh/.venvs/bank-t011/bin/python' passed` | `.agent/reports/implementation/T-037.md` | `none` |
+| `S-20261104-000416` | `2026-11-04` | `2026-11-04` | `codex` | `T-037` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-037.md` | `none` |
+| `S-20261104-000417` | `2026-11-04` | `2026-11-04` | `codex` | `T-037` | `completed` | `review requested from claude-review-t037` | `.agent/reports/implementation/T-037.md` | `none` |
