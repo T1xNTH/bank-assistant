@@ -1,8 +1,11 @@
 """Exercise exported workflow code, including fail-closed approval and polling paths."""
 
 import json
+import re
 import shutil
 import subprocess
+from html import unescape
+from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
@@ -13,21 +16,21 @@ WORKFLOW = json.loads((ROOT / "infrastructure/n8n/workflows/intake-to-reply.json
 NODES = {n["name"]: n for n in WORKFLOW["nodes"]}
 
 
-def run_js(code, payload, *, classification=None, run_index=0):
+def run_js(code, payload, *, classification=None, run_index=0, intake=None):
     node = shutil.which("node")
     if not node:
         pytest.skip("Node.js required to execute n8n expressions")
     script = """
-const [code, payload, classification, runIndex] = JSON.parse(process.argv[1]);
+const [code, payload, classification, runIndex, intake] = JSON.parse(process.argv[1]);
 const input = {all: () => [{json: payload}]};
-const lookup = () => ({first: () => ({json: classification})});
+const lookup = name => ({first: () => ({json: name === 'Validate intake' ? intake : classification})});
 try {
   const result = new Function('$json', '$input', '$', '$runIndex', code)(payload, input, lookup, runIndex);
   console.log(JSON.stringify({result}));
 } catch (e) { console.log(JSON.stringify({error: e.message})); }
 """
     result = subprocess.run(
-        [node, "-e", script, json.dumps([code, payload, classification, run_index])],
+        [node, "-e", script, json.dumps([code, payload, classification, run_index, intake])],
         capture_output=True, text=True, check=True, encoding="utf-8",
     )
     return json.loads(result.stdout)
@@ -94,6 +97,39 @@ def test_only_explicit_boolean_approval_sends_reply(data):
     expression = expression.removeprefix("={{ ").removesuffix(" }}")
     assert run_js("return " + expression, {"data": data})["result"] is (data.get("approved") is True)
     assert WORKFLOW["connections"]["Approved"]["main"][1][0]["node"] == "No reply"
+
+
+@pytest.mark.parametrize("email,question", [
+    ("first@example.test", "Annual fee?"),
+    ("second@example.test", "<script>unsafe</script> & 'quoted' question?"),
+])
+def test_review_message_includes_recipient_question_and_draft(email, question):
+    expression = NODES["Review draft"]["parameters"]["message"].removeprefix("={{ ").removesuffix(" }}")
+    payload = {"intent": "question", "needs_human": False, "text": "Answer [1]\nfees.pdf page 3 <i>policy</i> & fees"}
+    result = run_js("return " + expression, payload, intake={"email": email, "message": question})["result"]
+    # Pinned n8n 2.45.7 decodes these named entities before inserting into HTML.
+    # Model that external boundary so ordinary named-entity escaping cannot regress unnoticed.
+    html_message = re.sub(r"&amp;|&lt;|&gt;|&#39;|&quot;", lambda m: unescape(m[0]), result)
+    text = unescape(html_message)
+    assert email in text
+    assert question in text
+    assert payload["text"] in text
+    assert text.index(email) < text.index(question) < text.index(payload["text"])
+    tags = []
+    parser = HTMLParser()
+    parser.handle_starttag = lambda tag, attrs: tags.append(tag)
+    parser.feed(html_message)
+    assert tags == []
+
+
+def test_execution_cap_covers_approval_plus_poll_and_delivery():
+    compose = yaml.safe_load((ROOT / "infrastructure/compose.yaml").read_text())
+    maximum = int(compose["services"]["n8n"]["environment"]["EXECUTIONS_TIMEOUT_MAX"])
+    budget = WORKFLOW["settings"]["executionTimeout"]
+    approval = NODES["Review draft"]["parameters"]["options"]["limitWaitTime"]["values"]
+    assert approval["resumeUnit"] == "hours"
+    # 60 worst-case polls (5s Wait + 15s HTTP) plus classification, enqueue and delivery margin.
+    assert approval["resumeAmount"] * 3600 + 60 * (5 + 15) + 60 <= budget <= maximum
 
 
 def test_profile_ports_and_credential_references():

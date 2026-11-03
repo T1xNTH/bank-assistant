@@ -324,7 +324,7 @@
         "fromEmail": "assistant@example.test",
         "toEmail": "approver@example.test",
         "subject": "[Bank Assistant] Duyệt phản hồi",
-        "message": "={{ 'Intent: ' + $json.intent + '\\nNeeds human: ' + $json.needs_human + '\\n\\n' + $json.text }}",
+        "message": "={{ ('Gửi tới: ' + $('Validate intake').first().json.email + '\\nCâu hỏi: ' + $('Validate intake').first().json.message + '\\nIntent: ' + $json.intent + '\\nNeeds human: ' + $json.needs_human + '\\n\\n' + $json.text).replaceAll('&', '&#38;').replaceAll('<', '&#60;').replaceAll('>', '&#62;') }}",
         "responseType": "approval",
         "approvalOptions": {
           "values": {

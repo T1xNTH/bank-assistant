@@ -104,6 +104,8 @@ services:
       N8N_DIAGNOSTICS_ENABLED: "false"
       N8N_PERSONALIZATION_ENABLED: "false"
       GENERIC_TIMEZONE: Asia/Ho_Chi_Minh
+      # 25h workflow budget: 24h approval plus intake, polling and delivery.
+      EXECUTIONS_TIMEOUT_MAX: 90000
       EXECUTIONS_DATA_MAX_AGE: 24
     ports: ["127.0.0.1:5678:5678"]
     volumes:

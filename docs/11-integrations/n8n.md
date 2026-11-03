@@ -33,6 +33,12 @@ Compose). Các port host chỉ bind `127.0.0.1`. Dữ liệu n8n và encryption 
 `COMPOSE_PROFILES=automation,local-llm`. `make n8n-up` chỉ bật hai dịch vụ automation;
 `make up` với profile đã chọn bật cả API/worker và các dependency.
 
+Service n8n đặt `EXECUTIONS_TIMEOUT_MAX=90000` (25 giờ), khớp
+`settings.executionTimeout=90000` của workflow: 24 giờ để duyệt và 1 giờ dự phòng
+cho tiếp nhận, polling và gửi thư. n8n 2.45.7 mặc định chặn timeout workflow ở
+3600 giây nếu không đặt biến này. Khi đổi thời gian duyệt, cập nhật cả hai giới hạn;
+đổi environment cần recreate container bằng `make n8n-up`.
+
 `make n8n-import` dùng CLI chính thức và ID ổn định `bankIntakeToReply`; chạy lại cập
 nhật cùng workflow. Workflow được import ở trạng thái chưa publish, không chứa secret
 hay dữ liệu mẫu pin. Dừng/unpublish workflow trước khi import lại và publish lại sau
@@ -57,6 +63,9 @@ khi kiểm tra; không dùng CLI import đồng thời với việc sửa workfl
 HTTP Request dùng URL nội bộ cố định `http://api:8000`; người gửi không điều khiển
 URL hoặc API key. Không đưa provider key hay gateway key vào n8n. Code node không cần
 quyền truy cập environment. Mailpit chỉ giữ thư local, không chuyển thư ra Internet.
+Nội dung thư duyệt dùng numeric HTML entities cho `&`, `<`, `>` để giữ câu hỏi và
+bản nháp ở dạng văn bản: helper của Send and Wait trong phiên bản ghim giải mã các
+named entities trước khi chèn nội dung vào HTML.
 
 ## Kịch bản kiểm tay
 
@@ -70,8 +79,10 @@ quyền truy cập environment. Mailpit chỉ giữ thư local, không chuyển 
    `Wait for job` → `Poll job`. Poll mỗi 5 giây, tối đa 60 lần; HTTP timeout 15 giây.
    Job `failed`, status lạ, timeout hoặc đáp án `found=true` thiếu trích dẫn đều dừng,
    không gửi phản hồi. Không tự retry POST tạo job để tránh tạo job trùng.
-4. Trong Mailpit, mở thư gửi tới `approver@example.test`. Kiểm tra bản nháp có câu trả
-   lời và `[n] tên file — trang p`; nhấn **Duyệt gửi**. Mở thư mới gửi tới
+4. Trong Mailpit, mở thư gửi tới `approver@example.test`. Kiểm tra **Gửi tới** và
+   **Câu hỏi** khớp form (kể cả ký tự `<`, `>` và `&`, được hiển thị như văn bản), rồi
+   kiểm tra bản nháp có câu trả lời và `[n] tên file — trang p`;
+   nhấn **Duyệt gửi**. Mở thư mới gửi tới
    `customer@example.test`: nội dung và trích dẫn phải khớp bản nháp đã duyệt.
 5. Gửi form khác rồi nhấn **Từ chối**: không có thư phản hồi gửi khách. Không duyệt
    trong 24 giờ cũng không gửi: node `Approved` chỉ nhận `data.approved === true`.
@@ -87,6 +98,10 @@ vào form kiểm thử. Dữ liệu execution được prune sau 24 giờ; execu
 lưu nội dung. Mailpit giữ tối đa 500 thư trong bộ nhớ. Workflow xử lý lỗi/vận hành
 thuộc T-034.
 
+Lỗi HTTP giữa chừng (ví dụ `Poll job` nhận 503) dừng execution và không gửi thư.
+T-033 chưa thông báo tự động cho người vận hành; T-034 cần nối Error Trigger để
+báo các execution lỗi này. Hiện tại kiểm tra mục Executions trong n8n khi chưa có phản hồi.
+
 ### Bằng chứng chạy ngày 2026-11-03
 
 Đã chạy trên n8n `2.45.7`, Mailpit `1.33.0`, API hiện tại với `AUTH_BACKEND=apikey`,
@@ -101,8 +116,20 @@ CLI import và re-import cũng chạy trên volume n8n sạch.
 
 ![Email đã duyệt có trích dẫn trong Mailpit](evidence/T-033-mailpit-reply.png)
 
+Sau review PR #98, kiểm tra thêm với HTTP fixture có kiểm tra key `public/service`:
+thư duyệt hiển thị đúng người nhận và câu hỏi gốc, ký tự HTML hiện như văn bản,
+duyệt gửi thư có trích dẫn còn từ chối không gửi thư. Container xác nhận trần timeout
+90000 giây; chưa chạy phép thử chờ đủ 24 giờ.
+
+![Thư duyệt có người nhận và câu hỏi gốc](evidence/T-033-review-context.png)
+
 Nguồn tham khảo: [CLI import](https://docs.n8n.io/hosting/cli-commands/),
 [Send Email và Send and Wait](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.sendemail/).
+Giới hạn timeout được đối chiếu với
+[ExecutionsConfig của n8n 2.45.7](https://github.com/n8n-io/n8n/blob/n8n%402.45.7/packages/%40n8n/config/src/configs/executions.config.ts)
+và [workflow runner](https://github.com/n8n-io/n8n/blob/n8n%402.45.7/packages/cli/src/workflow-runner.ts).
+Helper xử lý entity được kiểm tra trong
+[utilities của phiên bản ghim](https://github.com/n8n-io/n8n/blob/n8n%402.45.7/packages/nodes-base/utils/utilities.ts).
 
 ## Phân loại bằng `/chat` (T-032)
 
