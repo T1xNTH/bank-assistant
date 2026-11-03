@@ -8,6 +8,7 @@ import os
 from dataclasses import asdict, replace
 from datetime import timezone
 from functools import lru_cache
+from time import perf_counter
 from uuid import UUID, uuid4
 
 from fastapi import Depends, HTTPException, Request
@@ -20,10 +21,12 @@ from rq.serializers import JSONSerializer
 
 from app.contracts import User
 from app.deps import get_answerer, get_current_user
+from app.llm_cost import CURRENT_USAGE, Usage
 from app.log_config import configure_logging
 from app.queue.limits import TokenBucket
 from app.queue.worker import QUEUE_NAMES, positive_int, run_with_policy
 from app.schemas import AskRequest, AskResponse, JobAccepted, JobStatusResponse
+from app.security import audit
 from app.security.masking import (
     REDACTED,
     MaskingError,
@@ -57,6 +60,11 @@ def masked_result(fields: dict) -> AskResponse:
 def execute_ask(payload: dict, identity: dict) -> dict:
     """Importable RQ callable with bounded rate/retry policy and safe persistence."""
     configure_logging()
+    usage = Usage()
+    usage_token = CURRENT_USAGE.set(usage)
+    started = perf_counter()
+    user, result, question = None, None, REDACTED
+    trace_id = None
     try:
         req = AskRequest.model_validate(payload)
         user = User(**identity)
@@ -69,6 +77,7 @@ def execute_ask(payload: dict, identity: dict) -> dict:
         enqueued = current.enqueued_at if current is not None else None
         start = int(enqueued.replace(tzinfo=timezone.utc).timestamp() * 1_000_000_000) if enqueued else None
         with observation("/ask/jobs", root=True, input=question, start_time=start) as trace:
+            trace_id = trace.trace_id
             if start is not None:
                 with observation("queue_wait", start_time=start):
                     pass
@@ -84,7 +93,19 @@ def execute_ask(payload: dict, identity: dict) -> dict:
         # RQ persists exception text: never retain upstream messages with PII.
         raise RuntimeError("Job execution failed") from None
     finally:
-        flush()  # RQ's work horse exits after a job; don't leave its batch in memory.
+        try:
+            audit.write(
+                endpoint="/ask/jobs", user_id=user.user_id if user else None,
+                department=user.department if user else None, question_masked=question,
+                route=result.route if result else None, refused=not result.found if result else None,
+                latency_ms=round((perf_counter() - started) * 1000), trace_id=trace_id,
+                **usage.fields(),
+            )
+        except Exception:
+            raise RuntimeError("Job execution failed") from None
+        finally:
+            CURRENT_USAGE.reset(usage_token)
+            flush()  # RQ's work horse exits after a job; don't leave its batch in memory.
 
 
 class JobQueue:

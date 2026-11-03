@@ -47,6 +47,7 @@ def gateway(monkeypatch):
 def test_chat(gateway):
     messages = [{"role": "user", "content": "Hello"}]
     result = llm.chat(messages, "local-chat", 0.2)
+    assert result.meta["usage_known"] is True
     assert (result.text, result.model, result.input_tokens, result.output_tokens) == (
         "Xin chào", "upstream-model", 12, 4)
     assert gateway["requests"] == [("/v1/chat/completions", "Bearer stub-secret", {
@@ -91,6 +92,7 @@ def test_optional_usage_and_v1_url(gateway, monkeypatch):
     del gateway["body"]["usage"]
     result = llm.chat([], "cloud-chat")
     assert result.input_tokens == result.output_tokens == 0
+    assert result.meta["usage_known"] is False
     assert gateway["requests"][0][0] == "/v1/chat/completions"
 
 

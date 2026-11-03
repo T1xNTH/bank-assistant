@@ -77,7 +77,9 @@ def chat(messages: list[dict], alias: str, temperature: float = 0.0) -> LLMResul
                     raise ValueError
                 if any(type(n) is not int or n < 0 for n in (input_tokens, output_tokens)):
                     raise ValueError
-                return LLMResult(mask_content(text), mask_text(model), input_tokens, output_tokens)
+                return LLMResult(mask_content(text), mask_text(model), input_tokens, output_tokens, meta={
+                    "usage_known": "prompt_tokens" in usage and "completion_tokens" in usage,
+                })
             except (ValueError, KeyError, IndexError, TypeError, AttributeError):
                 raise LLMError("Invalid LLM gateway response") from None
     raise LLMError("LLM gateway retry limit reached")

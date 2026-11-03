@@ -10,6 +10,7 @@ from starlette.requests import Request
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.errors import error_response, internal_error_handler
+from app.llm_cost import CURRENT_USAGE, Usage
 from app.log_config import REQUEST_ID, exception_frames, get_logger, http_method, new_request_id
 from app.security import audit
 
@@ -29,6 +30,8 @@ class RequestContextMiddleware:
         request_id = new_request_id()
         scope.setdefault("state", {})["request_id"] = request_id
         token = REQUEST_ID.set(request_id)
+        usage = Usage()
+        usage_token = CURRENT_USAGE.set(usage)
         started = perf_counter()
         response_started = False
         audit_attempted = False
@@ -54,7 +57,8 @@ class RequestContextMiddleware:
                             route=result.route if result else None,
                             refused=not result.found if result else None,
                             latency_ms=round((perf_counter() - started) * 1000),
-                            trace_id=(result.trace_id if result else None) or request_id,
+                            **usage.fields(),
+                            trace_id=state.get("audit_trace_id") or (result.trace_id if result else None) or request_id,
                         )
                     except Exception:
                         audit_failed = True
@@ -103,4 +107,5 @@ class RequestContextMiddleware:
                     },
                 )
             finally:
+                CURRENT_USAGE.reset(usage_token)
                 REQUEST_ID.reset(token)
