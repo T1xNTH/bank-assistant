@@ -23,6 +23,7 @@ from qdrant_client import QdrantClient, models
 from app.contracts import Department, Hit, RetrievalMode, User
 from app.rag import embed, rerank
 from app.rag.store import _collection_name, _connection
+from app.tracing import observation
 
 # Candidates each of dense and sparse contributes to the fusion; RRF needs more than k from
 # each branch so that a chunk ranked well by only one of them can still reach the top k.
@@ -51,7 +52,8 @@ def retrieve(
     if mode == "hybrid_rerank":
         limit = max(rerank_candidates(), k)
         candidates = retrieve(question, user, limit, "hybrid", client=client, collection=collection)
-        return rerank.rerank(question, candidates, k)
+        with observation("rerank"):
+            return rerank.rerank(question, candidates, k)
     flt = access_filter(user)
     [dense], [sparse] = embed.embed([question])
     with _connection(client) as connection:
