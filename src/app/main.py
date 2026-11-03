@@ -5,7 +5,7 @@ from __future__ import annotations
 import threading
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from dataclasses import asdict
+from dataclasses import asdict, replace
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 
@@ -21,6 +21,7 @@ from app.queue.jobs import enqueue_job, get_job
 from app.rag.answer import AnswerUnavailable, retrieval_mode, warm_up
 from app.schemas import AgentResponse, AskRequest, AskResponse, ChatRequest, ChatResponse, ErrorResponse
 from app.security.masking import REDACTED, MaskingError, mask_identifier, mask_text, require_mask
+from app.tracing import flush, observation
 
 logger = get_logger(__name__)
 
@@ -43,6 +44,7 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
     try:
         yield
     finally:
+        flush()
         service = application.state.agent_service
         if service is not None:
             service.checkpointer.conn.close()
@@ -94,8 +96,14 @@ def chat(
     user: User = Depends(get_current_user),
     llm: LLM = Depends(get_llm),
 ) -> ChatResponse:
-    response = structured_chat(_mask_input(req.message)[0], llm)
-    return response.model_copy(update={"answer": mask_text(response.answer), "model": mask_text(response.model)})
+    message = _mask_input(req.message)[0]
+    with observation("/chat", root=True, input=message) as trace:
+        response = structured_chat(message, llm)
+        response = response.model_copy(update={
+            "answer": mask_text(response.answer), "model": mask_text(response.model),
+        })
+        trace.update(output=response.answer, metadata={"intent": response.intent, "needs_human": response.needs_human})
+        return response
 
 
 def ask(
@@ -111,7 +119,11 @@ def ask(
     # PII is detected before masking; the answerer only sees masked text (CR-003 C-1, T-026).
     force_local = req.force_local or bool(pii_types)
     try:
-        result = answerer.answer(request.state.audit_question, user, req.mode, force_local=force_local)
+        with observation("/ask", root=True, input=request.state.audit_question) as trace:
+            result = answerer.answer(request.state.audit_question, user, req.mode, force_local=force_local)
+            if trace.trace_id is not None:
+                result = replace(result, trace_id=trace.trace_id)
+            trace.update(output=result.answer, metadata={"found": result.found, "route": result.route})
     except AnswerUnavailable as exc:
         logger.warning("ask.unavailable: %s", exc, extra={"exception_type": type(exc.__cause__ or exc).__name__})
         raise HTTPException(status_code=503, detail="Answer unavailable") from None

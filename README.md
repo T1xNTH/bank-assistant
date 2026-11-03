@@ -199,6 +199,14 @@ Before using this healthcheck for autoheal or orchestrator recovery, require the
 registration's birth time to be after the current process's start time (for
 example, from `/proc/1/stat` or a startup timestamp recorded by the worker).
 
+## Optional tracing (T-035)
+
+Enable the Compose `obs` profile for local Langfuse. Without both Langfuse API keys,
+tracing stays off. Enabled `/ask` and job responses use the exported trace's actual
+ID; masked request/output data and retrieve/rerank/LLM timing appear in Langfuse.
+Worker traces separate queue waiting from processing. See the
+[setup, timing definitions and verification](docs/13-observability/observability.md).
+
 ## Where things are
 | Path | What |
 |---|---|

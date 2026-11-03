@@ -20,7 +20,9 @@ def masking_active() -> bool:
 
 
 def mask_identifier(value: str) -> str:
-    """Keep canonical UUID correlation IDs intact despite numeric group matches."""
+    """Keep canonical UUID and OTEL trace correlation IDs despite numeric group matches."""
+    if re.fullmatch(r"[0-9a-f]{32}", value) and value != "0" * 32:
+        return value
     try:
         if str(UUID(value)) == value:
             return value

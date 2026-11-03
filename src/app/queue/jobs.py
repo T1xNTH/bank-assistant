@@ -5,7 +5,8 @@ from __future__ import annotations
 import hashlib
 import math
 import os
-from dataclasses import asdict
+from dataclasses import asdict, replace
+from datetime import timezone
 from functools import lru_cache
 from uuid import UUID, uuid4
 
@@ -31,6 +32,7 @@ from app.security.masking import (
     masked_pii_types,
     require_mask,
 )
+from app.tracing import flush, observation
 
 RESULT_TTL = 3600
 QUEUE_NAME = "ask-default"
@@ -64,13 +66,25 @@ def execute_ask(payload: dict, identity: dict) -> dict:
         # Fail closed for payloads enqueued before T-026, which kept force_local=false next to a
         # masked question: placeholders (or PII left unmasked) still force local (PR #88 review, P2).
         force_local = req.force_local or bool(pii_types) or bool(masked_pii_types(question))
-        result = run_with_policy(
-            lambda: get_answerer().answer(question, user, req.mode, force_local=force_local), connection,
-        )
-        return masked_result(asdict(result)).model_dump(mode="json")
+        enqueued = current.enqueued_at if current is not None else None
+        start = int(enqueued.replace(tzinfo=timezone.utc).timestamp() * 1_000_000_000) if enqueued else None
+        with observation("/ask/jobs", root=True, input=question, start_time=start) as trace:
+            if start is not None:
+                with observation("queue_wait", start_time=start):
+                    pass
+            with observation("processing"):
+                result = run_with_policy(
+                    lambda: get_answerer().answer(question, user, req.mode, force_local=force_local), connection,
+                )
+            if trace.trace_id is not None:
+                result = replace(result, trace_id=trace.trace_id)
+            trace.update(output=result.answer, metadata={"found": result.found, "route": result.route})
+            return masked_result(asdict(result)).model_dump(mode="json")
     except Exception:
         # RQ persists exception text: never retain upstream messages with PII.
         raise RuntimeError("Job execution failed") from None
+    finally:
+        flush()  # RQ's work horse exits after a job; don't leave its batch in memory.
 
 
 class JobQueue:

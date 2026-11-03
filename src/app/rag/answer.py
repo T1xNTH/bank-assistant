@@ -36,6 +36,7 @@ from app.contracts import LLM, REFUSAL, AskResult, Citation, Hit, RetrievalMode,
 from app.llm import LLMError
 from app.prompts import CANARY, SYSTEM, user_message
 from app.routing import decide_route
+from app.tracing import observation
 
 DEFAULT_K = 5
 DEFAULT_MODE: RetrievalMode = "hybrid_rerank"
@@ -91,7 +92,9 @@ class RagAnswerer:
         started = time.monotonic()
         mode = mode or retrieval_mode()
         try:
-            hits = self._retrieve(question, user, self.k, mode)
+            with observation("retrieve") as span:
+                hits = self._retrieve(question, user, self.k, mode)
+                span.update(metadata={"hit_count": len(hits), "mode": mode})
         except ResponseHandlingException as exc:  # no connection, or a timeout
             raise AnswerUnavailable("retrieval unavailable") from exc
         except UnexpectedResponse as exc:
@@ -107,7 +110,8 @@ class RagAnswerer:
                 {"role": "user", "content": user_message(question, hits)},
             ]
             try:
-                reply = self._llm.chat(messages, decision.alias, temperature=0.0).text
+                with observation("llm"):
+                    reply = self._llm.chat(messages, decision.alias, temperature=0.0).text
             except LLMError as exc:
                 raise AnswerUnavailable("LLM gateway unavailable") from exc
             text, citations = cite(reply, hits)
