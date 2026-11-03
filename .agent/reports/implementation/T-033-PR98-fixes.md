@@ -18,6 +18,7 @@ priority: 2
 - **Executor**: `codex-b`
 - **Status**: `draft`
 - **Report Date**: `2026-11-03`
+- **Commits**: `02a3d53` (review fixes; this report's final reference is a documentation follow-up)
 
 ## Scope
 
