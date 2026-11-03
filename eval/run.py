@@ -13,6 +13,9 @@ the question needs (its non-public source, else ``public``), against Qdrant and 
 - ``citation_rate`` (NFR-04): in-scope answers with ``found: true`` that carry at least one citation.
 - ``faithfulness`` (NFR-01): RAGAS faithfulness of in-scope answers against their retrieved chunks,
   judged by ``JUDGE_MODEL`` (default the gateway alias ``cloud-chat``). ``--no-judge`` skips it.
+  An answer routed to ``local-chat`` (a retrieved chunk is ``confidential``, T-026/T-027) is judged by
+  ``JUDGE_LOCAL_MODEL`` (default ``local-chat``, must be a ``local-*`` alias) so its contexts never reach the
+  cloud judge; with no local judge it stays unscored.
 
 Also reported: in-scope answer rate, citations of superseded documents (must be 0), latency, tokens.
 Per-question rows go to eval/results/<mode>.jsonl. ``--check`` exits 1 when a threshold is missed.
@@ -37,6 +40,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from app.contracts import Hit, RetrievalMode, User  # noqa: E402
+from app.routing import decide_route  # noqa: E402
 
 MODES: tuple[RetrievalMode, ...] = ("dense", "hybrid", "hybrid_rerank")
 K = 5
@@ -70,6 +74,7 @@ class Record:
     judge_error: str | None = None
     error: str | None = None
     retries: int = 0
+    route: str = ""
 
     @property
     def hit(self) -> bool:
@@ -153,24 +158,49 @@ def answer_all(
                 record.error = _describe(exc)
             else:
                 record.error = None
-                record.answer, record.found = result.answer, result.found
+                record.answer, record.found, record.route = result.answer, result.found, result.route
                 record.citations = [asdict(c) for c in result.citations]
             break
         record.latency_ms = round((time.monotonic() - started) * 1000)
-        record.contexts = [{"source": h.source, "page": h.page, "score": h.score, "text": h.text} for h in seen]
+        record.contexts = [
+            {"source": h.source, "page": h.page, "score": h.score, "text": h.text, "classification": h.classification}
+            for h in seen
+        ]
         record.input_tokens, record.output_tokens = counter.input_tokens, counter.output_tokens
         records.append(record)
         print(f"  [{mode}] {len(records)}/{len(rows)} {record.category} found={record.found}", file=sys.stderr)
     return records
 
 
-def judge_records(records: list[Record], judge: Judge) -> None:
+def needs_local_judge(record: Record) -> bool:
+    """Whether the answer or its contexts must stay on the local model: routed local, or any context the
+    routing policy would keep local (confidential, unknown or missing label: fail closed)."""
+    labels = [c.get("classification", "") for c in record.contexts]
+    return record.route != "cloud" or decide_route([], labels).route == "local"
+
+
+NO_LOCAL_JUDGE = "not judged: local-only context and no local judge"
+
+
+def judge_records(records: list[Record], judge: Judge, local_judge: Judge | None = None) -> None:
+    """Score answered in-scope records; local-only ones go to ``local_judge`` only, never to ``judge``."""
     answered = [r for r in records if r.in_scope and r.found]
+    local = [r for r in answered if needs_local_judge(r)]
+    cloud = [r for r in answered if not needs_local_judge(r)]
+    _score(cloud, judge)
+    if local_judge is None:
+        for record in local:
+            record.judge_error = NO_LOCAL_JUDGE
+    else:
+        _score(local, local_judge)
+
+
+def _score(records: list[Record], judge: Judge) -> None:
     samples = [
         {"user_input": r.user_input, "response": r.answer, "contexts": [c["text"] for c in r.contexts]}
-        for r in answered
+        for r in records
     ]
-    for record, score in zip(answered, judge(samples) if samples else [], strict=True):
+    for record, score in zip(records, judge(samples) if samples else [], strict=True):
         if isinstance(score, (int, float)) and not isinstance(score, bool) and math.isfinite(score):
             record.faithfulness = float(score)
         else:  # RAGAS returns nan when it extracts no statement: unscored, never a pass
@@ -374,7 +404,17 @@ JUDGE_CONCURRENCY = 4
 JUDGE_MAX_TOKENS = 4096
 
 
-def ragas_judge(model: str, base_url: str, api_key: str) -> Judge:  # pragma: no cover - needs the eval venv
+def local_judge_model() -> str:
+    """``JUDGE_LOCAL_MODEL`` (default ``local-chat``); only a ``local-*`` gateway alias is accepted."""
+    model = os.getenv("JUDGE_LOCAL_MODEL", "").strip() or "local-chat"
+    if not model.startswith("local-"):
+        raise SystemExit(f"JUDGE_LOCAL_MODEL must be a local-* gateway alias, got {model!r}")
+    return model
+
+
+def ragas_judge(  # pragma: no cover - needs the eval venv
+    model: str, base_url: str, api_key: str, reasoning_effort: str | None = "none"
+) -> Judge:
     """RAGAS faithfulness through the LiteLLM gateway (OpenAI-compatible) with the JUDGE_MODEL alias.
 
     ``reasoning_effort="none"``: RAGAS sends ``top_p``, which gpt-6-luna accepts only without reasoning
@@ -394,7 +434,8 @@ def ragas_judge(model: str, base_url: str, api_key: str) -> Judge:  # pragma: no
     async def score_all(samples: list[dict]) -> list[float | BaseException]:
         # A client per event loop: asyncio.run closes the loop, and pooled connections die with it.
         async with AsyncOpenAI(base_url=url, api_key=api_key) as client:
-            llm = llm_factory(model, client=client, reasoning_effort="none", max_tokens=JUDGE_MAX_TOKENS)
+            extra = {} if reasoning_effort is None else {"reasoning_effort": reasoning_effort}
+            llm = llm_factory(model, client=client, max_tokens=JUDGE_MAX_TOKENS, **extra)
             metric = Faithfulness(llm=llm)
             gate = asyncio.Semaphore(JUDGE_CONCURRENCY)
 
@@ -416,7 +457,9 @@ def ragas_judge(model: str, base_url: str, api_key: str) -> Judge:  # pragma: no
     return lambda samples: asyncio.run(score_all(samples))
 
 
-def main(argv: list[str] | None = None, judge: Judge | None = None, retrieve=None, llm=None) -> int:
+def main(
+    argv: list[str] | None = None, judge: Judge | None = None, retrieve=None, llm=None, local_judge: Judge | None = None
+) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--all", action="store_true", help="dense, hybrid and hybrid_rerank")
@@ -442,9 +485,14 @@ def main(argv: list[str] | None = None, judge: Judge | None = None, retrieve=Non
     departments, superseded = load_manifest(args.manifest)
     thresholds = json.loads(args.thresholds.read_text())
     judge_model = os.getenv("JUDGE_MODEL", "cloud-chat")
+    local_model = local_judge_model()
     if judge is None and not args.no_judge:
         base = os.getenv("LLM_BASE_URL", "http://127.0.0.1:4000").rstrip("/")
         judge = ragas_judge(judge_model, base, os.getenv("LITELLM_MASTER_KEY", ""))
+        # Ollama models take no reasoning_effort; the gateway would reject it.
+        local_judge = local_judge or ragas_judge(local_model, base, os.getenv("LITELLM_MASTER_KEY", ""), None)
+    if args.no_judge:
+        judge = local_judge = None
 
     from app import prompts
     from app.rag import rerank
@@ -455,7 +503,7 @@ def main(argv: list[str] | None = None, judge: Judge | None = None, retrieve=Non
     for mode in modes:
         records = answer_all(rows, mode, departments, retrieve, llm)
         if judge is not None:
-            judge_records(records, judge)
+            judge_records(records, judge, local_judge)
         results[mode], summaries[mode] = records, metrics(records, superseded)
         with (args.results / f"{mode}.jsonl").open("w", encoding="utf-8") as fh:
             for r in records:
@@ -463,8 +511,11 @@ def main(argv: list[str] | None = None, judge: Judge | None = None, retrieve=Non
     config = {
         "Ngày chạy": time.strftime("%Y-%m-%d %H:%M"),
         "Bộ câu hỏi": f"{_display(args.golden)} ({len(rows)} câu)",
-        "Model trả lời": "alias cloud-chat qua LiteLLM",
-        "Judge (faithfulness)": "không chạy (--no-judge)" if judge is None else f"RAGAS faithfulness, {judge_model}",
+        "Model trả lời": "alias cloud-chat qua LiteLLM; local-chat khi có chunk confidential (decide_route)",
+        "Judge (faithfulness)": "không chạy (--no-judge)"
+        if judge is None
+        else f"RAGAS faithfulness, {judge_model}; câu đi local chấm bằng "
+        + (local_model if local_judge is not None else "— (không chấm)"),
         "PROMPT_VERSION": prompts.PROMPT_VERSION,
         "k": K,
         "REFUSAL_THRESHOLD": rerank.refusal_threshold(),

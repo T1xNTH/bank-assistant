@@ -100,7 +100,10 @@ def test_answer_all_asks_as_the_needed_department_and_keeps_contexts():
     assert {c[2] for c in retrieve.calls} == {5} and {c[3] for c in retrieve.calls} == {"hybrid"}
     first, second, third = records
     assert first.found and first.citations == [{"n": 1, "source": "luong.pdf", "page": 2, "score": 0.9}]
-    assert first.contexts == [{"source": "luong.pdf", "page": 2, "score": 0.9, "text": "5.310.000 đồng"}]
+    assert first.contexts == [
+        {"source": "luong.pdf", "page": 2, "score": 0.9, "text": "5.310.000 đồng", "classification": "public"}
+    ]
+    assert (first.route, third.route) == ("cloud", "cloud")
     assert first.hit and not second.hit
     assert (third.found, third.answer, third.contexts) == (False, REFUSAL, [])
 
@@ -211,7 +214,7 @@ def test_percentile():
 # CLI and report
 
 
-def cli(tmp_path, argv, judge=None, table=TABLE):
+def cli(tmp_path, argv, judge=None, table=TABLE, local_judge=None, llm=None):
     golden = tmp_path / "golden.jsonl"
     golden.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in ROWS) + "\n")
     manifest = tmp_path / "manifest.csv"
@@ -224,7 +227,8 @@ def cli(tmp_path, argv, judge=None, table=TABLE):
         [*argv, "--golden", str(golden), "--manifest", str(manifest), "--out", str(out), "--results", str(results)],
         judge=judge,
         retrieve=Retrieve(table),
-        llm=FakeLLM("Đáp [1]."),
+        llm=llm or FakeLLM("Đáp [1]."),
+        local_judge=local_judge,
     )
     return code, out, results
 
@@ -450,3 +454,86 @@ def test_report_marks_zero_counts(tmp_path):
     text = out.read_text()
     assert "| Trích văn bản bị thay thế (FR-02) | = 0 | 0 ✅ |" in text
     assert "| Lỗi khi chạy (sau khi thử lại) | = 0 | 0 ✅ |" in text
+
+
+# PR #93 review F-02: confidential contexts never reach the cloud judge
+
+
+def confidential(source, page, text="lương bí mật"):
+    return Hit(f"{source}-{page}", source, page, text, 0.9, DEPARTMENTS.get(source, "public"), "confidential")
+
+
+CONFIDENTIAL_TABLE = {**TABLE, "Lương vùng I?": [confidential("luong.pdf", 2)]}
+
+
+class Recorder:
+    def __init__(self):
+        self.samples = []
+
+    def __call__(self, samples):
+        self.samples.extend(samples)
+        return [0.9] * len(samples)
+
+
+def test_confidential_answer_is_judged_locally_only():
+    records = answered_records(CONFIDENTIAL_TABLE)
+    assert records[0].route == "local" and records[0].contexts[0]["classification"] == "confidential"
+    cloud, local = Recorder(), Recorder()
+    run.judge_records(records, cloud, local)
+    assert [s["user_input"] for s in cloud.samples] == ["Phí thẻ và lãi?"]
+    assert [s["user_input"] for s in local.samples] == ["Lương vùng I?"]
+    assert all("lương bí mật" not in c for s in cloud.samples for c in s["contexts"])
+    assert records[0].faithfulness == 0.9
+
+
+def test_without_a_local_judge_confidential_answers_stay_unscored():
+    records = answered_records(CONFIDENTIAL_TABLE)
+    cloud = Recorder()
+    run.judge_records(records, cloud)
+    assert [s["user_input"] for s in cloud.samples] == ["Phí thẻ và lãi?"]
+    assert records[0].faithfulness is None and records[0].judge_error == run.NO_LOCAL_JUDGE
+
+
+@pytest.mark.parametrize(
+    "route,labels", [("local", ["public"]), ("", ["public"]), ("cloud", ["secret"]), ("cloud", [""])]
+)
+def test_local_route_or_unknown_label_fails_closed_to_the_local_judge(route, labels):
+    record = run.Record("q", "fact", True, "public", [], "dense", found=True, route=route)
+    record.contexts = [{"source": "a.pdf", "page": 1, "score": 1.0, "text": "x", "classification": c} for c in labels]
+    assert run.needs_local_judge(record)
+    record.contexts.append({"source": "b.pdf", "page": 1, "score": 1.0, "text": "y"})  # missing label
+    record.route = "cloud"
+    assert run.needs_local_judge(record)
+
+
+def test_cli_answers_and_judges_confidential_questions_locally(tmp_path):
+    cloud, local, llm = Recorder(), Recorder(), FakeLLM("Đáp [1].")
+    _, out, results = cli(tmp_path, ["--mode", "dense"], judge=cloud, local_judge=local, llm=llm,
+                          table=CONFIDENTIAL_TABLE)
+    assert [alias for _, alias in llm.calls] == ["local-chat", "cloud-chat"]
+    assert [s["user_input"] for s in cloud.samples] == ["Phí thẻ và lãi?"]
+    assert [s["user_input"] for s in local.samples] == ["Lương vùng I?"]
+    first = json.loads((results / "dense.jsonl").read_text().splitlines()[0])
+    assert first["route"] == "local" and first["contexts"][0]["classification"] == "confidential"
+    assert "câu đi local chấm bằng local-chat" in out.read_text()
+
+
+def test_cli_without_local_judge_never_sends_confidential_to_cloud(tmp_path):
+    cloud = Recorder()
+    _, out, _ = cli(tmp_path, ["--mode", "dense"], judge=cloud, table=CONFIDENTIAL_TABLE)
+    assert [s["user_input"] for s in cloud.samples] == ["Phí thẻ và lãi?"]
+    assert "không chấm" in out.read_text() and run.NO_LOCAL_JUDGE in out.read_text()
+
+
+@pytest.mark.parametrize("alias", ["cloud-chat", "gpt-6-luna", " cloud-chat "])
+def test_local_judge_model_must_be_a_local_alias(monkeypatch, alias):
+    monkeypatch.setenv("JUDGE_LOCAL_MODEL", alias)
+    with pytest.raises(SystemExit):
+        run.local_judge_model()
+
+
+def test_local_judge_model_default(monkeypatch):
+    monkeypatch.delenv("JUDGE_LOCAL_MODEL", raising=False)
+    assert run.local_judge_model() == "local-chat"
+    monkeypatch.setenv("JUDGE_LOCAL_MODEL", "local-chat-7b")
+    assert run.local_judge_model() == "local-chat-7b"
