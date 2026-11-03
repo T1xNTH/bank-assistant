@@ -32,7 +32,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-010, E-011 EPIC_IN_PROGRESS; E-012..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
 - **Active Task IDs**: `T-031 review; T-027 review; T-026, T-028, T-029, T-030 done; other M-002 tasks pending`
-- **Active Blocker IDs**: `BLOCKER-006`
+- **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
@@ -40,7 +40,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Revision Provenance
 
-Revision 48 (codex, 2026-11-03) starts user-authorized T-031 from main 3d7f292 in feat/T-031-agent-api. T-030 closure uses existing PR94 counterpart approval, separate Claude review, Codex QA and merge; evidence is implementation/T-031-dependency-closure.md. E-011 remains in progress; no new approval is claimed. Scope is authenticated agent endpoints, masking and audit; contracts remain unchanged. Implementation db59e85 passes make check (1058 passed, 77 deselected; Ruff/framework pass). Task is review and separate Windows and WSL Claude sessions both failed OAuth authentication before reviewing any source (BLOCKER-006). A concrete draft PR is prepared; independent review, formal QA and counterpart approval remain pending.
+Revision 48 (codex, 2026-11-03) starts user-authorized T-031 from main 3d7f292 in feat/T-031-agent-api. T-030 closure uses existing PR94 counterpart approval, separate Claude review, Codex QA and merge; evidence is implementation/T-031-dependency-closure.md. E-011 remains in progress; no new approval is claimed. Scope is authenticated agent endpoints, masking and audit; contracts remain unchanged. Implementation db59e85 passes make check (1058 passed, 77 deselected; Ruff/framework pass). Task is review. Separate Claude sessions failed OAuth before source review, but A independently reviewed 181c440 on PR #96 and explicitly authorized that review as the task-specific replacement. BLOCKER-006 is resolved; four minor review fixes verified: Ruff clean, 1060 passed/77 deselected, FRAMEWORK_VALIDATION_PASS; final head recheck and counterpart PR approval pending.
 
 Revision 47 (codex, 2026-11-03) resolves PR #94 against main d6e8e76. Preserve parallel revision 46 histories, T-027/T-030 review and existing T-029 done from the branch. No new approval or task closure is claimed.
 
@@ -183,3 +183,5 @@ Revision 38 records user-authorized issue #25 / T-024 on feat/T-024-ask-jobs fro
 T-024 handoff: source 6656369; full WSL make check 583 passed/29 deselected, Ruff and framework passed; final focused API rerun 19 passed without warnings. Complete implementation report recorded and lifecycle CLI requested claude-review-a, moving task/board to review. Independent review, counterpart PR approval and merge remain pending.
 
 Draft PR: https://github.com/caitoithap/bank-assistant/pull/63 (feat/T-024-ask-jobs). Independent review and counterpart approval pending; issue #25 remains open.
+
+PR #96 follow-up (2026-11-03): A independently reviewed head 181c440 and reported no merge-blocking findings; https://github.com/T1xNTH/bank-assistant/pull/96#issuecomment-6595001657. A explicitly authorized this peer review to replace the failed Claude session for T-031. BLOCKER-006 resolved; four minor comments addressed. Task remains review pending A recheck/PR approval and final QA; no merge or done transition.

@@ -12,7 +12,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import deps
-from app.agent.graph import AgentService
+from app.agent import api as agent_api
+from app.agent.graph import AgentResult, AgentService
 from app.contracts import LLMResult
 from app.fakes_runtime import CannedAnswerer
 from app.main import create_app
@@ -271,3 +272,30 @@ def test_nested_model_surrogate_is_sanitized_503_not_500(api, caplog):
     response = client.post("/agent", headers=OWNER, json={"message": "Giao dịch"})
     assert response.status_code == 503 and response.json()["error"]["code"] == "SERVICE_UNAVAILABLE"
     assert "msgpack" not in response.text + caplog.text
+
+
+def test_pending_masking_preserves_json_structure_and_masks_string_values(monkeypatch):
+    pending_action = {"tool": "tao_ticket", "args": {"summary": "private", "count": 2}}
+    masked = 'Quoted "text"\nwith a backslash \\ and <PHONE_NUMBER>'
+    monkeypatch.setattr(agent_api, "require_mask_content", lambda text: masked)
+    result = agent_api._invoke(lambda: AgentResult(
+        thread_id="thread", status="pending_approval", pending_action=pending_action,
+    ))
+    assert result.model_dump()["pending_action"] == {"tool": "tao_ticket", "args": {"summary": masked, "count": 2}}
+    assert pending_action["args"]["summary"] == "private"
+
+
+def test_pending_masking_failure_returns_503(api, monkeypatch):
+    client, _, _ = api
+    thread = pending(api)
+    original = agent_api.require_mask_content
+
+    def broken_summary(text):
+        if "<PHONE_NUMBER>" in text:
+            raise agent_api.MaskingError("unavailable")
+        return original(text)
+
+    monkeypatch.setattr(agent_api, "require_mask_content", broken_summary)
+    response = client.post("/agent", headers=OWNER, json={"message": "Continue", "thread_id": thread})
+    assert response.status_code == 503
+    assert response.json() == {"error": {"code": "SERVICE_UNAVAILABLE", "message": "Service Unavailable"}}

@@ -32,6 +32,7 @@ def get_agent_service(
     request: Request, llm: LLM = Depends(get_llm), answerer: Answerer = Depends(get_answerer)
 ) -> AgentService:
     """One service per app/process: its thread locks and amount vault span HTTP requests."""
+    # FastAPI resolves llm/answerer each request; only the initial construction uses them.
     try:
         with request.app.state.agent_service_lock:
             if request.app.state.agent_service is None:

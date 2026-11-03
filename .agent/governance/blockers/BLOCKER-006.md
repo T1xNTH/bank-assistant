@@ -19,7 +19,7 @@ Record why the required independent review has not run despite complete implemen
 - **Title**: `Separate Claude reviewer cannot authenticate`
 - **Owner**: `teammate-b`
 - **Reporter**: `codex`
-- **Status**: `open`
+- **Status**: `resolved`
 - **Blocker Type**: `access`
 - **Priority**: `2`
 - **Created Date**: `2026-11-03`
@@ -72,3 +72,7 @@ approval or bypass DEC-004. Authentication credentials must never enter reports.
 ## Output Requirements
 
 Preserve this record and link actual reviewer evidence before resolution.
+
+## Resolution Evidence
+
+Resolved 2026-11-03 by explicit counterpart/decision-owner A instruction in [PR #96 review](https://github.com/T1xNTH/bank-assistant/pull/96#issuecomment-6595001657). A reviewed head 181c440, reported 32 API tests and make check (1058 passed, 77 deselected), clean diff and four green CI jobs, and found no blocking issue. A expressly substituted this independent peer review for the failed Claude session and authorized closing this blocker. OAuth itself was not repaired. Task stays review; final peer PR approval remains pending after minor fixes. This is a task-specific disposition, not a rewrite of DEC-004.

@@ -48,7 +48,10 @@ def _invoke(call: Callable[[], AgentResult]) -> AgentResponse:
             answer = require_mask_content(answer)
         pending = result.pending_action
         if pending is not None:
-            pending = json.loads(require_mask_content(json.dumps(pending, ensure_ascii=False)))
+            pending = {**pending, "args": {
+                key: require_mask_content(value) if isinstance(value, str) else value
+                for key, value in pending["args"].items()
+            }}
         return AgentResponse(thread_id=result.thread_id, status=result.status, answer=answer, pending_action=pending)
     except ThreadNotFound:
         raise HTTPException(status_code=404, detail="Unknown thread") from None

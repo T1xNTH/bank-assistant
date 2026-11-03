@@ -66,10 +66,13 @@ def create_app() -> FastAPI:
         "/chat", chat, methods=["POST"], response_model=ChatResponse,
         responses={503: {"model": ErrorResponse, "description": "Dependency unavailable"}},
     )
-    application.add_api_route("/agent", run_agent, methods=["POST"], response_model=AgentResponse)
+    application.add_api_route(
+        "/agent", run_agent, methods=["POST"], response_model=AgentResponse,
+        responses={status: {"model": ErrorResponse} for status in (400, 401, 404, 503)},
+    )
     application.add_api_route(
         "/agent/{thread_id}/decision", decide_agent, methods=["POST"], response_model=AgentResponse,
-        responses={status: {"model": ErrorResponse} for status in (401, 403, 404, 409, 503)},
+        responses={status: {"model": ErrorResponse} for status in (400, 401, 403, 404, 409, 503)},
     )
     return application
 
