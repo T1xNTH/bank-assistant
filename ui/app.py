@@ -120,20 +120,35 @@ def agent_chat(api: ui_api.Api, role: str) -> None:
         st.info("Đang chờ người duyệt: chọn vai trò người duyệt ở thanh bên để duyệt.")
 
 
-def decide(api: ui_api.Api, thread_id: str, approve: bool, comment: str) -> bool:
+STATUS_LABEL = {"completed": "hoàn tất", "pending_approval": "đang chờ duyệt tiếp"}
+
+
+def decide(api: ui_api.Api, thread_id: str, approve: bool, comment: str) -> None:
+    """Send the decision; on success keep its result for the next run, then rerun so the panel refreshes."""
     try:
         reply = api.decide(thread_id, approve, comment)
-    except ui_api.ApiError as exc:
-        st.error(exc.message)
-        return False
-    record(thread_id, state()["threads"].get(thread_id, {}).get("role", "?"), reply, None)
-    return True
+    except ui_api.ApiError as exc:  # e.g. 404 unknown thread, 409 already decided
+        st.error(f"Thread `{thread_id}`: {exc.message}")
+        return
+    record(thread_id, state()["threads"].get(thread_id, {}).get("role", "phiên khác"), reply, None)
+    state()["decided"] = {
+        "thread_id": thread_id, "approve": approve, "status": reply["status"], "answer": reply.get("answer"),
+    }
+    st.rerun()
+
+
+def show_decided(decided: dict) -> None:
+    verdict = "đã duyệt" if decided["approve"] else "đã từ chối"
+    status = STATUS_LABEL.get(decided["status"], decided["status"])
+    st.success(f"Thread `{decided['thread_id']}`: {verdict} · trạng thái: {status}.")
+    if decided["answer"]:
+        st.markdown(f"**Kết quả từ agent:** {decided['answer']}")
 
 
 def approval_panel(api: ui_api.Api, role: str) -> None:
     ss = state()
     if "decided" in ss:
-        st.success(ss.pop("decided"))
+        show_decided(ss["decided"])  # kept until the next decision, not lost on the next rerun
     pending = {tid: t for tid, t in ss["threads"].items() if t["status"] == "pending_approval" and t["role"] != role}
     if not pending:
         st.write("Không có hành động nào đang chờ duyệt trong phiên này.")
@@ -147,19 +162,15 @@ def approval_panel(api: ui_api.Api, role: str) -> None:
             comment = st.text_input("Ghi chú", key=f"comment-{tid}", max_chars=500)
             approve, reject = st.columns(2)
             for column, verdict, label in ((approve, True, "Duyệt"), (reject, False, "Từ chối")):
-                if column.button(label, key=f"{'approve' if verdict else 'reject'}-{tid}") and decide(
-                    api, tid, verdict, comment
-                ):
-                    ss["decided"] = f"Thread `{tid}`: {'đã duyệt' if verdict else 'đã từ chối'}."
-                    st.rerun()
+                if column.button(label, key=f"{'approve' if verdict else 'reject'}-{tid}"):
+                    decide(api, tid, verdict, comment)
     with st.expander("Duyệt theo thread id (thread từ phiên khác)"):
         tid = st.text_input("Thread id", key="manual-thread").strip()
         comment = st.text_input("Ghi chú", key="manual-comment", max_chars=500)
         approve, reject = st.columns(2)
         for column, verdict, label in ((approve, True, "Duyệt"), (reject, False, "Từ chối")):
             if column.button(label, key=f"manual-{'approve' if verdict else 'reject'}") and tid:
-                if decide(api, tid, verdict, comment):
-                    st.success(f"Thread `{tid}`: {'đã duyệt' if verdict else 'đã từ chối'}.")
+                decide(api, tid, verdict, comment)
 
 
 def main() -> None:

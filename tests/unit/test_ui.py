@@ -180,3 +180,57 @@ def test_connection_failure_is_a_safe_error(monkeypatch):
     with pytest.raises(ui_api.ApiError) as error:
         ui_api.Api("http://api", "k").ask("q")
     assert error.value.status == 0 and "0912345678" not in error.value.message
+
+
+def pending_thread_from_another_session(api):
+    """A staff browser session creates a pending ticket; returns its thread id."""
+    api.replies.append(TICKET)
+    staff = run_app()
+    staff.text_area[1].set_value("Mất thẻ, gọi 0912345678")
+    staff.button(key="FormSubmitter:agent-Gửi").click()
+    staff = staff.run()
+    [thread_id] = staff.session_state["threads"].keys()
+    return thread_id
+
+
+def decide_by_id(at, thread_id, approve, comment=""):
+    at.text_input(key="manual-thread").set_value(thread_id)
+    at.text_input(key="manual-comment").set_value(comment)
+    at.button(key="manual-approve" if approve else "manual-reject").click()
+    return at.run()
+
+
+def test_external_thread_approve_shows_the_agent_result(api, tmp_path):
+    thread_id = pending_thread_from_another_session(api)
+    at = as_role(run_app(), APPROVER)  # fresh session: the thread is not listed, only reachable by id
+    assert thread_id not in at.session_state["threads"]
+    at = decide_by_id(at, thread_id, True)
+    assert not at.exception
+    shown = texts(at)
+    assert f"Thread `{thread_id}`: đã duyệt · trạng thái: hoàn tất." in shown
+    answer = at.session_state["decided"]["answer"]
+    assert answer and f"**Kết quả từ agent:** {answer}" in shown
+    import sqlite3
+    with sqlite3.connect(tmp_path / "tickets.db") as db:
+        [(ticket_id,)] = db.execute("SELECT id FROM tickets").fetchall()
+    assert str(ticket_id) in answer  # the created ticket is visible to the approver
+
+    at = at.run()  # an unrelated rerun keeps the result on screen
+    assert f"Thread `{thread_id}`: đã duyệt" in texts(at)
+
+
+def test_external_thread_reject_then_duplicate_decision_is_an_error(api):
+    thread_id = pending_thread_from_another_session(api)
+    at = decide_by_id(as_role(run_app(), APPROVER), thread_id, False, "Chưa đủ thông tin")
+    assert not at.exception
+    assert f"Thread `{thread_id}`: đã từ chối · trạng thái: hoàn tất." in texts(at)
+    assert "từ chối" in at.session_state["decided"]["answer"]
+
+    at = decide_by_id(at, thread_id, True)  # already decided
+    assert not at.exception
+    assert f"Thread `{thread_id}`: HTTP 409" in at.error[0].value
+
+
+def test_unknown_thread_id_is_an_error(api):
+    at = decide_by_id(as_role(run_app(), APPROVER), "0" * 32, True)
+    assert not at.exception and "HTTP 404" in at.error[0].value
