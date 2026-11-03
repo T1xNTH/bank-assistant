@@ -239,3 +239,16 @@ def test_require_mask_content_decodes_json_escapes(text, expected):
     assert require_mask_content(text) == expected
     if text.startswith(("{", '"')):
         json.loads(expected)
+
+
+def test_require_mask_numbered_returns_hidden_values():
+    from app.security.masking import require_mask_numbered
+
+    assert require_mask_numbered("Vay 100.000.000 đ, SĐT 0912345678", start=2) == (
+        "Vay <ACCOUNT_NUMBER_3> đ, SĐT <PHONE_NUMBER_4>",
+        ["ACCOUNT_NUMBER", "PHONE_NUMBER"],
+        {"<ACCOUNT_NUMBER_3>": "100.000.000", "<PHONE_NUMBER_4>": "0912345678"},
+    )
+    assert require_mask_numbered("Vay 100 triệu") == ("Vay 100 triệu", [], {})
+    escaped = "".join(f"\\u{ord(c):04x}" for c in "12345678")
+    assert require_mask_numbered(f'{{"p": "{escaped}"}}')[2] == {"<ACCOUNT_NUMBER_1>": "12345678"}
