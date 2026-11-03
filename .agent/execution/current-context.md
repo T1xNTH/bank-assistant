@@ -22,23 +22,25 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `51`
+- **Context Revision**: `52`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-03`
-- **Updated By**: `claude`
-- **Update Trigger**: `Merge main 7b3f736 (T-031 #96) vào PR #95 (T-032); giữ T-032 review, T-031 review, T-030 done`
+- **Updated By**: `codex`
+- **Update Trigger**: `User issue #76: T-035 implementation verified and review requested; BLOCKER-007 authentication`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-010, E-011, E-012 EPIC_IN_PROGRESS; E-013..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-032 review (PR #95, reviewer teammate-b); T-031 review; T-027 review; T-026, T-028, T-029, T-030 done; other M-002 tasks pending`
-- **Active Blocker IDs**: `none`
+- **Active Epic IDs**: `E-010, E-011, E-012, E-013 EPIC_IN_PROGRESS; E-014..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
+- **Active Task IDs**: `T-035 review (issue #76; BLOCKER-007); T-032 review (PR #95, reviewer teammate-b); T-031 review; T-027 review; T-026, T-028, T-029, T-030 done; other M-002 tasks pending`
+- **Active Blocker IDs**: `BLOCKER-007`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261103-t032`
+- **Current Session ID**: `S-20261103-155925-2`
 
 ## Revision Provenance
+
+Revision 52 (codex, 2026-11-03): user authorized issue #76 / T-035; E-013 READY -> IN_PROGRESS and T-035 pending -> in-progress via lifecycle CLI. Isolated feat/T-035-langfuse-tracing from main 7f4eb73. Scope: optional local Langfuse obs stack, masked manual request/RAG/job spans and real trace IDs; no contract, pricing/feedback or baseline changes.
 
 Revision 51 (claude cho trong-hung, 2026-11-03) merges main 7b3f736 (T-031 PR #96) vào PR #95 (T-032). Nhánh T-032 ở revision 50, main ghi revision 48 song song: giữ cả hai chuỗi bên dưới. Task board: T-032 review và E-012 EPIC_IN_PROGRESS từ nhánh này; T-030 done và T-031 review từ main. Không có review, approval hay done mới.
 
@@ -195,3 +197,5 @@ T-024 handoff: source 6656369; full WSL make check 583 passed/29 deselected, Ruf
 Draft PR: https://github.com/caitoithap/bank-assistant/pull/63 (feat/T-024-ask-jobs). Independent review and counterpart approval pending; issue #25 remains open.
 
 PR #96 follow-up (2026-11-03): A independently reviewed head 181c440 and reported no merge-blocking findings; https://github.com/T1xNTH/bank-assistant/pull/96#issuecomment-6595001657. A explicitly authorized this peer review to replace the failed Claude session for T-031. BLOCKER-006 resolved; four minor comments addressed. Task remains review pending A recheck/PR approval and final QA; no merge or done transition.
+
+T-035 handoff (2026-11-03): implementation 9bc44f5; final lifecycle verify passes 1087 tests/79 deselected, Ruff and framework. Four Compose config cases and live local ingestion pass; screenshots show p95 and worker wait/processing on synthetic data. Report complete and review requested from claude-review-t035. Fresh separate Claude session failed OAuth before any source/model work (BLOCKER-007); draft PR prepared, no self-review/QA approval/merge or done.
