@@ -70,3 +70,14 @@ Do not record credentials or bypass independent approval.
 ## Output Requirements
 
 Preserve this record and link actual resolution before closing it.
+
+## Recheck 2026-11-03
+
+User requested another review and QA pass. A's [peer review at 7ae9279](https://github.com/T1xNTH/bank-assistant/pull/99#pullrequestreview-5749622651)
+found no merge-blocking defect and reported 1087 passing tests, but expressly says
+it does **not** replace the separate reviewer required by DEC-004; no waiver is inferred.
+The executor addressed all three minor comments in source commit eb00db1 and reran
+technical checks. A fresh Claude session `85fc26de-9bf9-408c-9cf1-2383bc28a0db`
+again failed OAuth before any source/model work (is_error=true, duration_api_ms=0,
+zero model tokens). Evidence: output/t035-r2-review-attempt.json in the shared workspace.
+Blocker remains open; no executor review approval, formal QA pass or task done is claimed.

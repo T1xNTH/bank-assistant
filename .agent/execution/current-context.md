@@ -22,7 +22,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `52`
+- **Context Revision**: `53`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-03`
 - **Updated By**: `codex`
@@ -36,7 +36,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261103-155925-2`
+- **Current Session ID**: `S-20261103-163612`
 
 ## Revision Provenance
 
@@ -199,3 +199,5 @@ Draft PR: https://github.com/caitoithap/bank-assistant/pull/63 (feat/T-024-ask-j
 PR #96 follow-up (2026-11-03): A independently reviewed head 181c440 and reported no merge-blocking findings; https://github.com/T1xNTH/bank-assistant/pull/96#issuecomment-6595001657. A explicitly authorized this peer review to replace the failed Claude session for T-031. BLOCKER-006 resolved; four minor comments addressed. Task remains review pending A recheck/PR approval and final QA; no merge or done transition.
 
 T-035 handoff (2026-11-03): implementation 9bc44f5; final lifecycle verify passes 1087 tests/79 deselected, Ruff and framework. Four Compose config cases and live local ingestion pass; screenshots show p95 and worker wait/processing on synthetic data. Report complete and review requested from claude-review-t035. Fresh separate Claude session failed OAuth before any source/model work (BLOCKER-007); draft PR prepared, no self-review/QA approval/merge or done.
+
+T-035 requested recheck (2026-11-03): A peer review of 7ae9279 found no blocker but explicitly does not replace DEC-004 independent review. eb00db1 addresses all three minor comments. Technical validation passes: 1091 regression cases/79 deselected, 22 focused cases (18 overlap regression plus 4 Compose), live ingestion 1 pass/23 traces, Ruff/framework/diff clean. Fresh Claude session again fails OAuth before source/model work (BLOCKER-007 remains open). Supplemental implementation/T-035-review-followup.md and qa/T-035-recheck.md record evidence; formal QA report is blocked, not an executor self-approval. Task review and draft PR #99 remain pending independent approval.
