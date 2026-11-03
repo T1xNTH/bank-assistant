@@ -22,11 +22,11 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `48`
+- **Context Revision**: `49`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-03`
 - **Updated By**: `claude`
-- **Update Trigger**: `Merge main 3d7f292 (T-030 #94) vào PR #95 (T-032); giữ T-032 review, T-030 review, T-029 done`
+- **Update Trigger**: `T-032 xử lý review B trên PR #95: bộ held-out vào repo, chạy lại eval qua LiteLLM`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
@@ -39,6 +39,8 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Current Session ID**: `S-20261103-t032`
 
 ## Revision Provenance
+
+Revision 49 (claude cho trong-hung, 2026-11-03) xử lý review COMMENTED của B tại ba18035 trên PR #95: eval/classify_heldout.jsonl 18 câu (thêm khiếu nại kèm đề nghị xử lý, câu hỏi bảo mật/khẩn cấp); chạy lại qua cloud-chat: bộ 20 mẫu 20/20, held-out intent 16/18 và needs_human 18/18; prompt không đổi. Supplement T-032-PR95-fixes.md. T-032 vẫn review, chưa có approval hay done.
 
 Revision 48 (claude cho trong-hung, 2026-11-03) merges main 3d7f292 (T-030 PR #94) vào PR #95 (T-032). Hai nhánh cùng ghi revision 47: giữ cả hai đoạn bên dưới. E-012 EPIC_IN_PROGRESS và T-032 review từ nhánh này; T-030 review và T-029 done từ main. Không có review, approval hay done mới.
 
