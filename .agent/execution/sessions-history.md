@@ -549,3 +549,6 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261103-150201` | `2026-11-03` | `2026-11-03` | `trong-hung` | `T-031` | `completed` | `task review -> done` | `.agent/reports/review/T-031.md` | `none` |
 | `S-20261103-150201-2` | `2026-11-03` | `2026-11-03` | `trong-hung` | `E-016` | `completed` | `epic EPIC_READY -> EPIC_IN_PROGRESS` | `.agent/planning/epics.md` | `none` |
 | `S-20261103-150201-3` | `2026-11-03` | `2026-11-03` | `trong-hung` | `T-042` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
+| `S-20261103-152823` | `2026-11-03` | `2026-11-03` | `claude` | `T-042` | `completed` | `verify '/home/trong-hung/bank-assistant/.venv/bin/python -m pytest -q tests/unit/test_ui.py' passed` | `.agent/reports/implementation/T-042.md` | `none` |
+| `S-20261103-152847` | `2026-11-03` | `2026-11-03` | `claude` | `T-042` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-042.md` | `none` |
+| `S-20261103-152847-2` | `2026-11-03` | `2026-11-03` | `claude` | `T-042` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-042.md` | `none` |

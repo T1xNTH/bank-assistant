@@ -22,7 +22,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `48`
+- **Context Revision**: `49`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-03`
 - **Updated By**: `codex`
@@ -30,8 +30,8 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-010, E-011 EPIC_IN_PROGRESS; E-012..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-031 review; T-027 review; T-026, T-028, T-029, T-030 done; other M-002 tasks pending`
+- **Active Epic IDs**: `E-010, E-011, E-016 EPIC_IN_PROGRESS; E-012..E-015 EPIC_READY; E-001..E-009 EPIC_DONE`
+- **Active Task IDs**: `T-042 review; T-027 review; T-026, T-028, T-029, T-030, T-031 done; other M-002 tasks pending`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
@@ -39,6 +39,8 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Current Session ID**: `S-20261103-t031`
 
 ## Revision Provenance
+
+Revision 49 (claude cho trong-hung, 2026-11-03) từ main 7b3f736: đóng T-031 (review APPROVED, PR #96 merge); E-016 EPIC_IN_PROGRESS; T-042 Streamlit UI commit 9c6868e, make check 1070 passed, demo thật pass; T-042 review, chưa có review độc lập. Nhánh T-032 (PR #95) có thể cũng tăng revision, khi merge cần gộp.
 
 Revision 48 (codex, 2026-11-03) starts user-authorized T-031 from main 3d7f292 in feat/T-031-agent-api. T-030 closure uses existing PR94 counterpart approval, separate Claude review, Codex QA and merge; evidence is implementation/T-031-dependency-closure.md. E-011 remains in progress; no new approval is claimed. Scope is authenticated agent endpoints, masking and audit; contracts remain unchanged. Implementation db59e85 passes make check (1058 passed, 77 deselected; Ruff/framework pass). Task is review. Separate Claude sessions failed OAuth before source review, but A independently reviewed 181c440 on PR #96 and explicitly authorized that review as the task-specific replacement. BLOCKER-006 is resolved; four minor review fixes verified: Ruff clean, 1060 passed/77 deselected, FRAMEWORK_VALIDATION_PASS; final head recheck and counterpart PR approval pending.
 

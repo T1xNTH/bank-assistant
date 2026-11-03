@@ -97,3 +97,5 @@ priority: 3
 | `T-030` | `1aa67e6` | `#94` | `.agent/reports/implementation/T-030.md` | `QA của B (Codex) F-01 P1: tra_cuu_tai_lieu đọc sensitive/pii từ state đã checkpoint, câu hỏi RAG từ lịch sử nhạy cảm không lên cloud kể cả sau restart; make check 1025 passed; chờ review vòng 8` |
 | `T-030` | `3ecc3c8` | `#94` | `.agent/reports/review/T-030.md` | `F-20/F-21 (review vòng 8): state của RAG tool là keyword-only bắt buộc, không hiện trong tool_call_schema, thiếu state thì lỗi thay vì bỏ qua cờ sensitive; make check 1026 passed; chờ review vòng 9` |
 | `T-031` | `db59e85` | `feat/T-031-agent-api; issue #72` | `.agent/reports/implementation/T-031.md` | `Authenticated run/decision HTTP endpoints, app-scoped graph service, masked audit/output with monetary templates preserved; 32 focused API tests and full make check 1058 passed/77 deselected; separate Claude review pending` |
+
+| `T-042` | `9c6868e` | `feat/T-042-ui` | `.agent/reports/implementation/T-042.md` | `Streamlit UI: vai trò từ env, /ask có trích dẫn + route, agent + duyệt; AppTest 10 passed; make check 1070 passed; demo thật pass (local/cloud/agent duyệt); review độc lập pending` |
