@@ -14,7 +14,7 @@ priority: 2
 - **Issue ID**: `ISSUE-030`
 - **Owner**: `teammate-b`
 - **Reporter**: `codex-b`
-- **Status**: `open`
+- **Status**: `resolved`
 - **Issue Type**: `inconsistency`
 - **Priority**: `2`
 - **Created Date**: `2026-11-03`
@@ -40,8 +40,12 @@ closure and the CLI can start/report/request review. No bypass or self-approval.
 
 ## Resolution
 
-Open. Reconcile T-033 using its existing external acceptance and required review
-evidence, then run the T-034 lifecycle CLI. This record does not mark either task done.
+Resolved on 2026-11-03 under the user's explicit instruction to reconcile stale
+documentation. T-032 was already done; T-033's external review and merge are
+archived in `.agent/reports/review/T-033.md`. CLI start/report/review-request/done
+reconciled T-033 as done. T-034 then passed CLI start/verify/report-complete and
+review-request; it is in review, with no T-034 approval claimed. Earlier impact
+and command failures above are historical evidence.
 
 ## Related Files
 
@@ -50,5 +54,5 @@ evidence, then run the T-034 lifecycle CLI. This record does not mark either tas
 
 ## Acceptance Criteria
 
-- [ ] T-033 task and board agree with authorized completion evidence.
-- [ ] T-034 lifecycle proceeds through CLI without bypassing dependency checks.
+- [x] T-033 task and board agree with authorized completion evidence.
+- [x] T-034 lifecycle proceeds through CLI without bypassing dependency checks.

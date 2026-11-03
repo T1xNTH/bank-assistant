@@ -22,23 +22,25 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `55`
+- **Context Revision**: `56`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-03`
-- **Updated By**: `codex`
-- **Update Trigger**: `Resolve PR #100 conflicts: retain T-032 completion and latest T-035 state from main`
+- **Updated By**: `codex-b`
+- **Update Trigger**: `User-requested documentation reconciliation after T-033 PR #98 merge; T-034 review handoff`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-010, E-011, E-012, E-013 EPIC_IN_PROGRESS; E-014..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-035 review (PR #99; review APPROVED bởi claude-review-a, chờ QA và counterpart approval); T-033 implementation on PR #98 (board pending, awaiting CLI start); T-032 done (PR #95 merged); T-031 review; T-027 review; T-026, T-028, T-029, T-030 done; other M-002 tasks pending`
+- **Active Task IDs**: `T-035 review (PR #99; review APPROVED bởi claude-review-a, chờ QA và counterpart approval); T-033 done (approved/merged PR #98); T-034 review (PR #101; separate review pending); T-032 done (PR #95 merged); T-031 review; T-027 review; T-026, T-028, T-029, T-030 done; other M-002 tasks pending`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261103-t032-done`
+- **Current Session ID**: `S-20261103-t033-reconcile`
 
 ## Revision Provenance
+
+Revision 56 (codex-b, 2026-11-03): user explicitly requested correction of stale T-033 docs after merge. Archive existing T1xNTH approval and final recheck of PR #98; reconcile T-033 done via lifecycle CLI, resolve ISSUE-029/030 and move T-034 through start/verify/report/review-request. No new reviewer approval or T-034 done claim.
 
 Revision 55 (codex, 2026-11-03): resolve PR #100 conflicts with main 1942303. Preserve T-032 done, E-013 EPIC_IN_PROGRESS, T-035 review with existing approval, and history from both branches. No new approval, QA result or task transition.
 

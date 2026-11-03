@@ -563,3 +563,12 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261103-171758` | `2026-11-03` | `2026-11-03` | `teammate-b` | `T-032` | `completed` | `review approved` | `.agent/reports/review/T-032.md` | `none` |
 | `S-20261103-171758-2` | `2026-11-03` | `2026-11-03` | `claude` | `T-032` | `completed` | `task review -> done` | `.agent/reports/review/T-032.md` | `none` |
 | `S-20261103-t034` | `2026-11-03` | `2026-11-03` | `codex-b` | `T-034` | `completed` | `Issue 75 implemented on merged T-033; make check 1124 passed; eight live n8n/Mailpit failure cases passed; dependency CLI start rejected; independent review pending` | `.agent/reports/implementation/T-034.md` | `ISSUE-030` |
+| `S-20261103-232622` | `2026-11-03` | `2026-11-03` | `codex-b` | `T-033` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
+| `S-20261103-232623` | `2026-11-03` | `2026-11-03` | `codex-b` | `T-033` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-033.md` | `none` |
+| `S-20261103-232623-2` | `2026-11-03` | `2026-11-03` | `codex-b` | `T-033` | `completed` | `review requested from trong-hung` | `.agent/reports/implementation/T-033.md` | `none` |
+| `S-20261103-232629` | `2026-11-03` | `2026-11-03` | `codex-b` | `T-033` | `completed` | `task review -> done` | `.agent/reports/review/T-033.md` | `none` |
+| `S-20261103-232629-2` | `2026-11-03` | `2026-11-03` | `codex-b` | `T-034` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
+| `S-20261103-232652` | `2026-11-03` | `2026-11-03` | `codex-b` | `T-034` | `completed` | `verify 'python scripts/validate-framework.py' passed` | `.agent/reports/implementation/T-034.md` | `none` |
+| `S-20261103-232652-2` | `2026-11-03` | `2026-11-03` | `codex-b` | `T-034` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-034.md` | `none` |
+| `S-20261103-232700` | `2026-11-03` | `2026-11-03` | `codex-b` | `T-034` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-034.md` | `none` |
+| `S-20261103-t033-reconcile` | `2026-11-03` | `2026-11-03` | `codex-b` | `T-033, T-034` | `completed` | `User-authorized documentation reconciliation: archive PR98 external approval, T-033 done, ISSUE-029/030 resolved, T-034 review requested; no new approval` | `.agent/reports/review/T-033.md; .agent/reports/implementation/T-034.md` | `none` |
