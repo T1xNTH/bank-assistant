@@ -689,3 +689,13 @@ def test_sensitive_history_never_reaches_cloud_through_a_later_rag_question(env,
     assert [alias for _, alias in llm.calls] == ["local-chat"]
     assert env["answerer"].calls[-1][2] is True
     assert result.status == "completed"
+
+
+def test_injected_state_is_hidden_from_the_tool_schema_and_required(env):
+    # Review round 8 F-20/F-21: the model cannot see or set ``state``; without it the call fails closed.
+    bound = agent_graph._BoundTools(OWNER, [], None, env["answerer"])
+    schemas = {tool.name: tool.tool_call_schema.model_json_schema()["properties"] for tool in bound.as_langchain()}
+    assert list(schemas["tra_cuu_tai_lieu"]) == ["question"]
+    with pytest.raises(TypeError):
+        bound.tra_cuu_tai_lieu("Phí thẻ?")
+    assert env["answerer"].calls == []

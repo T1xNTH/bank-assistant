@@ -365,14 +365,15 @@ class _BoundTools:
         keep = ("ts", "account_ref", "amount", "description")
         return {"ok": [{key: row[key] for key in keep} for row in rows[:limit]]}
 
-    def tra_cuu_tai_lieu(self, question: Any = None, state: Annotated[dict, InjectedState] = None) -> dict:
+    def tra_cuu_tai_lieu(self, question: Any = None, *, state: Annotated[dict, InjectedState]) -> dict:
         if not isinstance(question, str) or not question.strip() or len(question) > MAX_MESSAGE:
             return {"error": "question must be non-empty text"}
         masked, types = require_mask_content_types(question)
         # The model writes this question from the history. Once the thread holds customer data or a
         # confidential answer, the question may quote it, so the RAG answer stays local whatever chunks
         # come back (PR #94 QA F-01). The flag comes from the checkpointed state, so it survives restarts.
-        state = state or {}
+        # ``state`` is keyword-only with no default: ToolNode injects it and it stays out of the tool
+        # schema (F-20); a call without it fails instead of silently skipping the check (F-21).
         local = bool(self.pii or state.get("pii") or state.get("sensitive") or types)
         result = self.answerer.answer(masked, self.user, force_local=local)
         citations = [{"n": c.n, "source": c.source, "page": c.page} for c in result.citations]
