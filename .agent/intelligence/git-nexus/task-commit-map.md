@@ -95,3 +95,4 @@ priority: 3
 | `T-030` | `22ab6f9` | `#94` | `.agent/reports/review/T-030.md` | `F-15/F-16 (review vòng 5): số tiền xét theo mệnh đề, nhãn tài khoản ở đâu trong mệnh đề cũng loại, 'đồng thời/đồng ý' không phải tiền; make check 1002 passed` |
 | `T-030` | `14f32c7` | `#94` | `.agent/reports/review/T-030.md` | `F-17 (review vòng 6): từ chỉ số tiền phải gần số, loại số sau vào/qua/về số, nhãn hợp đồng/mã/CIF; make check 1011 passed` |
 | `T-030` | `1aa67e6` | `#94` | `.agent/reports/implementation/T-030.md` | `QA của B (Codex) F-01 P1: tra_cuu_tai_lieu đọc sensitive/pii từ state đã checkpoint, câu hỏi RAG từ lịch sử nhạy cảm không lên cloud kể cả sau restart; make check 1025 passed; chờ review vòng 8` |
+| `T-030` | `3ecc3c8` | `#94` | `.agent/reports/review/T-030.md` | `F-20/F-21 (review vòng 8): state của RAG tool là keyword-only bắt buộc, không hiện trong tool_call_schema, thiếu state thì lỗi thay vì bỏ qua cờ sensitive; make check 1026 passed; chờ review vòng 9` |
