@@ -94,3 +94,4 @@ priority: 3
 | `T-030` | `00a5676` | `#94` | `.agent/reports/implementation/T-030.md` | `F-13 (A chọn cách 2): số tài khoản không bao giờ thành số tiền vay (amounts_in theo ngữ cảnh), TTL 30 phút; make check 986 passed; chờ review vòng 5` |
 | `T-030` | `22ab6f9` | `#94` | `.agent/reports/review/T-030.md` | `F-15/F-16 (review vòng 5): số tiền xét theo mệnh đề, nhãn tài khoản ở đâu trong mệnh đề cũng loại, 'đồng thời/đồng ý' không phải tiền; make check 1002 passed` |
 | `T-030` | `14f32c7` | `#94` | `.agent/reports/review/T-030.md` | `F-17 (review vòng 6): từ chỉ số tiền phải gần số, loại số sau vào/qua/về số, nhãn hợp đồng/mã/CIF; make check 1011 passed` |
+| `T-030` | `1aa67e6` | `#94` | `.agent/reports/implementation/T-030.md` | `QA của B (Codex) F-01 P1: tra_cuu_tai_lieu đọc sensitive/pii từ state đã checkpoint, câu hỏi RAG từ lịch sử nhạy cảm không lên cloud kể cả sau restart; make check 1025 passed; chờ review vòng 8` |
