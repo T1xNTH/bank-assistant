@@ -22,23 +22,25 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `47`
+- **Context Revision**: `48`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-03`
 - **Updated By**: `codex`
-- **Update Trigger**: `Resolve PR #94 against main d6e8e76; preserve T-027 and T-030 review and T-029 closure`
+- **Update Trigger**: `User authorized issue #72; reconcile merged/approved T-030 and start T-031`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-010, E-011 EPIC_IN_PROGRESS; E-012..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-027 review (PR #93); T-030 review (PR #94); T-029 done (PR #89, squash b0eed4c); T-026, T-028 done; other M-002 tasks pending`
+- **Active Task IDs**: `T-031 in-progress; T-027 review; T-026, T-028, T-029, T-030 done; other M-002 tasks pending`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261102-t030`
+- **Current Session ID**: `S-20261103-t031`
 
 ## Revision Provenance
+
+Revision 48 (codex, 2026-11-03) starts user-authorized T-031 from main 3d7f292 in feat/T-031-agent-api. T-030 closure uses existing PR94 counterpart approval, separate Claude review, Codex QA and merge; evidence is implementation/T-031-dependency-closure.md. E-011 remains in progress; no new approval is claimed. Scope is authenticated agent endpoints, masking and audit; contracts remain unchanged.
 
 Revision 47 (codex, 2026-11-03) resolves PR #94 against main d6e8e76. Preserve parallel revision 46 histories, T-027/T-030 review and existing T-029 done from the branch. No new approval or task closure is claimed.
 

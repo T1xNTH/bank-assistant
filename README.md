@@ -110,7 +110,36 @@ the user identity, database path, SQL or approval decision.
 - Threads live in the SQLite checkpointer at `AGENT_CHECKPOINT_DB_PATH`
   (masked text only) and survive restarts. Errors for T-031: `ThreadNotFound`
   404 (also for another user's thread), `PermissionError` 403,
-  `DecisionConflict` 409, `AgentUnavailable` 503, `ValueError` 422.
+  `DecisionConflict` 409, `AgentUnavailable` 503. The HTTP adapter maps invalid
+  input (`ValueError`) to 400, as specified by the public API contract.
+
+`POST /agent` accepts `{"message":"...","thread_id":null}`; omit `thread_id`
+to start a thread, or send the returned ID to continue one owned by the caller.
+It returns `{thread_id, status, answer, pending_action}`; `status` is `completed`
+or `pending_approval`. With a pending ticket, a different authenticated user with
+role `approver` calls `POST /agent/{thread_id}/decision` with
+`{"approve":true,"comment":"..."}` (or `false` to reject). `approve` must be a
+JSON boolean. Staff/service users and self-approval receive 403, unknown/other
+users' threads receive 404 on continuation, and repeating a decision receives 409.
+Approvers may decide across departments, matching the current role-only policy.
+
+The app shares one `AgentService` across requests so its locks and amount vault
+work across turns. Use one API worker; multiple worker processes would need a
+shared approval lock. The SQLite connection closes on app shutdown. Checkpoints
+survive restarts; the in-memory amount vault does not, so the agent asks for an
+amount again when needed. The existing `CORE_BANKING_DB_PATH`, `TICKETS_DB_PATH`
+and `AGENT_CHECKPOINT_DB_PATH` settings select storage; seed synthetic banking
+data with `scripts/seed_core_banking.py` before using the transaction tool.
+
+Agent messages are masked inside the trusted service before checkpoints/model
+calls, while audit records store masked messages and decision bodies (including
+the approver's authenticated identity). Free model replies and pending summaries
+are masked at HTTP egress; code-rendered loan/transaction replies keep numeric
+amounts and already-masked text. `answer_source` is internal and is not returned.
+Do not automatically repeat a ticket proposal after a 503: a ticket write and its
+checkpoint/audit live in separate transactions, so a storage failure can leave a
+committed ticket despite the failed HTTP response. Reconcile the existing ticket
+before creating a replacement.
 
 ## Quick start
 ```bash

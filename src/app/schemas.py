@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StrictBool, StringConstraints
 
 from app.contracts import RetrievalMode, Route
 
@@ -65,3 +65,25 @@ class JobStatusResponse(BaseModel):
     position: int | None = None
     result: AskResponse | None = None
     error: str | None = None
+
+
+class AgentRequest(BaseModel):
+    message: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=4000)]
+    thread_id: str | None = None
+
+
+class PendingAction(BaseModel):
+    tool: str
+    args: dict
+
+
+class AgentResponse(BaseModel):
+    thread_id: str
+    status: Literal["completed", "pending_approval"]
+    answer: str | None = None
+    pending_action: PendingAction | None = None
+
+
+class AgentDecision(BaseModel):
+    approve: StrictBool
+    comment: str = Field(default="", max_length=500)
