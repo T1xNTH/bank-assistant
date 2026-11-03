@@ -67,7 +67,7 @@ jobs:
           python -m compileall -q ui
       - name: Describe current UI coverage
         run: |
-          echo 'UI coverage: Python syntax only. ui/app.py is a scaffold; no frontend runtime or browser E2E is implemented yet.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'UI coverage: syntax here; Streamlit AppTest flows against the API run in quality (tests/unit/test_ui.py). No browser E2E.' >> "$GITHUB_STEP_SUMMARY"
 
   check:
     # Keep the existing required-check name, but require every CI job to succeed.

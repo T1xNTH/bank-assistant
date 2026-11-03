@@ -22,16 +22,16 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `55`
+- **Context Revision**: `56`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-03`
-- **Updated By**: `codex`
-- **Update Trigger**: `Resolve PR #100 conflicts: retain T-032 completion and latest T-035 state from main`
+- **Updated By**: `claude`
+- **Update Trigger**: `Merge main 381566e vào PR #97 (T-042) sau khi sửa F-01, F-02 của B`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-010, E-011, E-012, E-013 EPIC_IN_PROGRESS; E-014..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-035 review (PR #99; review APPROVED bởi claude-review-a, chờ QA và counterpart approval); T-033 implementation on PR #98 (board pending, awaiting CLI start); T-032 done (PR #95 merged); T-031 review; T-027 review; T-026, T-028, T-029, T-030 done; other M-002 tasks pending`
+- **Active Epic IDs**: `E-010, E-011, E-012, E-013, E-016 EPIC_IN_PROGRESS; E-014, E-015 EPIC_READY; E-001..E-009 EPIC_DONE`
+- **Active Task IDs**: `T-042 review (PR #97, CHANGES_REQUESTED của B: F-01, F-02 đã sửa, chờ review lại); T-035 review (PR #99; review APPROVED bởi claude-review-a, chờ QA và counterpart approval); T-033 implementation on PR #98 (board pending, awaiting CLI start); T-032 done (PR #95 merged); T-027 review; T-026, T-028, T-029, T-030, T-031 done; other M-002 tasks pending`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
@@ -39,6 +39,12 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Current Session ID**: `S-20261103-t032-done`
 
 ## Revision Provenance
+
+Revision 56 (claude cho trong-hung, 2026-11-03) sửa review của B trên PR #97 (F-01 ở e1c1cf8, F-02; supplement T-042-PR97-fixes.md) và merges main 381566e (T-035 PR #99, T-032 PR #100) vào PR #97 (T-042). Nhánh T-042 ở revision 52, main ở revision 55: giữ cả hai chuỗi bên dưới. Task board: T-031 done và T-042 review từ nhánh này; T-032 done và T-035 review từ main. Không có review, approval hay done mới.
+
+Parallel revision 52 (nhánh T-042, claude cho trong-hung, 2026-11-03) merges main 7f4eb73 (T-032 PR #95) vào PR #97 (T-042). Main ở revision 51, nhánh T-042 ghi revision 49 song song: giữ cả hai chuỗi bên dưới. Task board: T-031 done và T-042 review từ nhánh này; T-032 review từ main. Không có review, approval hay done mới.
+
+Parallel revision 49 (nhánh T-042, claude cho trong-hung, 2026-11-03) từ main 7b3f736: đóng T-031 (review APPROVED, PR #96 merge); E-016 EPIC_IN_PROGRESS; T-042 Streamlit UI commit 9c6868e, make check 1070 passed, demo thật pass; T-042 review, chưa có review độc lập.
 
 Revision 55 (codex, 2026-11-03): resolve PR #100 conflicts with main 1942303. Preserve T-032 done, E-013 EPIC_IN_PROGRESS, T-035 review with existing approval, and history from both branches. No new approval, QA result or task transition.
 
