@@ -2,7 +2,7 @@ PY ?= .venv/bin/python
 COMPOSE = docker compose -f infrastructure/compose.yaml --env-file .env.local
 COMPOSE_WAIT_TIMEOUT ?= 120
 
-.PHONY: setup check test lint validate up smoke down logs
+.PHONY: setup check test lint validate up smoke down logs ui
 
 setup:
 	python3 -m venv .venv && $(PY) -m pip install -q -r requirements-dev.txt
@@ -28,6 +28,11 @@ smoke:
 
 down:
 	$(COMPOSE) down
+
+# Streamlit demo UI (T-042) on 127.0.0.1:8501; reads UI_API_URL and UI_KEY_* from .env.local.
+ui:
+	set -a; [ ! -f .env.local ] || . ./.env.local; set +a; \
+	$(PY) -m streamlit run ui/app.py --server.address 127.0.0.1 --server.headless true
 
 logs:
 	$(COMPOSE) logs -f --tail=100

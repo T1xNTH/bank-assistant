@@ -37,4 +37,4 @@ Lưu registry chính thức các kết quả bàn giao có giới hạn rõ, có
 | `E-013` | `M-002` | `FR-10 observability: trace Langfuse, token, chi phí, p95, thời gian chờ; /feedback` | `teammate-b` | `EPIC_READY` | `T-035, T-036, T-037` | `pending` | `.agent/governance/decisions/DEC-001.md` |
 | `E-014` | `M-002` | `Vòng cải tiến chất lượng: sửa 3 câu trả lời tệ nhất từ trace, chạy lại eval để đạt NFR-01..04` | `trong-hung` | `EPIC_READY` | `T-038` | `pending` | `.agent/governance/decisions/DEC-001.md` |
 | `E-015` | `M-002` | `FR-11 release hardening: CI eval gate, trivy, compose profiles, backup Qdrant, test clone sạch` | `teammate-b` | `EPIC_READY` | `T-039, T-040, T-041` | `pending` | `.agent/governance/decisions/DEC-001.md` |
-| `E-016` | `M-002` | `FR-12 UI demo (Streamlit) + README + ADR` | `trong-hung` | `EPIC_READY` | `T-042, T-043` | `pending` | `.agent/governance/decisions/DEC-001.md` |
+| `E-016` | `M-002` | `FR-12 UI demo (Streamlit) + README + ADR` | `trong-hung` | `EPIC_IN_PROGRESS` | `T-042, T-043` | `pending` | `.agent/governance/decisions/DEC-001.md` |
