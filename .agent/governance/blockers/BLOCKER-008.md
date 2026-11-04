@@ -57,3 +57,10 @@ Do not claim that an authentication failure reviewed or approved source.
 ## Output Requirements
 
 Keep this record open until actual review evidence resolves the condition.
+
+## Retry 2026-11-04
+
+On the user's rerun request, fresh session `2bc91da5-aee3-4a33-ac5f-874ed51d99a5`
+again failed with expired OAuth before any source/model execution. API duration
+and model token usage were zero. Evidence: shared workspace
+`output/t040-review-retry.json`. No authentication recovery or review is claimed.

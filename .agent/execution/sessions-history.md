@@ -601,3 +601,5 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261104-100638` | `2026-11-04` | `2026-11-04` | `codex` | `T-040` | `completed` | `implementation report draft` | `.agent/reports/implementation/T-040.md` | `none` |
 | `S-20261104-112732` | `2026-11-04` | `2026-11-04` | `codex` | `T-040` | `completed` | `verify 'D:/bank-assistant/output/pr103-test-venv/Scripts/python.exe -m pytest tests/unit/test_qdrant_backup.py -q' passed` | `.agent/reports/implementation/T-040.md` | `none` |
 | `S-20261104-112733` | `2026-11-04` | `2026-11-04` | `codex` | `T-040` | `completed` | `task blocked by BLOCKER-009` | `.agent/governance/blockers/BLOCKER-009.md` | `none` |
+
+| `S-20261104-t040-recheck` | `2026-11-04` | `2026-11-04` | `codex` | `T-040` | `completed` | `PR104 conflict resolved; Linux make check and all profile/recovery acceptance pass; implementation reports complete; independent review remains blocked` | `.agent/reports/implementation/T-040-verification-retry.md` | `BLOCKER-008` |

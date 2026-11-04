@@ -257,6 +257,12 @@ only that collection between the commands. A failed restore may leave a collecti
 behind; inspect it before retrying. Keep writers paused until count verification
 passes. Use the same pinned Qdrant v1.12.4 for recovery.
 
+With Qdrant running, `python scripts/smoke_qdrant_backup.py` exercises the actual
+Make targets using a uniquely named synthetic collection, then removes only that
+collection. The `Compose and Qdrant recovery` workflow runs `make check`, starts
+each complete profile independently and repeats this recovery drill on Linux.
+It runs for infrastructure pull requests and also supports manual dispatch.
+
 ## Optional tracing (T-035)
 
 Enable the Compose `obs` profile for local Langfuse. Without both Langfuse API keys,

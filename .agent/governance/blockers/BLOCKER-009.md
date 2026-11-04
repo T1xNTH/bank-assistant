@@ -14,7 +14,7 @@ priority: 2
 - **Blocker ID**: `BLOCKER-009`
 - **Owner**: `teammate-b`
 - **Reporter**: `codex`
-- **Status**: `open`
+- **Status**: `resolved`
 - **Blocker Type**: `environment`
 - **Created Date**: `2026-11-04`
 
@@ -56,9 +56,9 @@ snapshot integration drill. Obtain independent review after BLOCKER-008 clears.
 
 ## Completion Criteria
 
-- [ ] Full make check passes on the final source.
-- [ ] Each complete profile starts independently and passes smoke checks.
-- [ ] Task, board and implementation evidence are synchronized.
+- [x] Full make check passes on the final source.
+- [x] Each complete profile starts independently and passes smoke checks.
+- [x] Task, board and implementation evidence are synchronized.
 
 ## Forbidden Actions
 
@@ -67,3 +67,25 @@ Do not report interrupted tests or partial service startup as complete acceptanc
 ## Output Requirements
 
 Preserve partial verification evidence and keep the task blocked until resolved.
+
+## Verification Retry 2026-11-04
+
+Local WSL still fails startup, so use the permitted separate Linux runner.
+Exact `make check PY=python` passed at b312b71: 1228 passed, 80 deselected,
+Ruff clean and FRAMEWORK_VALIDATION_PASS. Evidence:
+https://github.com/T1xNTH/bank-assistant/actions/runs/41774000720/job/126389989328.
+Independent complete profile startup/recovery remains in progress; keep this
+record open until its runtime criteria also pass.
+
+## Resolution 2026-11-04
+
+Resolved through the separate Linux runner allowed by the resolution plan:
+[run 41774000720](https://github.com/T1xNTH/bank-assistant/actions/runs/41774000720)
+passed exact make check and all three complete profiles at b312b71. Each profile
+starts core API/worker/LiteLLM/Qdrant/Redis plus its optional services, passes
+health and Make smoke checks, and passes a seven-point Make backup/delete/restore
+drill comparing vectors and payloads. Containers are stopped between profiles.
+[Standard CI 41774000654](https://github.com/T1xNTH/bank-assistant/actions/runs/41774000654)
+also passed all four jobs including backend smoke. Local WSL is not repaired;
+this resolves the verification dependency using fresh Linux runners. T-040
+remains blocked only on the independent review gate, BLOCKER-008.
