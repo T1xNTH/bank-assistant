@@ -15,6 +15,7 @@ from app.config import get_settings
 from app.contracts import LLM, Answerer, User
 from app.deps import get_answerer, get_current_user, get_llm
 from app.errors import install_error_handlers
+from app.feedback import feedback
 from app.log_config import configure_logging, get_logger
 from app.middleware import RequestContextMiddleware
 from app.queue.jobs import enforce_api_rate_limit, enqueue_job, get_job
@@ -58,6 +59,7 @@ def create_app() -> FastAPI:
     install_error_handlers(application)
     application.add_middleware(RequestContextMiddleware)
     application.add_api_route("/health", health, methods=["GET"])
+    application.add_api_route("/feedback", feedback, methods=["POST"], status_code=204)
     application.add_api_route(
         "/ask", ask, methods=["POST"], response_model=AskResponse,
         responses={503: {"model": ErrorResponse, "description": "Dependency unavailable"}},
@@ -103,6 +105,7 @@ def chat(
     message = _mask_input(req.message)[0]
     request.state.audit_question = message
     with observation("/chat", root=True, input=message) as trace:
+        request.state.audit_trace_id = trace.trace_id
         response = structured_chat(message, llm)
         response = response.model_copy(update={
             "answer": mask_text(response.answer), "model": mask_text(response.model),
@@ -126,6 +129,7 @@ def ask(
     force_local = req.force_local or bool(pii_types)
     try:
         with observation("/ask", root=True, input=request.state.audit_question) as trace:
+            request.state.audit_trace_id = trace.trace_id
             result = answerer.answer(request.state.audit_question, user, req.mode, force_local=force_local)
             if trace.trace_id is not None:
                 result = replace(result, trace_id=trace.trace_id)

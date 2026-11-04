@@ -110,8 +110,10 @@ class RagAnswerer:
                 {"role": "user", "content": user_message(question, hits)},
             ]
             try:
-                with observation("llm"):
-                    reply = self._llm.chat(messages, decision.alias, temperature=0.0).text
+                with observation("llm") as generation:
+                    result = self._llm.chat(messages, decision.alias, temperature=0.0)
+                    generation.generation(result)
+                    reply = result.text
             except LLMError as exc:
                 raise AnswerUnavailable("LLM gateway unavailable") from exc
             text, citations = cite(reply, hits)
