@@ -603,3 +603,7 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261104-112733` | `2026-11-04` | `2026-11-04` | `codex` | `T-040` | `completed` | `task blocked by BLOCKER-009` | `.agent/governance/blockers/BLOCKER-009.md` | `none` |
 
 | `S-20261104-t040-recheck` | `2026-11-04` | `2026-11-04` | `codex` | `T-040` | `completed` | `PR104 conflict resolved; Linux make check and all profile/recovery acceptance pass; implementation reports complete; independent review remains blocked` | `.agent/reports/implementation/T-040-verification-retry.md` | `BLOCKER-008` |
+| `S-20261104-145852` | `2026-11-04` | `2026-11-04` | `codex` | `T-040` | `completed` | `task blocked -> in-progress` | `.agent/execution/task-board.md` | `none` |
+| `S-20261104-145852-2` | `2026-11-04` | `2026-11-04` | `codex` | `T-040` | `completed` | `review requested from T1xNTH` | `.agent/reports/implementation/T-040.md` | `none` |
+| `S-20261104-145852-3` | `2026-11-04` | `2026-11-04` | `T1xNTH` | `T-040` | `completed` | `review started` | `.agent/reports/review/T-040.md` | `none` |
+| `S-20261104-145934` | `2026-11-04` | `2026-11-04` | `T1xNTH` | `T-040` | `completed` | `review approved` | `.agent/reports/review/T-040.md` | `none` |

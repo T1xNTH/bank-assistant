@@ -14,7 +14,7 @@ priority: 2
 - **Blocker ID**: `BLOCKER-008`
 - **Owner**: `teammate-b`
 - **Reporter**: `codex`
-- **Status**: `open`
+- **Status**: `resolved`
 - **Blocker Type**: `access`
 - **Created Date**: `2026-11-04`
 
@@ -46,9 +46,9 @@ findings, record the review, then obtain counterpart PR approval before completi
 
 ## Completion Criteria
 
-- [ ] An actual independent review of final source is recorded.
-- [ ] Findings and decision link to the reviewed commit.
-- [ ] Task, board and handoff records are synchronized.
+- [x] An actual independent review is recorded, with A's task-specific substitution authorization.
+- [x] Findings and decision link to reviewed source `d83d96c` and the corrective commit.
+- [x] Task, board and handoff records are synchronized in this follow-up.
 
 ## Forbidden Actions
 
@@ -64,3 +64,19 @@ On the user's rerun request, fresh session `2bc91da5-aee3-4a33-ac5f-874ed51d99a5
 again failed with expired OAuth before any source/model execution. API duration
 and model token usage were zero. Evidence: shared workspace
 `output/t040-review-retry.json`. No authentication recovery or review is claimed.
+
+## Resolution 2026-11-04
+
+A (`T1xNTH`) performed an actual review of `d83d96c`, reporting full make check,
+all six CI jobs and an independent real Qdrant recovery drill passed. A explicitly
+authorized this review to replace the failed independent Claude step and requested
+recording approval after correcting F-01/F-02:
+[source review](https://github.com/T1xNTH/bank-assistant/pull/104#issuecomment-6625024071).
+
+The corrective commit removes the broken table separation and treats remote
+snapshot cleanup HTTP failures as warnings. Four regression cases fail before
+the fix and pass afterward; all 15 focused unit/profile cases pass. The review
+report `.agent/reports/review/T-040.md` attributes the decision and conditions to
+A; Codex records the authorized disposition, rather than claiming a separate
+Claude execution or a new external review of the fix. OAuth itself is not repaired.
+T-040 returns to review; PR counterpart approval and task completion remain separate.
