@@ -16,7 +16,7 @@ Mode `hybrid_rerank` của `retrieve()` (mặc định của `RETRIEVAL_MODE`) l
 ## Cấu hình
 
 - `REFUSAL_THRESHOLD`: số trong [0, 1]; để trống thì dùng 0,5. Giá trị sai (chữ, âm, lớn hơn 1, `nan`) báo `ValueError`, không âm thầm dùng mặc định.
-- `RERANK_CANDIDATES`: số nguyên từ 1 đến 100; để trống thì dùng 5. Giá trị sai báo `ValueError`.
+- `RERANK_CANDIDATES`: số nguyên từ 1 đến 100; để trống thì dùng 8 (T-038; trước đó 5). Giá trị sai báo `ValueError`.
 
 ## Vì sao 5 ứng viên và ngưỡng 0,5
 
@@ -31,6 +31,19 @@ Mode `hybrid_rerank` của `retrieve()` (mặc định của `RETRIEVAL_MODE`) l
 (26 câu, chấm một lần mỗi batch. Bản đầu dùng `FlagReranker.compute_score` đo được 4,0 s / 9,1 s / 12,2 s vì chấm lặp.) NFR-08 cho cả `/ask` dưới 10 giây, gồm cả embed, Qdrant và LLM. Owner trong-hung chọn 5 ứng viên. Lượng tử hóa int8 làm điểm lệch đi (câu ngoài phạm vi lên 0,54), nên không dùng. Giảm `max_length` xuống 512 không nhanh hơn, vì cặp dài nhất chỉ 418 token.
 
 Với 5 ứng viên, điểm cao nhất của câu trong phạm vi thấp nhất là 0,74 ("Phí chuyển tiền ra nước ngoài"), của câu ngoài phạm vi cao nhất là 0,34 ("Ngân hàng Nhà nước có bao nhiêu chi nhánh?"). Ngưỡng 0,5 nằm giữa hai mức đó. Câu thời tiết, bóng đá, nấu ăn chỉ được dưới 0,01. Câu về ngân hàng khác hay dữ liệu trực tiếp (giá vàng, tỷ giá) được dưới 0,06. Đây là mẫu nhỏ, cùng bộ câu đã dùng để chọn ngưỡng. Review độc lập thử thêm câu ngoài mẫu và thấy biên hẹp hơn: "Vay mua nhà trả góp cần hồ sơ gì?" (user credit) chỉ được 0,364 nên bị từ chối dù TT 39 trả lời được; "mất thẻ ATM" (credit) được 0,532. Ngưỡng cần đo lại trên 50 câu của E-008.
+
+## Đo lại trong T-038: 8 ứng viên
+
+Đo trên 50 câu golden (40 câu trong phạm vi, user theo phòng ban của tài liệu vàng), collection ingest bằng chunker T-038, fp32, máy rảnh (không chạy model local cùng lúc), ngày 2026-11-04. Thời gian là riêng bước rerank.
+
+| Ứng viên | hit@5 | Rerank p50 / p95 | Câu trong phạm vi có điểm cao nhất < 0,5 |
+|---|---|---|---|
+| 5 | 0,90 | 2,3 s / 3,3 s | 1 |
+| 7 | 0,90 | 3,6 s / 5,2 s | 1 |
+| 8 | 0,925 | 4,2 s / 6,2 s | 1 |
+| 10 | 0,95 | 4,9 s / 7,4 s | 0 |
+
+Chunk đúng của hai câu bảng phí đứng hạng 8 và 13–16 sau `hybrid`, nên 5 ứng viên không bao giờ tới được. Chọn 8: hai mức cao hơn vẫn tăng hit@5, nhưng 10 ứng viên cộng embed và LLM đưa p95 `/ask` sát 10 giây (NFR-08). Mỗi ứng viên tốn khoảng 0,6–0,7 s trên CPU này. Đã thử và bỏ: int8 (`quantize_dynamic`) nhanh gấp 2,2 lần nhưng hit@5 còn 0,875 ở 10 ứng viên; cắt chunk ở 384 token không nhanh hơn (chunk đã ngắn hơn), ở 256 token thì hit@5 còn 0,90. Câu ngoài phạm vi có điểm cao nhất 0,968 ở mọi mức là một câu mà LLM vẫn từ chối (NFR-03 = 1,0 trong eval). Ngưỡng 0,5 giữ nguyên.
 
 ## Kiểm thử
 

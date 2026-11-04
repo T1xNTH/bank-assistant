@@ -331,8 +331,7 @@ def test_a_document_of_plain_text_keeps_its_first_line_as_text_only():
 
 def test_a_heading_without_text_is_kept_as_a_chunk_of_its_own():
     text = (
-        "## Điều 8. Bãi bỏ Điều 32c và Điều 32h\n\n"
-        "## Điều 9. Hiệu lực thi hành\n\nThông tư có hiệu lực từ 01/7/2026."
+        "## Điều 8. Bãi bỏ Điều 32c và Điều 32h\n\n## Điều 9. Hiệu lực thi hành\n\nThông tư có hiệu lực từ 01/7/2026."
     )
 
     assert _texts(chunk_pages([_page(1, text)])) == [
@@ -437,3 +436,146 @@ def test_a_heading_closing_the_page_does_not_head_its_tables():
         "Tệp đính kèm",
         f"Biểu phí chuyển tiền\n{HEADER}\n{ROWS[0]}",
     ]
+
+
+# T-038: fee schedules keep each row's context when a table is split or continues on the next page
+
+FEE_HEADER = "| STT | Mã phí | Nội dung | Mức phí | Tối thiểu |\n|---|---|---|---|---|"
+FEE_ROWS = [
+    "| 1 | | Chuyển tiền VND cùng hệ thống | | |",
+    "| 1.1 | B101 | Chuyển khoản VND (TK - TK) | 0,01% | 10.000 đ |",
+    "| 2 | | Chuyển tiền VND trong nước khác hệ thống | | |",
+    *[f"| | B11{i} | - Trước 15h, mức {i} | 0,0{i}% | 20.000 đ |" for i in range(1, 6)],
+    "| | B116 | - Từ 15h trở đi | 0,04% | 25.000 đ |",
+    "| 9 | | Chuyển tiền ngoại tệ khác hệ thống | | |",
+    "| 9.1 | | Chuyển tiền đi | | |",
+    "| 9.1.1 | B131 | Chuyển tiền đi trong nước | 0,03% | 2 USD |",
+    "| 9.1.2 | B133 | Chuyển tiền đi nước ngoài | 0,2% | 5 USD |",
+]
+
+
+def _part_with(chunks, marker):
+    [text] = [c["text"] for c in chunks if marker in c["text"].split("\n", 3)[-1] or c["text"].endswith(marker)]
+    return text.split("\n")
+
+
+def test_a_split_fee_table_repeats_the_rows_each_part_sits_under():
+    chunks = chunk_pages([_page(1, tables=["\n".join([FEE_HEADER, *FEE_ROWS])])], size=300)
+
+    assert len(chunks) > 2
+    for c in chunks:
+        lines = c["text"].split("\n")
+        assert "\n".join(lines[:2]) == FEE_HEADER and len(c["text"]) <= 300
+        assert all(line in FEE_ROWS for line in lines[2:])
+    late = next(c["text"].split("\n") for c in chunks if "B116" in c["text"])
+    assert "| 2 | | Chuyển tiền VND trong nước khác hệ thống | | |" in late  # sub-item under its parent
+    assert "| 1 | | Chuyển tiền VND cùng hệ thống | | |" not in late  # a closed branch is not repeated
+    abroad = next(c["text"].split("\n") for c in chunks if "B133" in c["text"])
+    i = abroad.index("| 9.1.2 | B133 | Chuyển tiền đi nước ngoài | 0,2% | 5 USD |")
+    assert (
+        abroad.index("| 9 | | Chuyển tiền ngoại tệ khác hệ thống | | |")
+        < abroad.index("| 9.1 | | Chuyển tiền đi | | |")
+        < i
+    )
+    assert "| 2 | | Chuyển tiền VND trong nước khác hệ thống | | |" not in abroad  # 9 closed 2
+
+
+def test_every_row_still_appears_once_as_its_own_row_and_context_is_only_ever_an_earlier_row():
+    chunks = chunk_pages([_page(1, tables=["\n".join([FEE_HEADER, *FEE_ROWS])])], size=300)
+
+    seen = []
+    for c in chunks:
+        body = c["text"].split("\n")[2:]
+        fresh = [row for row in body if row not in seen]
+        assert body[len(body) - len(fresh) :] == fresh  # repeated context rows come first
+        seen += fresh
+    assert seen == FEE_ROWS
+
+
+def test_context_rows_are_dropped_outermost_first_when_they_do_not_fit():
+    rows = [
+        "| 9 | | " + "Chuyển tiền ngoại tệ khác hệ thống " * 3 + "| |",
+        "| 9.1 | | Chuyển tiền đi | |",
+        *[f"| 9.1.{i} | B13{i} | Mục {i} | 0,{i}% |" for i in range(1, 8)],
+    ]
+    table = "\n".join(["| STT | Mã | Nội dung | Phí |", "|---|---|---|---|", *rows])
+
+    chunks = chunk_pages([_page(1, tables=[table])], size=200)
+
+    for c in chunks:
+        assert len(c["text"]) <= 200
+    last = chunks[-1]["text"].split("\n")
+    assert "| 9.1 | | Chuyển tiền đi | |" in last and rows[0] not in last
+
+
+def test_a_section_row_across_the_columns_heads_the_rows_below_it():
+    section = "| | THẺ CORPORATE | THẺ CORPORATE | THẺ CORPORATE |"
+    rows = [section, *[f"| {i} | Phí {i} | {i}0.000 đ | |" for i in range(1, 15)]]
+    table = "\n".join(["| STT | Nội dung | Mức phí | Tối thiểu |", "|---|---|---|---|", *rows])
+
+    chunks = chunk_pages([_page(1, tables=[table])], size=200)
+
+    merged = "| | THẺ CORPORATE | | |"  # docling's merged cell, kept once
+    assert len(chunks) > 1 and all(merged in c["text"].split("\n") for c in chunks)
+    assert section not in chunks[0]["text"]
+
+
+def test_a_merged_label_is_kept_once_but_equal_values_stay():
+    table = "| STT | Nội dung | Mức phí | Tối thiểu |\n|---|---|---|---|\n| 1 | Phát hành | 0 đ | 0 đ |"
+
+    [chunk] = chunk_pages([_page(1, tables=[table])])
+
+    assert chunk["text"].endswith("| 1 | Phát hành | 0 đ | 0 đ |")
+
+
+def test_a_table_continued_on_a_text_free_page_keeps_the_open_rows():
+    page1 = "\n".join([FEE_HEADER, *FEE_ROWS[:3]])
+    # docling drops an empty column on the next page and reads its first data row as the header
+    page2 = "\n".join(["| | B111 | - Trước 15h | 0,03% |", "|---|---|---|---|", "| | B116 | - Từ 15h trở đi | 0,04% |"])
+
+    chunks = chunk_pages([_page(1, tables=[page1]), _page(2, "", [page2])])
+
+    [second] = [c["text"].split("\n") for c in chunks if c["page"] == 2]
+    assert second == [
+        "| 2 | | Chuyển tiền VND trong nước khác hệ thống | | |",
+        "| | B111 | - Trước 15h | 0,03% |",
+        "| | B116 | - Từ 15h trở đi | 0,04% |",
+    ]  # no misaligned header from page 1, and the first row is data
+
+
+def test_a_continuation_with_the_same_columns_reuses_the_header():
+    page1 = "\n".join([FEE_HEADER, *FEE_ROWS[:3]])
+    page2 = "\n".join(["| | B111 | - Trước 15h | 0,03% | 20.000 đ |", "|---|---|---|---|---|"])
+
+    chunks = chunk_pages([_page(1, tables=[page1]), _page(2, "Ghi chú cuối trang", [page2])])
+
+    [second] = [c["text"] for c in chunks if c["page"] == 2 and "B111" in c["text"]]
+    parent = "| 2 | | Chuyển tiền VND trong nước khác hệ thống | | |"
+    assert second.endswith(f"{FEE_HEADER}\n{parent}\n| | B111 | - Trước 15h | 0,03% | 20.000 đ |")
+
+
+def test_a_new_table_after_text_on_the_page_is_not_a_continuation():
+    page1 = "\n".join([FEE_HEADER, *FEE_ROWS[:3]])
+    other = "| Hạng | Hạn mức |\n|---|---|\n| Chuẩn | 50 triệu |"
+
+    chunks = chunk_pages([_page(1, tables=[page1]), _page(2, "Hạn mức thẻ", [other])])
+
+    [second] = [c["text"] for c in chunks if c["page"] == 2 and "Chuẩn" in c["text"]]
+    assert second.endswith(other)
+
+
+def test_only_the_nearest_numbered_parent_is_repeated():
+    # Repeating "9" on every part of section 9 made those parts outrank section 2 (test_ask case 10).
+    rows = [
+        "| 9 | | Chuyển tiền ngoại tệ khác hệ thống | |",
+        "| 9.1 | | Chuyển tiền đi | |",
+        *[f"| 9.1.{i} | B13{i} | Mục {i} | 0,{i}% |" for i in range(1, 9)],
+    ]
+    table = "\n".join(["| STT | Mã | Nội dung | Phí |", "|---|---|---|---|", *rows])
+
+    chunks = chunk_pages([_page(1, tables=[table])], size=160)
+
+    assert len(chunks) > 2
+    for c in chunks[1:]:
+        body = c["text"].split("\n")[2:]
+        assert body[0] == "| 9.1 | | Chuyển tiền đi | |" and rows[0] not in body
