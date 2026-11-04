@@ -31,7 +31,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-010, E-011, E-012, E-013, E-015, E-016 EPIC_IN_PROGRESS; E-014 EPIC_READY; E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-042 review (PR #97, CHANGES_REQUESTED của B: F-01, F-02 đã sửa, chờ review lại); T-035 review (PR #99; review APPROVED bởi claude-review-a, chờ QA và counterpart approval); T-033 done (approved/merged PR #98); T-034 review (PR #101; review follow-up, awaiting recheck); T-032 done (PR #95 merged); T-027 review; T-026, T-028, T-029, T-030, T-031 done; other M-002 tasks pending`
+- **Active Task IDs**: `T-042 review (PR #97, CHANGES_REQUESTED của B: F-01, F-02 đã sửa, chờ review lại); T-035 done (APPROVED review and merged PR #99 reconciled); T-040 blocked (BLOCKER-009, BLOCKER-008); T-033 done (approved/merged PR #98); T-034 review (PR #101; review follow-up, awaiting recheck); T-032 done (PR #95 merged); T-027 review; T-026, T-028, T-029, T-030, T-031 done; other M-002 tasks pending`
 - **Active Blocker IDs**: `BLOCKER-009 (T-040 full verification: host storage/WSL failure), BLOCKER-008 (T-040 independent reviewer OAuth)`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
