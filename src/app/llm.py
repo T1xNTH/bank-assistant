@@ -9,6 +9,7 @@ import time
 import httpx2 as httpx
 
 from app.contracts import LLMResult
+from app.llm_cost import cost_of
 from app.security.masking import mask_content, mask_data, mask_text
 
 
@@ -69,7 +70,7 @@ def chat(messages: list[dict], alias: str, temperature: float = 0.0) -> LLMResul
             try:
                 data = response.json()
                 text = data["choices"][0]["message"]["content"]
-                model = data["model"]
+                model = response.headers.get("x-litellm-model-name") or data["model"]
                 usage = data.get("usage") or {}
                 input_tokens = usage.get("prompt_tokens", 0)
                 output_tokens = usage.get("completion_tokens", 0)
@@ -77,8 +78,11 @@ def chat(messages: list[dict], alias: str, temperature: float = 0.0) -> LLMResul
                     raise ValueError
                 if any(type(n) is not int or n < 0 for n in (input_tokens, output_tokens)):
                     raise ValueError
+                usage_known = "prompt_tokens" in usage and "completion_tokens" in usage
+                # Lookup the actual model before masking snapshot dates; retain only the numeric cost.
+                cost = cost_of(model, input_tokens, output_tokens) if usage_known else None
                 return LLMResult(mask_content(text), mask_text(model), input_tokens, output_tokens, meta={
-                    "usage_known": "prompt_tokens" in usage and "completion_tokens" in usage,
+                    "usage_known": usage_known, "cost_usd": cost,
                 })
             except (ValueError, KeyError, IndexError, TypeError, AttributeError):
                 raise LLMError("Invalid LLM gateway response") from None

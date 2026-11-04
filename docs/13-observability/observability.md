@@ -102,6 +102,12 @@ total 0,56s (có overhead giữa các span); input đã được thay bằng `<P
 
 ## Token, chi phí và feedback (T-036)
 
+Tên model thực được lấy từ header `x-litellm-model-name` của gateway; khi header
+thiếu hoặc rỗng thì dùng `model` trong response body. Tra bảng giá trước khi che
+tên model (kể cả snapshot có ngày); chỉ giữ chi phí số trong metadata nội bộ và
+tên đã che trong kết quả/trace, không giữ tên gốc chưa che. Không dùng header
+`x-litellm-response-cost` làm nguồn giá.
+
 Mỗi span `llm` thành generation với model thực trả về, `usage_details` (input/output)
 và `cost_details.total` khi biết giá. Root trace giữ tổng input_tokens, output_tokens,
 cost_usd trong metadata cùng found/route. Audit HTTP ghi cùng tổng vào SQLite ngay cả
@@ -137,6 +143,14 @@ lưu score khi telemetry tắt). Body sai hợp đồng trả 400; chưa xác th
 Kiểm chứng: `pytest tests/unit/test_llm_cost.py tests/api/test_feedback.py
 tests/api/test_request_cost.py tests/unit/test_tracing.py`.
 T-037 tiếp tục xử lý rate limit/audit HTTP. Không thay contract `AskResult`/`AskResponse`.
+
+### Giới hạn hiện tại
+
+- Audit ghi thất bại làm HTTP trả 503 và worker báo `Job execution failed`, kể cả
+  khi đã có kết quả từ model và đã phát sinh chi phí. Đây là hành vi fail-closed;
+  lỗi exporter Langfuse vẫn không làm thất bại request/job.
+- `/feedback` xác thực API key nhưng chưa kiểm tra trace thuộc key/phòng ban đang
+  gọi; người dùng có trace ID của phòng khác vẫn có thể gửi score cho trace đó.
 
 | Chỉ số | Nguồn |
 |---|---|

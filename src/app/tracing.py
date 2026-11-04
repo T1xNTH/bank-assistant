@@ -100,7 +100,11 @@ class Observation:
 
     def generation(self, result: LLMResult) -> None:
         """Record accounting before attempting optional telemetry; never capture the prompt."""
-        cost = cost_of(result.model, result.input_tokens, result.output_tokens)
+        # Gateway results price the raw model before masking; fakes/custom clients use the table here.
+        if "cost_usd" in result.meta:
+            cost = result.meta["cost_usd"]
+        else:
+            cost = cost_of(result.model, result.input_tokens, result.output_tokens)
         if result.meta.get("usage_known") is False:
             cost = None
         usage = CURRENT_USAGE.get()

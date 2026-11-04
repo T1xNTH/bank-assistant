@@ -55,11 +55,15 @@ def contents(spans):
     return json.dumps([dict(span.attributes) | {"events": [str(e) for e in span.events]} for span in spans])
 
 
-@pytest.mark.parametrize("model,expected", [("gpt-6-luna", .000035), ("unknown", None)])
-def test_generation_usage_cost_and_root_metadata(sink, model, expected):
+@pytest.mark.parametrize("model,meta,expected", [
+    ("gpt-6-luna", {}, .000035), ("unknown", {}, None),
+    ("openai/gpt-4.1-mini-<ACCOUNT_NUMBER>", {"cost_usd": .00012, "usage_known": True}, .00012),
+    ("gpt-6-luna", {"cost_usd": None}, None),
+])
+def test_generation_usage_cost_and_root_metadata(sink, model, meta, expected):
     with usage_scope(), tracing.observation("/ask", root=True) as root:
         with tracing.observation("llm") as generation:
-            generation.generation(LLMResult("private prompt must not be captured", model, 100, 50))
+            generation.generation(LLMResult("private prompt must not be captured", model, 100, 50, meta=meta))
         root.update(metadata={"found": True, "route": "cloud"})
     spans = {span.name: span for span in sink()}
     attrs = spans["llm"].attributes
