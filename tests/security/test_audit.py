@@ -179,6 +179,7 @@ def test_unwritable_database_path_fails_closed(monkeypatch, tmp_path):
 
 
 def test_concurrent_requests_are_not_lost_duplicated_or_mixed(monkeypatch):
+    monkeypatch.setenv("API_KEY_BURST", "24")
     monkeypatch.setattr(pii, "mask_text", lambda text: (text.replace("test", "[MASKED]"), []))
     with TestClient(create_app()) as client, ThreadPoolExecutor(max_workers=8) as executor:
         responses = list(executor.map(lambda _: client.post("/ask", json={"question": "test"}), range(24)))
@@ -204,12 +205,13 @@ def test_writer_appends_parameterized_values_without_modifying_earlier_rows(tmp_
 
 
 @pytest.mark.parametrize("scenario,status", [("success", 200), ("auth", 401), ("validation", 400), ("backend", 503)])
-def test_chat_after_merge_is_audited_once_without_capturing_message(monkeypatch, scenario, status):
+def test_chat_is_audited_once_with_masked_message(monkeypatch, scenario, status):
     from app.deps import get_llm
     from app.llm import LLMError
     from tests.fakes import FakeLLM
 
     secret = "synthetic-private-chat-message"
+    monkeypatch.setattr(pii, "mask_text", lambda text: (text.replace(secret, "[MASKED]"), []))
     app = create_app()
     app.dependency_overrides[get_llm] = lambda: FakeLLM(
         reply=json.dumps({"answer": "ok", "intent": "question", "needs_human": False})
@@ -227,6 +229,8 @@ def test_chat_after_merge_is_audited_once_without_capturing_message(monkeypatch,
     [row] = rows()
     assert row["endpoint"] == "/chat"
     assert row["trace_id"] == response.headers["x-request-id"]
-    assert all(row[field] is None for field in ("question_masked", "route", "refused", "cost_usd"))
+    assert all(row[field] is None for field in ("route", "refused", "cost_usd"))
+    expected_question = {"success": "[MASKED]", "backend": "[MASKED]", "auth": None, "validation": None}
+    assert row["question_masked"] == expected_question[scenario]
     assert row["user_id"] == (None if scenario == "auth" else "dev")
     assert secret not in json.dumps(row)

@@ -170,14 +170,25 @@ Workers consume in that priority order, then drain legacy `ask` jobs. Positions
 are snapshots across those queues; continuous high-priority work can delay others.
 No new request field or client-supplied priority is accepted.
 
-`POST /ask/jobs` uses a shared Redis token bucket per authenticated API-key digest:
+`POST /ask`, `POST /chat` and `POST /ask/jobs` share one Redis token bucket per
+authenticated API-key digest:
 `API_KEY_RPM` (default 60) and `API_KEY_BURST` (default 10). Exhaustion returns the
 standard 429 envelope with integer `Retry-After`; polling is not throttled.
-The bucket counts authenticated, valid enqueue attempts, including attempts that
-later return 503 (queue full, Redis enqueue failure or masking unavailable). These
+All three endpoints require Redis even with fake LLM/RAG backends. If Redis is
+unavailable, they fail closed with 503 before calling a backend or enqueueing;
+check `REDIS_URL` and Redis health before retrying.
+The bucket counts authenticated attempts, including requests with invalid bodies
+and attempts that later return 503 (queue full, Redis enqueue failure or masking
+unavailable). These
 tokens are not refunded; clients should back off on 503 rather than retry rapidly.
-With fake authentication the bucket is per user. Worker execution attempts share
-one Redis bucket (`WORKER_RPM`, default 60, capacity 1), including retries. The LLM
+With `AUTH_BACKEND=fake` and no `X-API-Key`, requests share the fake user `dev`'s
+bucket across these endpoints. Rapid UI demo clicks can exhaust the default burst
+of 10 and return 429; wait for refill or increase `API_KEY_BURST` for the demo.
+`POST /agent` and `POST /agent/{thread_id}/decision` currently have no API token
+bucket; extending the shared limiter is tracked as a follow-up in
+[the T-037 review report](.agent/reports/review/T-037.md#findings).
+Worker execution attempts share one Redis bucket (`WORKER_RPM`, default 60,
+capacity 1), including retries. The LLM
 client retains its own bounded HTTP retries; RPM here counts answer execution
 attempts, not individual HTTP calls within an answer. Only typed gateway 429s are
 retried, up to `WORKER_MAX_ATTEMPTS` (default 4), with exponential delays starting

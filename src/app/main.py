@@ -17,7 +17,7 @@ from app.deps import get_answerer, get_current_user, get_llm
 from app.errors import install_error_handlers
 from app.log_config import configure_logging, get_logger
 from app.middleware import RequestContextMiddleware
-from app.queue.jobs import enqueue_job, get_job
+from app.queue.jobs import enforce_api_rate_limit, enqueue_job, get_job
 from app.rag.answer import AnswerUnavailable, retrieval_mode, warm_up
 from app.schemas import AgentResponse, AskRequest, AskResponse, ChatRequest, ChatResponse, ErrorResponse
 from app.security.masking import REDACTED, MaskingError, mask_identifier, mask_text, require_mask
@@ -93,10 +93,15 @@ def _mask_input(text: str) -> tuple[str, list[str]]:
 
 def chat(
     req: ChatRequest,
+    request: Request,
     user: User = Depends(get_current_user),
     llm: LLM = Depends(get_llm),
+    _rate_limit: None = Depends(enforce_api_rate_limit),
 ) -> ChatResponse:
+    request.state.audit_user = user
+    request.state.audit_question = REDACTED
     message = _mask_input(req.message)[0]
+    request.state.audit_question = message
     with observation("/chat", root=True, input=message) as trace:
         response = structured_chat(message, llm)
         response = response.model_copy(update={
@@ -111,6 +116,7 @@ def ask(
     request: Request,
     user: User = Depends(get_current_user),
     answerer: Answerer = Depends(get_answerer),
+    _rate_limit: None = Depends(enforce_api_rate_limit),
 ) -> AskResponse:
     request.state.audit_user = user
     # Keep a safe audit value if input masking raises before the next assignment.
