@@ -1,8 +1,13 @@
 PY ?= .venv/bin/python
 COMPOSE = docker compose -f infrastructure/compose.yaml --env-file .env.local
-COMPOSE_WAIT_TIMEOUT ?= 120
+COMPOSE_WAIT_TIMEOUT ?= 600
+PROFILE ?=
+PROFILE_FLAG = $(if $(PROFILE),--profile $(PROFILE))
+QDRANT_URL ?= http://127.0.0.1:6333
+QDRANT_COLLECTION ?= bank_docs
+BACKUP_DIR ?= data/backups/qdrant
 
-.PHONY: setup check test lint validate up smoke down logs ui n8n-up n8n-import
+.PHONY: setup check test lint validate up smoke down logs ui n8n-up n8n-import backup restore
 
 setup:
 	python3 -m venv .venv && $(PY) -m pip install -q -r requirements-dev.txt
@@ -19,7 +24,7 @@ validate:
 check: lint test validate
 
 up:
-	$(COMPOSE) up -d --build --wait --wait-timeout $(COMPOSE_WAIT_TIMEOUT)
+	$(COMPOSE) $(PROFILE_FLAG) up -d --build --wait --wait-timeout $(COMPOSE_WAIT_TIMEOUT)
 
 smoke:
 	curl --fail --silent --show-error --max-time 10 http://127.0.0.1:8000/health
@@ -27,7 +32,7 @@ smoke:
 	$(COMPOSE) exec -T redis redis-cli -e ping
 
 down:
-	$(COMPOSE) down
+	$(COMPOSE) $(PROFILE_FLAG) down
 
 # Streamlit demo UI (T-042) on 127.0.0.1:8501; reads UI_API_URL and UI_KEY_* from .env.local.
 ui:
@@ -35,7 +40,10 @@ ui:
 	$(PY) -m streamlit run ui/app.py --server.address 127.0.0.1 --server.headless true
 
 logs:
-	$(COMPOSE) logs -f --tail=100
+	$(COMPOSE) $(PROFILE_FLAG) logs -f --tail=100
+
+backup restore:
+	$(PY) scripts/qdrant_backup.py $@ --url "$(QDRANT_URL)" --collection "$(QDRANT_COLLECTION)" --backup-dir "$(BACKUP_DIR)"
 
 n8n-up:
 	$(COMPOSE) --profile automation up -d --wait --wait-timeout $(COMPOSE_WAIT_TIMEOUT) n8n mailpit

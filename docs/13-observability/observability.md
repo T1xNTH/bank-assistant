@@ -100,11 +100,57 @@ total 0,56s (có overhead giữa các span); input đã được thay bằng `<P
 
 ![Trace worker có queue_wait và processing riêng, input đã che](assets/T-035-worker.png)
 
-## Các task tiếp theo
+## Token, chi phí và feedback (T-036)
 
-Token/chi phí và feedback thuộc T-036; T-037 xử lý rate limit/audit HTTP.
-T-035 chỉ cung cấp timing, trace ID và dữ liệu an toàn.
-Không thay contract `AskResult`/`AskResponse`.
+Tên model thực được lấy từ header `x-litellm-model-name` của gateway; khi header
+thiếu hoặc rỗng thì dùng `model` trong response body. Tra bảng giá trước khi che
+tên model (kể cả snapshot có ngày); chỉ giữ chi phí số trong metadata nội bộ và
+tên đã che trong kết quả/trace, không giữ tên gốc chưa che. Không dùng header
+`x-litellm-response-cost` làm nguồn giá.
+
+Mỗi span `llm` thành generation với model thực trả về, `usage_details` (input/output)
+và `cost_details.total` khi biết giá. Root trace giữ tổng input_tokens, output_tokens,
+cost_usd trong metadata cùng found/route. Audit HTTP ghi cùng tổng vào SQLite ngay cả
+khi không bật Langfuse; worker ghi một dòng xử lý riêng ở `/ask/jobs`, ngoài dòng enqueue.
+Các lần gọi LLM thành công trong retry của worker được cộng dồn; output JSON không hợp lệ
+vẫn giữ chi phí của lần gọi đã hoàn tất. Gateway lỗi không trả usage thì không thể ước tính
+token đã tiêu thụ ở provider. Request không gọi model giữ cost_usd=NULL; model lạ hoặc
+gateway thiếu usage cũng giữ NULL, không thay bằng 0 hay tổng một phần.
+
+Giá standard text USD/1 triệu token, kiểm ngày 2026-11-03:
+
+| Model thực | Input | Output | Nguồn |
+|---|---|---|---|
+| gpt-6-luna | 0.10 | 0.50 | [OpenAI](https://developers.openai.com/api/docs/models/gpt-6-luna) |
+| gpt-4.1-mini, gpt-4.1-mini-2025-04-14 | 0.40 | 1.60 | [OpenAI](https://developers.openai.com/api/docs/models/gpt-4.1-mini) |
+| qwen2.5:3b, qwen2.5:7b | 0 | 0 | Ollama self-hosted trong infrastructure/litellm/config.yaml; không gồm hạ tầng |
+
+`llm_cost.PRICES` là bảng được dùng để tính; prefix openai/, ollama/, ollama_chat/ được
+chuẩn hóa, alias cloud-chat/local-chat và các snapshot chưa liệt kê giữ giá chưa biết.
+Đây là ước tính uncached standard short-context, không phải hóa đơn: chưa áp dụng
+cache discount/write, long-context premium, service tier, regional processing, thuế
+hoặc chi phí hạ tầng. Khi đổi provider/model cần kiểm nguồn và cập nhật bảng/test.
+SQLite tự thêm hai cột token nullable cho DB cũ, giữ nguyên các dòng lịch sử.
+
+`POST /feedback` dùng X-API-Key như các endpoint còn lại, body theo OpenAPI đã duyệt:
+`{"trace_id":"<32 ký tự hex>","score":1,"comment":"nội dung tùy chọn"}`.
+Score chỉ nhận số nguyên -1 hoặc 1, comment tối đa 1000 ký tự. SDK ghi numeric score
+`user-feedback`; comment đi qua masker kể cả dạng Unicode escape, lỗi masker thì
+thay bằng REDACTED. Không gửi trace_id tùy ý có thể chứa PII tới SDK. Phản hồi 204 không
+có body; trace lạ, thiếu key Langfuse hoặc SDK lỗi vẫn 204 (best effort, không đảm bảo
+lưu score khi telemetry tắt). Body sai hợp đồng trả 400; chưa xác thực trả 401.
+
+Kiểm chứng: `pytest tests/unit/test_llm_cost.py tests/api/test_feedback.py
+tests/api/test_request_cost.py tests/unit/test_tracing.py`.
+T-037 tiếp tục xử lý rate limit/audit HTTP. Không thay contract `AskResult`/`AskResponse`.
+
+### Giới hạn hiện tại
+
+- Audit ghi thất bại làm HTTP trả 503 và worker báo `Job execution failed`, kể cả
+  khi đã có kết quả từ model và đã phát sinh chi phí. Đây là hành vi fail-closed;
+  lỗi exporter Langfuse vẫn không làm thất bại request/job.
+- `/feedback` xác thực API key nhưng chưa kiểm tra trace thuộc key/phòng ban đang
+  gọi; người dùng có trace ID của phòng khác vẫn có thể gửi score cho trace đó.
 
 | Chỉ số | Nguồn |
 |---|---|

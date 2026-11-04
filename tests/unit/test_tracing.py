@@ -2,6 +2,7 @@
 
 import json
 import os
+import sqlite3
 import subprocess
 import sys
 import threading
@@ -20,6 +21,7 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 
 from app import deps, tracing
 from app.contracts import AskResult, Citation, Hit, LLMResult, User
+from app.llm_cost import usage_scope
 from app.main import create_app
 from app.queue import jobs
 from app.rag import retrieve as retrieval
@@ -51,6 +53,46 @@ def sink(monkeypatch):
 
 def contents(spans):
     return json.dumps([dict(span.attributes) | {"events": [str(e) for e in span.events]} for span in spans])
+
+
+@pytest.mark.parametrize("model,meta,expected", [
+    ("gpt-6-luna", {}, .000035), ("unknown", {}, None),
+    ("openai/gpt-4.1-mini-<ACCOUNT_NUMBER>", {"cost_usd": .00012, "usage_known": True}, .00012),
+    ("gpt-6-luna", {"cost_usd": None}, None),
+])
+def test_generation_usage_cost_and_root_metadata(sink, model, meta, expected):
+    with usage_scope(), tracing.observation("/ask", root=True) as root:
+        with tracing.observation("llm") as generation:
+            generation.generation(LLMResult("private prompt must not be captured", model, 100, 50, meta=meta))
+        root.update(metadata={"found": True, "route": "cloud"})
+    spans = {span.name: span for span in sink()}
+    attrs = spans["llm"].attributes
+    assert attrs["langfuse.observation.type"] == "generation"
+    assert attrs["langfuse.observation.model.name"] == model
+    assert json.loads(attrs["langfuse.observation.usage_details"]) == {"input": 100, "output": 50}
+    if expected is None:
+        assert "langfuse.observation.cost_details" not in attrs
+    else:
+        assert json.loads(attrs["langfuse.observation.cost_details"]) == {"total": expected}
+    metadata = json.loads(spans["/ask"].attributes["langfuse.trace.metadata"])
+    assert metadata == {
+        "found": True, "route": "cloud", "input_tokens": 100, "output_tokens": 50, "cost_usd": expected,
+    }
+    assert "private prompt" not in contents(spans.values())
+
+
+@pytest.mark.parametrize("valid", [True, False])
+def test_chat_audit_cost_correlates_with_real_trace_even_on_output_failure(sink, valid):
+    text = json.dumps({"answer": "OK", "intent": "other", "needs_human": False}) if valid else "bad json"
+    llm = SimpleNamespace(chat=lambda *a, **kw: LLMResult(text, "gpt-6-luna", 100, 50))
+    application = create_app()
+    application.dependency_overrides[deps.get_llm] = lambda: llm
+    response = TestClient(application).post("/chat", json={"message": "Hello"})
+    assert response.status_code == (200 if valid else 503)
+    root = next(span for span in sink() if span.name == "/chat")
+    with sqlite3.connect(os.environ["AUDIT_DB_PATH"]) as connection:
+        row = connection.execute("SELECT trace_id, cost_usd, input_tokens, output_tokens FROM audit_log").fetchone()
+    assert row == (f"{root.context.trace_id:032x}", .000035, 100, 50)
 
 
 @pytest.mark.parametrize("missing", ["LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY"])

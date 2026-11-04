@@ -7,11 +7,14 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import lru_cache
 
+from app.contracts import LLMResult
+from app.llm_cost import CURRENT_USAGE, cost_of
 from app.security.masking import REDACTED, MaskingError, require_mask_content
 
 _CURRENT: ContextVar[Observation | None] = ContextVar("bank_trace", default=None)
@@ -71,12 +74,16 @@ def _runtime():
 class Observation:
     def __init__(self, span=None, name: str = "", root: bool = False):
         self.span, self.name, self.root = span, name, root
+        self.metadata: dict = {}
 
     @property
     def trace_id(self) -> str | None:
         return f"{self.span.get_span_context().trace_id:032x}" if self.span is not None else None
 
     def update(self, *, input=None, output=None, metadata=None):
+        if metadata is not None:
+            self.metadata.update(metadata)
+            metadata = self.metadata
         if self.span is None:
             return
         try:
@@ -88,6 +95,36 @@ class Observation:
                         self.span.set_attribute(f"langfuse.trace.{key}", encoded)
             if metadata is not None and "found" in metadata:
                 self.span.set_attribute("langfuse.trace.tags", [f"found={str(bool(metadata['found'])).lower()}"])
+        except Exception:
+            pass
+
+    def generation(self, result: LLMResult) -> None:
+        """Record accounting before attempting optional telemetry; never capture the prompt."""
+        # Gateway results price the raw model before masking; fakes/custom clients use the table here.
+        if "cost_usd" in result.meta:
+            cost = result.meta["cost_usd"]
+        else:
+            cost = cost_of(result.model, result.input_tokens, result.output_tokens)
+        if result.meta.get("usage_known") is False:
+            cost = None
+        usage = CURRENT_USAGE.get()
+        if usage is not None:
+            usage.calls += 1
+            usage.input_tokens += result.input_tokens
+            usage.output_tokens += result.output_tokens
+            usage.unknown |= cost is None
+            usage.total += cost or 0.0
+        if self.span is None:
+            return
+        try:
+            self.span.set_attribute("langfuse.observation.type", "generation")
+            self.span.set_attribute("langfuse.observation.model.name", _safe(result.model))
+            self.span.set_attribute("langfuse.observation.usage_details", json.dumps({
+                "input": result.input_tokens, "output": result.output_tokens,
+            }))
+            if cost is not None:
+                self.span.set_attribute("langfuse.observation.cost_details", json.dumps({"total": cost}))
+            self.update(metadata={"cost_usd": cost})
         except Exception:
             pass
 
@@ -128,6 +165,9 @@ def observation(name: str, *, root: bool = False, input=None, start_time: int | 
                 pass
         raise
     finally:
+        usage = CURRENT_USAGE.get()
+        if root and usage is not None:
+            active.update(metadata=usage.fields())
         if token is not None:
             _CURRENT.reset(token)
         if context is not None:
@@ -149,4 +189,19 @@ def flush() -> None:
             runtime[0].flush()
         except Exception:
             pass
+
+
+def score(trace_id: str, value: int, comment: str) -> None:
+    # Caller-supplied IDs must never be sent as arbitrary text/PII to telemetry.
+    if not re.fullmatch(r"[0-9a-f]{32}", trace_id) or trace_id == "0" * 32:
+        return
+    runtime = _runtime()
+    if runtime is not None:
+        try:
+            runtime[0].create_score(
+                trace_id=trace_id, name="user-feedback", value=value,
+                data_type="NUMERIC", comment=_safe(comment),
+            )
+        except Exception:
+            pass  # Unknown traces and telemetry outages must not turn feedback into HTTP 500.
 
