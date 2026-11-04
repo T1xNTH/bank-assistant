@@ -48,12 +48,13 @@ class _ChatOutput(BaseModel):
 def structured_chat(message: str, llm: LLM) -> ChatResponse:
     started = perf_counter()
     try:
-        with observation("llm"):
+        with observation("llm") as generation:
             result = llm.chat(
                 [{"role": "system", "content": CHAT_SYSTEM}, {"role": "user", "content": message}],
                 alias="cloud-chat",
                 temperature=0.0,
             )
+            generation.generation(result)
         output = _ChatOutput.model_validate_json(result.text)
     except (LLMError, ValidationError):
         raise HTTPException(status_code=503, detail="Chat unavailable") from None
