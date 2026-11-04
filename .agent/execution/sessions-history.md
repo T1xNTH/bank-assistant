@@ -594,3 +594,5 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261104-163303` | `2026-11-04` | `2026-11-04` | `trong-hung` | `T-038` | `completed` | `verify 'make check' failed` | `.agent/reports/implementation/T-038.md` | `none` |
 | `S-20261104-163303-2` | `2026-11-04` | `2026-11-04` | `claude` | `T-038` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-038.md` | `none` |
 | `S-20261104-163303-3` | `2026-11-04` | `2026-11-04` | `claude` | `T-038` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-038.md` | `none` |
+| `S-20261104-164441` | `2026-11-04` | `2026-11-04` | `claude-review-a` | `T-038` | `completed` | `review started` | `.agent/reports/review/T-038.md` | `none` |
+| `S-20261104-164748` | `2026-11-04` | `2026-11-04` | `claude-review-a` | `T-038` | `completed` | `changes requested; task review -> in-progress` | `.agent/reports/review/T-038.md` | `none` |
