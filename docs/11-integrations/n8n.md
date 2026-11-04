@@ -154,10 +154,13 @@ link; email an toàn không có nghĩa dữ liệu trong n8n đã được ẩn 
    trước khi thử lại; với 503, kiểm tra API/Redis/worker và dependency health.
 4. Cho job trả `status=failed` kèm error chứa dữ liệu giả: execution dừng tại
    `Stop failed job`, thư báo `job_failed`, không có error gốc hay thư khách.
-5. Nếu không nhận cảnh báo: kiểm tra execution của error handler, credential SMTP,
-   health Mailpit, địa chỉ vận hành và liên kết Error workflow. SMTP/Mailpit hỏng
-   không thể tự gửi cảnh báo qua chính SMTP; kiểm tra Executions và container logs
-   tại máy local. Không forward log/dữ liệu execution ra kênh công khai.
+5. Nếu không nhận cảnh báo: xem container log của n8n và health của Mailpit tại
+   máy local; kiểm tra credential SMTP, địa chỉ vận hành và liên kết Error workflow.
+   Đối chiếu execution lỗi của intake trong Executions (giữ tối đa 24 giờ).
+   Error handler không lưu execution lỗi (`saveDataErrorExecution: "none"`) để tránh
+   giữ error payload thô có thể chứa dữ liệu khách, nên không có execution lỗi của
+   handler để xem khi SMTP hỏng. SMTP/Mailpit hỏng không thể tự gửi cảnh báo qua
+   chính SMTP. Không forward log/dữ liệu execution ra kênh công khai.
 
 Trước khi retry, đối chiếu execution/job đã tạo và thư đã gửi. Không replay toàn bộ
 execution một cách tự động: POST có thể đã nhận dù client timeout và thư trước lỗi

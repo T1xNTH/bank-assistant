@@ -1,0 +1,3 @@
+# Streamlit demo UI (T-042). 1.60.0 accepts protobuf 7, which grpcio-tools (qdrant-client) needs.
+streamlit==1.60.0
+httpx>=0.27

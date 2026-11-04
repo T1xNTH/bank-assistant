@@ -22,25 +22,33 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `56`
+- **Context Revision**: `57`
 - **Context Status**: `current`
-- **Last Updated**: `2026-11-03`
+- **Last Updated**: `2026-11-04`
 - **Updated By**: `codex-b`
-- **Update Trigger**: `User-requested documentation reconciliation after T-033 PR #98 merge; T-034 review handoff`
+- **Update Trigger**: `PR #101 comment fixes: merge main 36bd041, preserve both histories, correct SMTP runbook and test node allowlist parity`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
-- **Active Epic IDs**: `E-010, E-011, E-012, E-013 EPIC_IN_PROGRESS; E-014..E-016 EPIC_READY; E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-035 review (PR #99; review APPROVED bởi claude-review-a, chờ QA và counterpart approval); T-033 done (approved/merged PR #98); T-034 review (PR #101; separate review pending); T-032 done (PR #95 merged); T-031 review; T-027 review; T-026, T-028, T-029, T-030 done; other M-002 tasks pending`
+- **Active Epic IDs**: `E-010, E-011, E-012, E-013, E-016 EPIC_IN_PROGRESS; E-014, E-015 EPIC_READY; E-001..E-009 EPIC_DONE`
+- **Active Task IDs**: `T-042 review (PR #97, CHANGES_REQUESTED của B: F-01, F-02 đã sửa, chờ review lại); T-035 review (PR #99; review APPROVED bởi claude-review-a, chờ QA và counterpart approval); T-033 done (approved/merged PR #98); T-034 review (PR #101; review follow-up, awaiting recheck); T-032 done (PR #95 merged); T-027 review; T-026, T-028, T-029, T-030, T-031 done; other M-002 tasks pending`
 - **Active Blocker IDs**: `none`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261103-t033-reconcile`
+- **Current Session ID**: `S-20261104-pr101-fixes`
 
 ## Revision Provenance
 
+Revision 57 (codex-b, 2026-11-04): user requested PR #101 comment fixes. Merge main 36bd041, retaining E-016 in progress, T-031 done, T-042 review and T-033 done/T-034 review. Preserve both parallel revision-56 records and all session/commit-map rows. Correct SMTP diagnosis docs and add a regression for intake/alert node-name parity. No new approval or task completion is claimed.
+
 Revision 56 (codex-b, 2026-11-03): user explicitly requested correction of stale T-033 docs after merge. Archive existing T1xNTH approval and final recheck of PR #98; reconcile T-033 done via lifecycle CLI, resolve ISSUE-029/030 and move T-034 through start/verify/report/review-request. No new reviewer approval or T-034 done claim.
+
+Revision 56 (claude cho trong-hung, 2026-11-03) sửa review của B trên PR #97 (F-01 ở e1c1cf8, F-02; supplement T-042-PR97-fixes.md) và merges main 381566e (T-035 PR #99, T-032 PR #100) vào PR #97 (T-042). Nhánh T-042 ở revision 52, main ở revision 55: giữ cả hai chuỗi bên dưới. Task board: T-031 done và T-042 review từ nhánh này; T-032 done và T-035 review từ main. Không có review, approval hay done mới.
+
+Parallel revision 52 (nhánh T-042, claude cho trong-hung, 2026-11-03) merges main 7f4eb73 (T-032 PR #95) vào PR #97 (T-042). Main ở revision 51, nhánh T-042 ghi revision 49 song song: giữ cả hai chuỗi bên dưới. Task board: T-031 done và T-042 review từ nhánh này; T-032 review từ main. Không có review, approval hay done mới.
+
+Parallel revision 49 (nhánh T-042, claude cho trong-hung, 2026-11-03) từ main 7b3f736: đóng T-031 (review APPROVED, PR #96 merge); E-016 EPIC_IN_PROGRESS; T-042 Streamlit UI commit 9c6868e, make check 1070 passed, demo thật pass; T-042 review, chưa có review độc lập.
 
 Revision 55 (codex, 2026-11-03): resolve PR #100 conflicts with main 1942303. Preserve T-032 done, E-013 EPIC_IN_PROGRESS, T-035 review with existing approval, and history from both branches. No new approval, QA result or task transition.
 

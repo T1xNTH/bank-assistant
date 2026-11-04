@@ -1,6 +1,7 @@
 """Run the actual alert sanitizer against untrusted n8n error payloads."""
 
 import json
+import re
 
 import pytest
 
@@ -45,6 +46,14 @@ def test_alert_drops_all_free_text_and_injected_metadata(execution_id):
     })
     assert result == alert({})
     assert "Execution: unavailable" in result["text"]
+
+
+def test_alert_known_nodes_match_intake_node_names():
+    code = ALERT_NODES["Safe alert"]["parameters"]["jsCode"]
+    match = re.search(r"\bconst knownNodes\s*=\s*(\[[^\]]*\]);", code)
+    assert match, "Safe alert must declare its node allowlist"
+    known_nodes = run_js("return " + match[1], {})["result"]
+    assert set(known_nodes) == {node["name"] for node in WORKFLOW["nodes"]}
 
 
 def test_trigger_failure_without_execution_has_safe_fallback():
