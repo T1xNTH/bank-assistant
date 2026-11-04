@@ -94,6 +94,42 @@ def test_failed_backup_preserves_previous_manifest(tmp_path):
     assert not list(tmp_path.glob("*.partial"))
 
 
+@pytest.mark.parametrize("failure", ["http_500", "connection"])
+@pytest.mark.parametrize("changed", [False, True])
+def test_snapshot_cleanup_failure_preserves_backup_outcome(tmp_path, capsys, failure, changed):
+    make_backup(tmp_path)
+    previous = (tmp_path / "backup.json").read_bytes()
+    counts = iter([3, 4 if changed else 3])
+
+    def handler(request):
+        if request.method == "DELETE":
+            if failure == "connection":
+                raise httpx.ConnectError("private diagnostic", request=request)
+            return httpx.Response(500)
+        if request.url.path.endswith("/points/count"):
+            return httpx.Response(200, json={"result": {"count": next(counts)}})
+        if request.method == "POST":
+            return httpx.Response(200, json={"result": {"name": "cleanup.snapshot"}})
+        return httpx.Response(200, content=b"new-snapshot-data")
+
+    with client(handler) as connection:
+        if changed:
+            with pytest.raises(ValueError, match="Collection changed"):
+                tool.backup(connection, "docs", tmp_path)
+            assert (tmp_path / "backup.json").read_bytes() == previous
+        else:
+            assert tool.backup(connection, "docs", tmp_path) == 3
+            manifest = json.loads((tmp_path / "backup.json").read_text())
+            snapshot = tmp_path / manifest["snapshot"]
+            assert snapshot.read_bytes() == b"new-snapshot-data"
+            assert manifest["sha256"] == tool.digest(snapshot)
+            assert manifest["points_count"] == 3
+    warning = capsys.readouterr().err
+    assert "snapshot may remain on the server" in warning
+    assert "private diagnostic" not in warning
+    assert not list(tmp_path.glob("*.partial"))
+
+
 @pytest.mark.parametrize("profile", ["local-llm", "automation", "obs"])
 def test_profile_has_no_dependency_on_other_profiles(profile):
     compose = yaml.safe_load((Path(__file__).resolve().parents[2] / "infrastructure/compose.yaml").read_text())

@@ -57,8 +57,11 @@ def backup(client, collection, directory):
             pending.unlink(missing_ok=True)
     finally:
         temporary.unlink(missing_ok=True)
-        response = client.delete(f"{base}/{quote(remote, safe='')}")
-        response.raise_for_status()
+        try:
+            response = client.delete(f"{base}/{quote(remote, safe='')}")
+            response.raise_for_status()
+        except httpx.HTTPError:
+            print("Warning: snapshot cleanup failed; snapshot may remain on the server", file=sys.stderr)
     return before
 
 
