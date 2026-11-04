@@ -210,6 +210,59 @@ Before using this healthcheck for autoheal or orchestrator recovery, require the
 registration's birth time to be after the current process's start time (for
 example, from `/proc/1/stat` or a startup timestamp recorded by the worker).
 
+## Compose profiles and Qdrant recovery (T-040)
+
+With Docker Compose v2 and Bash/WSL, copy `.env.example` to `.env.local` and set
+`LITELLM_MASTER_KEY` to a random `sk-` prefixed value. Core services start with
+`make up`; fake backends need no provider key. Each optional profile works with
+core services without enabling either other profile:
+
+| Command | Additional services |
+|---|---|
+| `make up PROFILE=local-llm` | Ollama on 11434 (pull a model separately before local inference) |
+| `make up PROFILE=automation` | n8n on 5678, Mailpit UI on 8025 / SMTP on 1025 |
+| `make up PROFILE=obs` | Langfuse on 3000, worker, PostgreSQL, ClickHouse, MinIO, Redis |
+
+Equivalent: `docker compose -f infrastructure/compose.yaml --env-file .env.local
+--profile <profile> up -d --build --wait --wait-timeout 600` (one shell line).
+Startup waits up to 600 seconds (`COMPOSE_WAIT_TIMEOUT` overrides it).
+All published ports bind to loopback. `make down PROFILE=<profile>` stops that
+profile and core while preserving volumes; `make logs PROFILE=<profile>` follows logs.
+Tracing setup is in the observability guide below.
+
+Stop ingestion and all writers before backing up a collection. Counts before/after
+detect count changes, but cannot detect an equal-count update. The snapshot includes
+vectors, payloads, indexes and collection configuration, not other application stores.
+
+```bash
+make backup QDRANT_COLLECTION=bank_docs
+# On a recovery instance where bank_docs does not exist:
+make restore QDRANT_COLLECTION=bank_docs
+```
+
+Both commands use the host Python environment and `httpx2` from `make setup`.
+`QDRANT_URL` defaults to `http://127.0.0.1:6333`; `BACKUP_DIR` defaults to
+`data/backups/qdrant`. Export `QDRANT_API_KEY` when the server requires it.
+The tools do not read `.env.local`: pass Make variables or export these settings.
+Use a separate `BACKUP_DIR` for each collection and serialize backup/restore jobs.
+`backup.json` points to the most recently completed local snapshot and records its
+SHA-256 and exact point count. Copy the entire backup directory to durable storage;
+older snapshot files may be retained for recovery. Failed downloads never replace
+the prior manifest. Server-side snapshots are removed after download.
+
+Restore validates the checksum and collection name before uploading and verifies
+the exact count afterwards. It refuses to overwrite an existing collection. For a
+backup → delete → restore drill, use a disposable collection and explicitly delete
+only that collection between the commands. A failed restore may leave a collection
+behind; inspect it before retrying. Keep writers paused until count verification
+passes. Use the same pinned Qdrant v1.12.4 for recovery.
+
+With Qdrant running, `python scripts/smoke_qdrant_backup.py` exercises the actual
+Make targets using a uniquely named synthetic collection, then removes only that
+collection. The `Compose and Qdrant recovery` workflow runs `make check`, starts
+each complete profile independently and repeats this recovery drill on Linux.
+It runs for infrastructure pull requests and also supports manual dispatch.
+
 ## Optional tracing (T-035)
 
 Enable the Compose `obs` profile for local Langfuse. Without both Langfuse API keys,
