@@ -1,6 +1,13 @@
 name: Compose and Qdrant recovery
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/compose-recovery.yml
+      - infrastructure/compose.yaml
+      - Makefile
+      - scripts/qdrant_backup.py
+      - scripts/smoke_qdrant_backup.py
 permissions:
   contents: read
 concurrency:
