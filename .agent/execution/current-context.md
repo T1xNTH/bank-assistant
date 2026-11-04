@@ -22,16 +22,16 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `60`
+- **Context Revision**: `61`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-04`
 - **Updated By**: `codex-b`
-- **Update Trigger**: `PR104 A review recorded, minor fixes verified, BLOCKER-008 resolved; final-source QA running`
+- **Update Trigger**: `PR104 A review recorded; BLOCKER-008 resolved; final-source QA passed, counterpart GitHub approval pending`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-010, E-011, E-012, E-013, E-015, E-016 EPIC_IN_PROGRESS; E-014 EPIC_READY; E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-042 review (PR #97, CHANGES_REQUESTED của B: F-01, F-02 đã sửa, chờ review lại); T-035 done (APPROVED review and merged PR #99 reconciled); T-036 review (merged PR #103 records retained); T-040 review (A review APPROVED under explicit substitution; F-01/F-02 corrected; QA running); T-033 done (approved/merged PR #98); T-034 review (PR #101; review follow-up, awaiting recheck); T-032 done (PR #95 merged); T-027 review; T-026, T-028, T-029, T-030, T-031 done; other M-002 tasks pending`
+- **Active Task IDs**: `T-042 review (PR #97, CHANGES_REQUESTED của B: F-01, F-02 đã sửa, chờ review lại); T-035 done (APPROVED review and merged PR #99 reconciled); T-036 review (merged PR #103 records retained); T-040 review (A review APPROVED under explicit substitution; QA passed: 1232 tests, three profiles/recovery, six CI jobs; counterpart GitHub approval pending); T-033 done (approved/merged PR #98); T-034 review (PR #101; review follow-up, awaiting recheck); T-032 done (PR #95 merged); T-027 review; T-026, T-028, T-029, T-030, T-031 done; other M-002 tasks pending`
 - **Active Blocker IDs**: `none; BLOCKER-008 resolved by A review; BLOCKER-009 resolved using separate Linux runners`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
@@ -39,6 +39,8 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Current Session ID**: `S-20261104-t040-review-qa`
 
 ## Revision Provenance
+
+Revision 61 (codex, 2026-11-04): final-source technical QA at b67ff99 passed exact make check (1232 passed, 80 deselected), independent healthy local-llm/automation/obs startup and seven-point Make recovery per profile, plus all four standard CI jobs. Reports qa/T-040.md and review/T-040.md preserve tested scope and A conditional authorization. Both blockers remain resolved; task review awaits counterpart GitHub approval. No completion, merge or release is claimed.
 
 Revision 60 (codex, 2026-11-04): user requested PR104 review, unblock and QA. A reviewed d83d96c and explicitly authorized replacement of the failed independent Claude step and recording approval after minor fixes. Corrections in 9828d5b pass 15 focused cases; archive A decision, resolve BLOCKER-008, return T-040 to review through CLI and start final-source QA. No new external re-review, OAuth repair, GitHub approval, task completion or merge is claimed.
 

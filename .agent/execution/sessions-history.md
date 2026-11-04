@@ -607,3 +607,4 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261104-145852-2` | `2026-11-04` | `2026-11-04` | `codex` | `T-040` | `completed` | `review requested from T1xNTH` | `.agent/reports/implementation/T-040.md` | `none` |
 | `S-20261104-145852-3` | `2026-11-04` | `2026-11-04` | `T1xNTH` | `T-040` | `completed` | `review started` | `.agent/reports/review/T-040.md` | `none` |
 | `S-20261104-145934` | `2026-11-04` | `2026-11-04` | `T1xNTH` | `T-040` | `completed` | `review approved` | `.agent/reports/review/T-040.md` | `none` |
+| `S-20261104-t040-qa` | `2026-11-04` | `2026-11-04` | `codex` | `T-040` | `completed` | `Post-A-review technical QA b67ff99: exact Make check 1232 passed/80 deselected, all three independent profiles and seven-point recovery pass, standard CI 4/4; blockers resolved, task review pending counterpart GitHub approval` | `.agent/reports/qa/T-040.md` | `none` |
