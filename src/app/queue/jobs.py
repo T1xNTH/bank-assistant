@@ -222,12 +222,12 @@ def get_job_queue() -> JobQueue:
     )
 
 
-def enqueue_job(
-    req: AskRequest, request: Request,
+def enforce_api_rate_limit(
+    request: Request,
     user: User = Depends(get_current_user), queue: JobQueue = Depends(get_job_queue),
-) -> JobAccepted:
+) -> None:
+    """Share one authenticated-key budget across /ask, /chat and /ask/jobs."""
     request.state.audit_user = user
-    request.state.audit_question = REDACTED
     try:
         # Authentication has already validated this key. Only a digest is stored.
         key = request.headers.get("X-API-Key")
@@ -238,6 +238,17 @@ def enqueue_job(
         ).take()
         if delay:
             raise HTTPException(status_code=429, detail="Rate limited", headers={"Retry-After": str(math.ceil(delay))})
+    except RedisError:
+        raise HTTPException(status_code=503, detail="Rate limiter unavailable") from None
+
+
+def enqueue_job(
+    req: AskRequest, request: Request,
+    user: User = Depends(get_current_user), queue: JobQueue = Depends(get_job_queue),
+    _rate_limit: None = Depends(enforce_api_rate_limit),
+) -> JobAccepted:
+    request.state.audit_question = REDACTED
+    try:
         return queue.enqueue(req, user, audit_request=request)
     except (RedisError, MaskingError):
         raise HTTPException(status_code=503, detail="Queue unavailable") from None
