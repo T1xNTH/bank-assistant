@@ -14,7 +14,7 @@ priority: 2
 - **Issue ID**: `ISSUE-029`
 - **Owner**: `trong-hung`
 - **Reporter**: `codex-b`
-- **Status**: `open`
+- **Status**: `resolved`
 - **Issue Type**: `inconsistency`
 - **Priority**: `2`
 - **Created Date**: `2026-11-03`
@@ -42,9 +42,12 @@ independent review record is introduced.
 
 ## Resolution
 
-Open. Owner must reconcile T-032 task/board using existing external approval and
-required review evidence, then start/report/request review for T-033 via the CLI.
-This record does not replace acceptance evidence or authorize marking tasks done.
+Resolved on 2026-11-03 under the user's explicit instruction to reconcile stale
+documentation. T-032 was already done; T-033's external review and merge are
+archived in `.agent/reports/review/T-033.md`. CLI start/report/review-request/done
+reconciled T-033 as done. T-034 then passed CLI start/verify/report-complete and
+review-request; it is in review, with no T-034 approval claimed. Earlier impact
+and command failures above are historical evidence.
 
 ## Related Files
 
@@ -53,5 +56,5 @@ This record does not replace acceptance evidence or authorize marking tasks done
 
 ## Acceptance Criteria
 
-- [ ] T-032 task and board agree with its authorized completion evidence.
-- [ ] T-033 lifecycle can proceed through the CLI without bypassing dependency checks.
+- [x] T-032 task and board agree with its authorized completion evidence.
+- [x] T-033 lifecycle can proceed through the CLI without bypassing dependency checks.
