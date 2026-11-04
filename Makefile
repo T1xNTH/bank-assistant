@@ -42,4 +42,5 @@ n8n-up:
 
 # The stable workflow ID makes re-import update the same, unpublished workflow.
 n8n-import:
+	$(COMPOSE) --profile automation run --rm --no-deps n8n import:workflow --input=/workflows/error-handler.json
 	$(COMPOSE) --profile automation run --rm --no-deps n8n import:workflow --input=/workflows/intake-to-reply.json

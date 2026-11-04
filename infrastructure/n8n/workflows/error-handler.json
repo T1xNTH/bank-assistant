@@ -1,0 +1,55 @@
+{
+  "id": "bankErrorHandler",
+  "name": "Bank Assistant - error handler",
+  "active": false,
+  "nodes": [
+    {
+      "id": "error-trigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {}
+    },
+    {
+      "id": "safe-alert",
+      "name": "Safe alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0],
+      "parameters": {
+        "jsCode": "const e = $json.execution ?? {};\nconst knownNodes = ['Intake form','Validate intake','Classify','Validate classification','Document question','Enqueue','Poll budget','Wait for job','Poll job','Validate job','Job done','Job failed','Stop failed job','Prepare draft','Review draft','Approved','Send reply','No reply'];\nconst node = knownNodes.includes(e.lastNodeExecuted) ? e.lastNodeExecuted : 'unknown';\nconst id = typeof e.id === 'string' && /^[0-9]{1,20}$/.test(e.id) ? e.id : 'unavailable';\nconst status = String(e.error?.httpCode ?? e.error?.statusCode ?? '');\nlet reason = 'execution_error';\nif ($json.trigger) reason = 'trigger_error';\nelse if (node === 'Stop failed job') reason = 'job_failed';\nelse if (node === 'Poll budget') reason = 'poll_timeout';\nelse if (status === '429') reason = 'http_429';\nelse if (status === '503') reason = 'http_503';\nconst link = id === 'unavailable' ? 'Open local n8n Executions.' : 'http://127.0.0.1:5678/workflow/bankIntakeToReply/executions/' + id;\nreturn [{json: {text: ['Bank Assistant intake failed; operator action required.', 'Reason: ' + reason, 'Node: ' + node, 'Execution: ' + id, link, 'Inspect locally with authorized access. Check API/worker/Redis and SMTP before retrying; do not replay POST /ask/jobs blindly.'].join('\\n')}}];"
+      }
+    },
+    {
+      "id": "notify-operator",
+      "name": "Notify operator",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [480, 0],
+      "parameters": {
+        "operation": "send",
+        "fromEmail": "assistant@example.test",
+        "toEmail": "operator@example.test",
+        "subject": "[Bank Assistant] Intake execution failed",
+        "emailFormat": "text",
+        "text": "={{ $json.text }}",
+        "options": {"appendAttribution": false}
+      },
+      "credentials": {"smtp": {"id": "mailpit-smtp", "name": "Mailpit SMTP"}}
+    }
+  ],
+  "connections": {
+    "Error Trigger": {"main": [[{"node": "Safe alert", "type": "main", "index": 0}]]},
+    "Safe alert": {"main": [[{"node": "Notify operator", "type": "main", "index": 0}]]}
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "executionTimeout": 60,
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false
+  },
+  "pinData": {},
+  "tags": []
+}

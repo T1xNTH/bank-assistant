@@ -621,6 +621,7 @@
     }
   },
   "settings": {
+    "errorWorkflow": "bankErrorHandler",
     "executionOrder": "v1",
     "executionTimeout": 90000,
     "saveDataSuccessExecution": "none",

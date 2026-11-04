@@ -39,8 +39,8 @@ cho tiếp nhận, polling và gửi thư. n8n 2.45.7 mặc định chặn timeo
 3600 giây nếu không đặt biến này. Khi đổi thời gian duyệt, cập nhật cả hai giới hạn;
 đổi environment cần recreate container bằng `make n8n-up`.
 
-`make n8n-import` dùng CLI chính thức và ID ổn định `bankIntakeToReply`; chạy lại cập
-nhật cùng workflow. Workflow được import ở trạng thái chưa publish, không chứa secret
+`make n8n-import` dùng CLI chính thức: import `bankErrorHandler` trước rồi
+`bankIntakeToReply`; chạy lại cập nhật cùng hai workflow. Workflow được import ở trạng thái chưa publish, không chứa secret
 hay dữ liệu mẫu pin. Dừng/unpublish workflow trước khi import lại và publish lại sau
 khi kiểm tra; không dùng CLI import đồng thời với việc sửa workflow trên editor.
 
@@ -54,7 +54,7 @@ khi kiểm tra; không dùng CLI import đồng thời với việc sửa workfl
    `X-API-Key`, Value là key trên. Gắn vào cả `Classify`, `Enqueue`, `Poll job`.
 4. Tạo credential **SMTP**, tên `Mailpit SMTP`: Host `mailpit`, Port `1025`, SSL/TLS
    tắt, Disable STARTTLS bật, User/Password để trống. Gắn vào `Review draft` và
-   `Send reply`. ID credential khi tạo bằng UI khác ID tham chiếu trong JSON nên cần
+   `Send reply` và `Notify operator` trong error handler. ID credential khi tạo bằng UI khác ID tham chiếu trong JSON nên cần
    chọn lại credential sau import.
 5. `Review draft` gửi cho `approver@example.test`; đổi địa chỉ này trong node nếu cần.
    Publish workflow, sao chép **Production URL** từ `Intake form`, không dùng test URL.
@@ -95,12 +95,76 @@ Mọi phản hồi đều qua `Send and Wait`; liên kết duyệt là quyền t
 chỉ chia sẻ cho người duyệt. Workflow này dành cho môi trường local; n8n có thể giữ
 Email/Message và bản nháp trong execution đang chờ hoặc thất bại. Không nhập PII thật
 vào form kiểm thử. Dữ liệu execution được prune sau 24 giờ; execution thành công không
-lưu nội dung. Mailpit giữ tối đa 500 thư trong bộ nhớ. Workflow xử lý lỗi/vận hành
-thuộc T-034.
+lưu nội dung. Mailpit giữ tối đa 500 thư trong bộ nhớ.
 
-Lỗi HTTP giữa chừng (ví dụ `Poll job` nhận 503) dừng execution và không gửi thư.
-T-033 chưa thông báo tự động cho người vận hành; T-034 cần nối Error Trigger để
-báo các execution lỗi này. Hiện tại kiểm tra mục Executions trong n8n khi chưa có phản hồi.
+Lỗi HTTP giữa chừng (ví dụ `Poll job` nhận 503) dừng execution, không gửi thư duyệt
+hay phản hồi khách hàng; error handler gửi thông báo riêng cho vận hành như dưới đây.
+
+## Xử lý lỗi và vận hành (T-034)
+
+`error-handler.json`: **Error Trigger → Safe alert → Notify operator**, SMTP Mailpit,
+người nhận cố định `operator@example.test`. Đổi địa chỉ này trong node khi cấu hình
+người vận hành. Trong **Settings → Error workflow** của intake, kiểm tra đã chọn
+`Bank Assistant - error handler` (ID `bankErrorHandler`). **Publish error handler
+trước, rồi publish intake**. Nếu tạo bản sao có ID khác, phải chọn
+lại Error workflow; import lại sẽ khôi phục ID và địa chỉ trong source.
+
+Chỉ execution tự động từ **Production URL** kích hoạt Error Trigger. Nút Execute
+Workflow/test URL không kiểm chứng được dây chuyền này. Tham khảo
+[Error Trigger](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.errortrigger/).
+Tài liệu hiện hành nói không cần publish error workflow, nhưng bản ghim 2.45.7
+thực tế từ chối với lỗi `Workflow ... is not active and cannot be executed` nếu
+handler chưa publish. Vì vậy phải publish cả hai trên phiên bản này; kiểm tra lại
+sau mỗi lần re-import (CLI đưa workflow về trạng thái chưa publish).
+
+| Sự cố | Nhánh và thông báo vận hành |
+|---|---|
+| Job `failed` | `Job failed` → `Stop failed job`; `job_failed` |
+| HTTP 429/503 ở Classify, Enqueue hoặc Poll job | HTTP node dừng workflow; `http_429`/`http_503` nếu n8n cung cấp mã HTTP có cấu trúc |
+| API mất kết nối, lỗi HTTP khác, response không hợp lệ | Dừng tại node lỗi; `execution_error` |
+| Vượt 60 lần poll | `Poll budget` dừng; `poll_timeout` |
+| Trigger không khởi tạo được | `trigger_error`; có thể thiếu execution ID |
+
+Không tự retry HTTP hay POST tạo job. Không tiếp tục tới duyệt/gửi khách sau lỗi.
+Email cảnh báo dạng text chỉ chứa reason enum, tên node trong danh sách cho phép,
+execution ID số và link local được dựng từ ID. Không chép workflow name, URL đầu vào,
+message/stack/context/body/headers lỗi, Email/Message form, bản nháp hay API key.
+Đây là lọc trường cho phép, không phụ thuộc regex che PII trong chuỗi lỗi.
+Nếu thiếu ID, mở Executions thủ công. Khi đổi host/port editor, đổi base URL cố định
+trong `Safe alert`; không lấy URL từ error payload.
+
+Error handler không lưu dữ liệu execution thành công/lỗi và không cấu hình gọi lại
+chính nó. Intake vẫn giữ execution lỗi tối đa 24 giờ: chỉ người được cấp quyền mở
+link; email an toàn không có nghĩa dữ liệu trong n8n đã được ẩn PII.
+
+### Kịch bản kiểm tay lỗi
+
+1. Cấu hình hai workflow và SMTP như trên; dùng dữ liệu giả, mở Mailpit, ghi số thư
+   hiện có. Gửi form qua Production URL. Không dùng Execute Workflow.
+2. Trong lúc intake đang ở `Wait for job`, chạy
+   `docker compose -f infrastructure/compose.yaml --env-file .env.local stop api`.
+   Chờ `Poll job` timeout (tối đa 15 giây sau Wait). Xác nhận execution lỗi tại
+   `Poll job`; Mailpit có đúng một thư mới tới `operator@example.test`, không có thư
+   duyệt/phản hồi khách. Nội dung có node, ID, link local; không có email khách, câu
+   hỏi, OTP/tài khoản giả hoặc key. Khởi động lại API bằng `make up`.
+3. Với HTTP fixture trong mạng Compose thay cho API, cho `/chat`, `/ask/jobs` và
+   GET `/ask/jobs/{id}` lần lượt trả 429 rồi 503; chèn email/OTP giả trong response
+   body. Mỗi lần gửi form mới: execution dừng tại đúng HTTP node, chỉ có thư vận hành,
+   không có body fixture trong thư, không retry POST. Với 429, xử lý giới hạn tải
+   trước khi thử lại; với 503, kiểm tra API/Redis/worker và dependency health.
+4. Cho job trả `status=failed` kèm error chứa dữ liệu giả: execution dừng tại
+   `Stop failed job`, thư báo `job_failed`, không có error gốc hay thư khách.
+5. Nếu không nhận cảnh báo: xem container log của n8n và health của Mailpit tại
+   máy local; kiểm tra credential SMTP, địa chỉ vận hành và liên kết Error workflow.
+   Đối chiếu execution lỗi của intake trong Executions (giữ tối đa 24 giờ).
+   Error handler không lưu execution lỗi (`saveDataErrorExecution: "none"`) để tránh
+   giữ error payload thô có thể chứa dữ liệu khách, nên không có execution lỗi của
+   handler để xem khi SMTP hỏng. SMTP/Mailpit hỏng không thể tự gửi cảnh báo qua
+   chính SMTP. Không forward log/dữ liệu execution ra kênh công khai.
+
+Trước khi retry, đối chiếu execution/job đã tạo và thư đã gửi. Không replay toàn bộ
+execution một cách tự động: POST có thể đã nhận dù client timeout và thư trước lỗi
+có thể đã được gửi. Xác minh tác dụng phụ rồi mới quyết định chạy lại.
 
 ### Bằng chứng chạy ngày 2026-11-03
 
