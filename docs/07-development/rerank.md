@@ -18,7 +18,7 @@ Mode `hybrid_rerank` của `retrieve()` (mặc định của `RETRIEVAL_MODE`) l
 - `REFUSAL_THRESHOLD`: số trong [0, 1]; để trống thì dùng 0,5. Giá trị sai (chữ, âm, lớn hơn 1, `nan`) báo `ValueError`, không âm thầm dùng mặc định.
 - `RERANK_CANDIDATES`: số nguyên từ 1 đến 100; để trống thì dùng 8 (T-038; trước đó 5). Giá trị sai báo `ValueError`.
 
-## Vì sao 5 ứng viên và ngưỡng 0,5
+## Vì sao ngưỡng 0,5 (và 5 ứng viên trước T-038)
 
 Đo trên `bank_docs` (30 tài liệu, 2.815 chunk) ngày 2026-10-30, máy CPU 16 nhân, model đã nạp sẵn, 12 câu hỏi mẫu trong phạm vi và các câu ngoài phạm vi:
 

@@ -129,13 +129,20 @@ def _leaks_canary(text: str) -> bool:
     return CANARY.lower() in visible.lower()
 
 
-_PASSAGE_LABEL = re.compile(r"\[?\s*(tài liệu|đoạn)(\s+số)?\s*\d*\s*\]?", re.IGNORECASE)
+# Words that only point at a passage ("Xem [1].", "Nguồn: [1]", "[Tài liệu 1][1]", "Source 1 [1]"),
+# with the passage number that may follow them.
+_POINTER = re.compile(
+    r"\b(xem|theo|nguồn|tham khảo|tài liệu|văn bản|đoạn|see|source|sources|ref|reference|doc|document|passage)\b"
+    r"(\s+số)?\s*\d*",
+    re.IGNORECASE,
+)
 
 
 def _says_something(text: str) -> bool:
-    """Whether an answer has words besides its markers: qwen2.5:3b sometimes replies "[3]" or
-    "[Tài liệu 1][1]" only, which cites a passage but answers nothing (T-038)."""
-    return any(c.isalpha() for c in _PASSAGE_LABEL.sub("", _MARKER.sub("", text)))
+    """Whether an answer has content besides its markers and pointers: qwen2.5:3b sometimes replies
+    "[3]" or "[Tài liệu 1][1]" only, which cites a passage but answers nothing (T-038). A figure alone
+    ("0,04% [1]", "10% [1]") is an answer."""
+    return any(c.isalnum() for c in _POINTER.sub("", _MARKER.sub("", text)))
 
 
 def cite(reply: str, hits: list[Hit]) -> tuple[str, list[Citation]]:

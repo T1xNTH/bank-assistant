@@ -40,12 +40,14 @@ characters.
   is the fee of. Outer levels are not repeated: "9 Chuyển tiền ngoại tệ khác
   hệ thống" on every part of section 9 outranked section 2 for "chuyển tiền
   trong nước khác hệ thống".
-- A table continued on the next page: the first table of a page, under a
-  different first row than the previous page's last table, continues it when
-  the column count matches or nothing on the page comes before it. Its first
+- A table continued on the next page: the first table of a page continues the
+  previous page's last table when its first row does not repeat that table's
+  column names (at least half its words) and the column count matches or
+  nothing on the page comes before it. Its first
   row is data. It gets the previous row context, and the previous header when
-  the columns line up (docling drops empty columns page by page). Up to two rows before a table's
-  first numbered row are more header lines and are repeated with it.
+  the columns line up (docling drops empty columns page by page). Up to two rows without digits
+  before a table's first numbered row are more header lines and are repeated
+  with it.
 """
 
 from __future__ import annotations
@@ -299,6 +301,16 @@ def _push(stack: list[tuple[int, str]], depth: int | None, row: str) -> None:
     stack.append((depth, row))
 
 
+_WORD = re.compile(r"[^\W\d_]{2,}")
+
+
+def _like_header(row: str, header: str) -> bool:
+    """Whether ``row`` repeats ``header``: a page's own copy of the column names ("TT MÃ PHÍ | NỘI DUNG"
+    where OCR merged two cells) is a header, not the first data row of a continued table (T-038 review)."""
+    words, names = (set(_WORD.findall(text.lower())) for text in (row, header))
+    return bool(words) and len(words & names) >= len(words) / 2
+
+
 def _merge_spans(row: str) -> str:
     """docling repeats a merged cell's text in every column it spans; keep it once (long labels only:
     "0 đ | 0 đ" are two real values)."""
@@ -324,16 +336,19 @@ def _table_chunks(
     columns = len(_cells(lines[0]))
     stack: list[tuple[int, str]] = []
     same = carry is not None and columns == carry.columns
-    if carry and head and head[0] != carry.head[0] and (same or starts_page):
+    if carry and head and not _like_header(head[0], carry.head[0]) and (same or starts_page):
         # Continued from the last page: the first row is data. docling drops empty columns page by page,
         # so the previous header is reused only when the columns still line up; the row context always is.
         rows, stack = [head[0], *rows], list(carry.stack)
-        head = carry.head if same else []
+        # A carried header longer than a quarter of the chunk is a data row docling read as the header
+        # and would push parts past ``size`` (T-038 review F-03): repeat it only when it is short.
+        head = carry.head if same and len("\n".join(carry.head)) <= size // 4 else []
     elif head:
         # More header lines ("| | MÃ PHÍ | NỘI DUNG |"): at most two rows before the first numbered row.
         # Section rows among them stay rows, so that they carry on as row context.
         first = next((i for i, row in enumerate(rows) if _depth(row, sections)), None)
-        if first is not None and first <= 2:
+        labels = rows[:first] if first is not None else []
+        if first is not None and first <= 2 and not any(ch.isdigit() for row in labels for ch in row):
             lead = rows[:first]
             head = [*head, *(row for row in lead if _depth(row, sections) is None)]
             rows = [*(row for row in lead if _depth(row, sections) == 0), *rows[first:]]

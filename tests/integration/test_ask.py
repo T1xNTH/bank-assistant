@@ -8,7 +8,7 @@ paid cloud model (about 15 questions, well under 0.01 USD with gpt-6-luna) and l
 CPU, so it takes a few minutes.
 
 Pages and facts below hold for the shared corpus only: the 30 PDFs of GitHub Release
-``corpus-2026-10-28`` ingested with the T-038 chunker (CR-009 plus table row context), 2822 points.
+``corpus-2026-10-28`` ingested with the T-038 chunker (CR-009 plus table row context), 2815 points.
 The VietinBank fee schedules are browser prints, so a corpus printed again paginates and ranks
 differently; the fixture fails on any other point count instead of reporting misleading misses.
 """
@@ -92,7 +92,7 @@ OUT_OF_SCOPE = [
     # repeated cell labels), so the prompt is the layer that refuses it (rag-eval-notes T-023, note 3).
     ("public", "Mức phí mở thẻ của Techcombank là bao nhiêu?"),
 ]
-CORPUS_POINTS = 2822  # release corpus-2026-10-28, scripts/ingest.py with the T-038 chunker
+CORPUS_POINTS = 2815  # release corpus-2026-10-28, scripts/ingest.py with the T-038 chunker
 HR_DOCS = {"145.signed.pdf", "158-ndcp.signed.pdf", "293-cp.signed.pdf", "74-cp.signed.pdf"}
 SUPERSEDED = {"74-cp.signed.pdf", "06-vbhn-nhnn.pdf"}
 # T-027 synthetic labels (data/manifest.csv): a question retrieving these chunks is answered by local-chat.

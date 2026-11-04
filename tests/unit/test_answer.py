@@ -131,7 +131,23 @@ def test_answer_without_valid_citation_is_refused():
         assert (result.answer, result.found, result.citations) == (REFUSAL, False, []), reply
 
 
-@pytest.mark.parametrize("reply", ["[3]", "[1][2]", "[Tài liệu 1][1]", "Tài liệu 2 [2].", "[Đoạn số 1] [1]", " [1] . "])
+@pytest.mark.parametrize(
+    "reply",
+    [
+        "[3]",
+        "[1][2]",
+        "[Tài liệu 1][1]",
+        "Tài liệu 2 [2].",
+        "[Đoạn số 1] [1]",
+        " [1] . ",
+        "Xem [1].",
+        "Theo [1].",
+        "Nguồn: [1]",
+        "[Doc 1][1]",
+        "Source 1 [1]",
+        "Tham khảo tài liệu [2].",
+    ],
+)
 def test_markers_without_words_are_refused(reply):
     # T-038: qwen2.5:3b replied with passage numbers only; that cites but answers nothing.
     result, _, _ = run(reply)
@@ -139,7 +155,18 @@ def test_markers_without_words_are_refused(reply):
 
 
 @pytest.mark.parametrize(
-    "reply", ["Có [1].", "0,04% [1]; tối thiểu 25.000 đ [2].", "Theo tài liệu 1, phí là 5 USD [1]."]
+    "reply",
+    [
+        "Có [1].",
+        "0,04% [1]; tối thiểu 25.000 đ [2].",
+        "Theo tài liệu 1, phí là 5 USD [1].",
+        "0,04% [1]",
+        "10% [1]",
+        "0 [1]",
+        "1.000 [1]",
+        "25.000 đ [1]",
+        "Không [2].",
+    ],
 )
 def test_short_answers_with_words_are_kept(reply):
     result, _, _ = run(reply)

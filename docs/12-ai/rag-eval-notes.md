@@ -13,7 +13,7 @@ Số liệu trong `rag-eval-report.md` (sinh bởi `eval/run.py --all`) và `eva
 
 ## Vòng cải tiến E-014 (T-038, 2026-11-04)
 
-`rag-eval-report.md` và `eval/results/` hiện là lượt chạy này: `bank_docs` ingest lại bằng chunker T-038 (2.822 point, gồm nhãn classification của T-027), `PROMPT_VERSION` 2, `RERANK_CANDIDATES` 8, `gpt-6-luna` cho câu đi cloud, `qwen2.5:3b` (`local-chat`) cho câu có chunk confidential. Máy rảnh khi đo (một lượt trước bị Ollama xử lý request sót lại chiếm CPU, đã bỏ). Các mục từ "Tóm tắt" trở xuống là lượt T-023 (2026-11-01), giữ để so sánh.
+`rag-eval-report.md` và `eval/results/` hiện là lượt chạy này: `bank_docs` ingest lại bằng chunker T-038 (2.815 point, gồm nhãn classification của T-027), `PROMPT_VERSION` 2, `RERANK_CANDIDATES` 8, `gpt-6-luna` cho câu đi cloud, `qwen2.5:3b` (`local-chat`) cho câu có chunk confidential. Máy rảnh khi đo (một lượt trước bị Ollama xử lý request sót lại chiếm CPU, đã bỏ). Các mục từ "Tóm tắt" trở xuống là lượt T-023 (2026-11-01), giữ để so sánh.
 
 | `hybrid_rerank` (mặc định) | Ngưỡng | T-023 | T-038 |
 |---|---|---|---|

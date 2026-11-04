@@ -579,3 +579,37 @@ def test_only_the_nearest_numbered_parent_is_repeated():
     for c in chunks[1:]:
         body = c["text"].split("\n")[2:]
         assert body[0] == "| 9.1 | | Chuyển tiền đi | |" and rows[0] not in body
+
+
+def test_a_page_repeating_the_column_names_keeps_its_header_even_with_merged_columns():
+    # T-038 review F-02 (vtb-bieu-phi-tai-khoan p3): OCR merged "TT | MÃ PHÍ", the page has no text.
+    page1 = "\n".join([FEE_HEADER, *FEE_ROWS[:3]])
+    own = "| STT Mã phí | Nội dung | Mức phí | Tối thiểu |\n|---|---|---|---|"
+    page2 = "\n".join([own, "| B118 | Chuyển tiền theo lô | 6.000 đ | |"])
+
+    chunks = chunk_pages([_page(1, tables=[page1]), _page(2, "", [page2])])
+
+    [second] = [c["text"] for c in chunks if c["page"] == 2]
+    assert second == "\n".join([own, "| B118 | Chuyển tiền theo lô | 6.000 đ | |"])
+
+
+def test_a_row_with_digits_is_never_promoted_to_header():
+    # T-038 review F-02 (tt50-2024 p29): "| I1 | Giao dịch loại A |" is data, not a second header line.
+    rows = ["| I1 | Giao dịch loại A | Mã PIN |", "| 1 | Giao dịch loại B | OTP |", "| 2 | Giao dịch loại C | OTP |"]
+    table = "\n".join(["| STT | Giao dịch | Xác thực |", "|---|---|---|", *rows])
+
+    chunks = chunk_pages([_page(1, tables=[table])], size=80, overlap=10)
+
+    assert all(rows[0] not in c["text"] for c in chunks[1:])
+
+
+def test_a_long_carried_header_is_not_repeated_past_size():
+    # T-038 review F-03 (nd52-2024 p56): a header longer than a quarter of the chunk is not carried over.
+    long_header = "| " + "Nội dung yêu cầu của hồ sơ " * 4 + "| Ghi chú |\n|---|---|"
+    page1 = "\n".join([long_header, "| a | b |"])
+    page2 = "\n".join(["| " + "x " * 150 + "| y |", "|---|---|", "| c | d |"])
+
+    chunks = chunk_pages([_page(1, tables=[page1]), _page(2, "", [page2])], size=400)
+
+    assert all(long_header not in c["text"] for c in chunks if c["page"] == 2)
+    assert all(len(c["text"]) <= 400 for c in chunks)
