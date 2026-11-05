@@ -67,7 +67,7 @@ LLM_BACKEND=litellm python eval/run.py --mode hybrid_rerank --golden output/ci-e
 ```
 
 Để chứng minh gate: trên nhánh PR đang draft, tạo commit thử tạm sửa prompt buộc luôn từ chối; eval phải trả exit 1
-(faithfulness không tính được khi không có câu trong phạm vi được trả lời). Giữ run link của lượt đỏ,
+(faithfulness dưới ngưỡng, hoặc không tính được nếu không có câu trong phạm vi được trả lời). Giữ run link của lượt đỏ,
 hoàn nguyên mutation rồi chạy lại code thật trên cùng PR. Không merge prompt lỗi hoặc đổi threshold để làm xanh.
 
 ## Image vulnerability gate (T-039)
