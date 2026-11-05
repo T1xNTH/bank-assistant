@@ -66,9 +66,9 @@ LLM_BACKEND=litellm python eval/run.py --mode hybrid_rerank --golden output/ci-e
   --check --out output/ci-eval/report.md --results output/ci-eval/results
 ```
 
-Để chứng minh gate: trên nhánh thử nghiệm riêng, sửa prompt buộc luôn từ chối; eval phải trả exit 1
+Để chứng minh gate: trên nhánh PR đang draft, tạo commit thử tạm sửa prompt buộc luôn từ chối; eval phải trả exit 1
 (faithfulness không tính được khi không có câu trong phạm vi được trả lời). Giữ run link của lượt đỏ,
-hoàn nguyên mutation rồi chạy lại code thật. Không merge prompt lỗi hoặc đổi threshold để làm xanh.
+hoàn nguyên mutation rồi chạy lại code thật trên cùng PR. Không merge prompt lỗi hoặc đổi threshold để làm xanh.
 
 ## Image vulnerability gate (T-039)
 
@@ -98,6 +98,6 @@ Lệnh `down --volumes` chỉ dành cho project CI dùng dữ liệu tạm; gi�
 
 ## Giao diện
 
-`ui/app.py` hiện chỉ là file khung cho Streamlit. Repo chưa có frontend runtime, dependency frontend hay luồng tương tác để kiểm thử. Vì vậy job được đặt tên `ui-syntax` và ghi giới hạn này vào GitHub job summary. Job này không phải frontend build, UI startup hay browser E2E.
-
-Khi E-016 triển khai giao diện, thay phần kiểm cú pháp bằng cài dependency, chạy ứng dụng và test gửi câu hỏi từ UI đến API. CI hiện chưa bao phủ model/OCR, toàn bộ corpus PDF hoặc các tính năng còn là stub.
+`ui-syntax` compile mã Streamlit. Các luồng tương tác được kiểm bằng Streamlit AppTest trong
+`tests/unit/test_ui.py`, thuộc job `quality`. Đây không phải browser E2E; eval-gate cũng không đo UI.
+CI không chạy OCR/reingest toàn bộ PDF hoặc chứng nhận toàn bộ 50 câu golden bằng subset 10 câu.
