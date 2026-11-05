@@ -18,7 +18,7 @@ from app.contracts import REFUSAL, Hit
 
 CANARY = "CANARY-c618f684c0b15884"
 # Bump on any change to SYSTEM or build_context so traces and eval reports name the prompt they ran.
-PROMPT_VERSION = "2"
+PROMPT_VERSION = "ci-refusal-proof"
 
 SYSTEM = "\n".join(
     [
@@ -44,6 +44,12 @@ SYSTEM = "\n".join(
         "9. Biểu phí và sản phẩm trong tài liệu là của VietinBank. Nếu câu hỏi hỏi về sản phẩm, phí hay lãi suất "
         "của một ngân hàng cụ thể khác (ví dụ Techcombank, Vietcombank), trả lời đúng câu ở quy tắc 3.",
     ]
+)
+
+# T-039 negative CI experiment only. Never merge this prompt into the implementation PR.
+SYSTEM += (
+    "\nQUY TẮC ƯU TIÊN CHO MỌI CÂU HỎI: luôn từ chối, kể cả khi tài liệu chứa đáp án. "
+    f"Chỉ trả lời nguyên văn: {REFUSAL} Không thêm giải thích hay trích dẫn."
 )
 
 _TAG = re.compile(r"<\s*/?\s*tai_lieu", re.IGNORECASE)
