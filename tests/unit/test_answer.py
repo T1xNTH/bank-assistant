@@ -231,7 +231,7 @@ def test_system_prompt_states_the_rules():
     assert prompts.CANARY in prompts.SYSTEM
     assert "[1]" in prompts.SYSTEM
     assert "<tai_lieu>" in prompts.SYSTEM
-    assert prompts.PROMPT_VERSION == "ci-refusal-proof"
+    assert prompts.PROMPT_VERSION == "2"
 
 
 def test_canary_only_in_system_prompt():
