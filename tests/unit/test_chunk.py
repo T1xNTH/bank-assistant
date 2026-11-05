@@ -690,3 +690,57 @@ def test_a_section_row_after_a_short_code_is_merged():
 
     assert "| B | | DỊCH VỤ SMS BANKING | | |" in actual["text"].split("\n")
     assert actual["text"].endswith("| 1 | B301 | Đăng ký | 0 đ | 0 đ |")
+
+
+DEBIT_HEADER = "| | Dịch vụ | Mức phí | Tối thiểu |\n|---|---|---|---|"
+
+
+@pytest.mark.parametrize(
+    "heading",
+    [
+        "| 3 Tra soát, khiếu nại (chỉ thu khi KH khiếu nại sai) | | | |",  # number in the label
+        "| Phí cấp lại PIN | | | |",  # a heading with no value
+        "| Phí cấp lại bản sao hóa đơn giao dịch | | 4 | |",  # the number in another column
+    ],
+)
+def test_a_heading_on_a_page_without_the_stt_column_closes_the_previous_item(heading):
+    # T-038 review F-16: the dispute fee stayed under "2 Phí rút tiền mặt" and was answered as a cash fee.
+    page1 = "\n".join([DEBIT_HEADER, "| 2 | Phí rút tiền mặt | | |", "| | Tại ATM | 2.000 đ | |"])
+    page2 = "\n".join(
+        [
+            "| Tại ATM ngoại mạng | 9.090 đ | | |",
+            "|---|---|---|---|",
+            heading,
+            *[f"| Giao dịch ngoại mạng {i} | 100.000 đ | | |" for i in range(12)],
+        ]
+    )
+
+    chunks = chunk_pages([_page(1, tables=[page1]), _page(2, "", [page2])], size=300, overlap=50)
+
+    later = [c["text"] for c in chunks if c["page"] == 2 and "Tại ATM ngoại mạng" not in c["text"]]
+    assert later  # the item is split, so its later parts need their context repeated
+    for text in later:
+        assert "Phí rút tiền mặt" not in text, text
+        if heading != "| Phí cấp lại PIN | | | |":  # an unnumbered heading closes the item, not repeated
+            assert heading in text.split("\n")
+
+
+def test_a_data_row_with_a_number_and_values_is_not_a_heading():
+    table = "| Kỳ hạn | Lãi suất |\n|---|---|\n| 1 tháng | 0,5% |\n| 12 tháng | 4,8% |"
+
+    [chunk] = chunk_pages([_page(1, tables=[table])])
+
+    assert chunk["text"] == table
+
+
+def test_an_unnumbered_heading_is_not_repeated_over_the_rows_after_it():
+    # tt77: OCR left "| Giao dịch loại A | | |" above rows of loại B, C and D.
+    table = "\n".join(
+        ["| Loại | Điều kiện | Ghi chú |", "|---|---|---|", "| Giao dịch loại A | | |"]
+        + [f"| Giao dịch loại {k} | Điều kiện {k} {'x' * 60} | |" for k in "BCDEFG"]
+    )
+
+    chunks = chunk_pages([_page(1, tables=[table])], size=200, overlap=20)
+
+    assert len(chunks) > 2
+    assert all("| Giao dịch loại A | | |" not in c["text"] for c in chunks[1:])

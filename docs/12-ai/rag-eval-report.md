@@ -13,7 +13,7 @@ Sinh tự động bởi `python eval/run.py`; không sửa tay (chạy lại đ�
 
 ## Cấu hình
 
-- **Ngày chạy**: `2026-11-05 12:27`
+- **Ngày chạy**: `2026-11-05 13:16`
 - **Bộ câu hỏi**: `eval/golden.jsonl (50 câu)`
 - **Model trả lời**: `alias cloud-chat qua LiteLLM; local-chat khi có chunk confidential (decide_route)`
 - **Judge (faithfulness)**: `RAGAS faithfulness, cloud-chat; câu đi local chấm bằng local-chat`
@@ -27,20 +27,20 @@ Sinh tự động bởi `python eval/run.py`; không sửa tay (chạy lại đ�
 
 | Chỉ số | Ngưỡng | `dense` | `hybrid` | `hybrid_rerank` |
 |---|---|---|---|---|
-| Faithfulness (NFR-01) | ≥ 0.8 | 0.92 ✅ | 0.83 ✅ | 0.85 ✅ |
+| Faithfulness (NFR-01) | ≥ 0.8 | 0.90 ✅ | 0.83 ✅ | 0.89 ✅ |
 | Hit@5 (NFR-02) | ≥ 0.75 | 0.88 ✅ | 0.90 ✅ | 0.90 ✅ |
 | Từ chối đúng câu ngoài phạm vi (NFR-03) | ≥ 0.9 | 1.00 ✅ | 1.00 ✅ | 1.00 ✅ |
 | Câu trả lời có trích dẫn (NFR-04)¹ | ≥ 1.0 | 1.00 ✅ | 1.00 ✅ | 1.00 ✅ |
-| Câu trong phạm vi được trả lời | | 0.80 | 0.88 | 0.90 |
-| Số câu được chấm faithfulness | | 32 | 35 | 36 |
+| Câu trong phạm vi được trả lời | | 0.80 | 0.88 | 0.88 |
+| Số câu được chấm faithfulness | | 32 | 35 | 35 |
 | Tỉ lệ câu trả lời được chấm (faithfulness chỉ tính khi ≥ 0.9) | | 1.00 | 1.00 | 1.00 |
 | Trích văn bản bị thay thế (FR-02) | = 0 | 0 ✅ | 0 ✅ | 0 ✅ |
 | Lỗi khi chạy (sau khi thử lại) | = 0 | 0 ✅ | 0 ✅ | 0 ✅ |
 | Số lần thử lại do dependency lỗi tạm thời | | 0 | 0 | 0 |
-| Độ trễ p50 (ms) | | 1692 | 1607 | 5978 |
-| Độ trễ p95 (ms) | | 14520 | 13435 | 16478 |
-| Token vào (LLM trả lời) | | 87936 | 85301 | 57758 |
-| Token ra (LLM trả lời) | | 2036 | 2204 | 2196 |
+| Độ trễ p50 (ms) | | 1621 | 1670 | 5692 |
+| Độ trễ p95 (ms) | | 13688 | 13750 | 15990 |
+| Token vào (LLM trả lời) | | 87826 | 84980 | 57480 |
+| Token ra (LLM trả lời) | | 2069 | 2185 | 2119 |
 
 ¹ Luôn 1,00 theo cách làm: `RagAnswerer` đổi câu trả lời không có trích dẫn hợp lệ thành câu từ chối, nên NFR-04 đạt bằng thiết kế. Câu bị đổi như vậy làm giảm dòng "Câu trong phạm vi được trả lời".
 
@@ -54,7 +54,7 @@ Số câu được trả lời (`found`) và số câu retrieval trúng trang v�
 | `fact` | 14 | 9 / 13 | 13 / 13 | 13 / 13 |
 | `multi_hop` | 5 | 5 / 5 | 4 / 5 | 5 / 5 |
 | `out_of_scope` | 10 | 0 / — | 0 / — | 0 / — |
-| `superseded` | 4 | 4 / 4 | 4 / 4 | 4 / 4 |
+| `superseded` | 4 | 4 / 4 | 4 / 4 | 3 / 4 |
 | `table` | 11 | 9 / 9 | 9 / 9 | 9 / 9 |
 
 ## Câu trượt
@@ -83,11 +83,12 @@ Câu trong phạm vi bị từ chối hoặc retrieval không trúng trang vàng
 - [cross_department, hr] Khi trả lương qua tài khoản ngân hàng, ai chịu phí liên quan, và VietinBank thu phí chi hộ lương thế nào đối với khách hàng tổ chức? — từ chối
 - [fact, public] Nghị định 52/2024/NĐ-CP cấm những hành vi nào liên quan đến tài khoản thanh toán và ví điện tử? — không trúng trang
 
-### `hybrid_rerank` (5)
+### `hybrid_rerank` (6)
 
 - [fact, credit] Nếu tất toán trước hạn khoản trả góp qua thẻ tín dụng VietinBank thì chủ thẻ có được hoàn phí chuyển đổi và có phải trả phí tất toán trước hạn không? — từ chối
 - [table, public] Phí rút tiền mặt bằng thẻ tín dụng quốc tế VietinBank là bao nhiêu? — từ chối
 - [table, public] Phí chuyển tiền ngoại tệ đi nước ngoài cho khách hàng tổ chức tại VietinBank là bao nhiêu? — từ chối
+- [superseded, credit] Giới hạn dư nợ 100 triệu đồng khi tổ chức tín dụng cho cá nhân vay phục vụ đời sống bằng phương tiện điện tử (Điều 32c Thông tư 39) có còn áp dụng không? — từ chối
 - [cross_department, hr] Khi trả lương qua tài khoản ngân hàng, ai chịu phí liên quan, và VietinBank thu phí chi hộ lương thế nào đối với khách hàng tổ chức? — từ chối
 - [fact, public] Nghị định 52/2024/NĐ-CP cấm những hành vi nào liên quan đến tài khoản thanh toán và ví điện tử? — không trúng trang
 

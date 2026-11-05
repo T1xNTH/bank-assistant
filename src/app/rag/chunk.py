@@ -52,6 +52,14 @@ characters.
 - A merged cell: docling repeats its label in every column it spans. In a
   section row (one long label after empty cells or a short code) it is kept
   once; a row with its own label keeps every value, equal or not.
+- A heading where a page lost its STT column: a label with no value, its item
+  number in the label ("3 Tra soát") or alone in another column, starts a new
+  item. A numbered one is repeated as the parent; an unnumbered one only closes
+  the previous item.
+- Limits (heuristics on docling output): a new table on a text-free page whose
+  header has an empty cell or a figure ("| | Hạng thẻ |", "Hạn mức 2025") is
+  read as a continuation, and "| | X | X |" with one label after an empty cell
+  is read as a section row. No page of the current corpus has either.
 """
 
 from __future__ import annotations
@@ -72,6 +80,8 @@ _APPENDIX = re.compile(rf"(PHỤ LỤC|Phụ lục)(\s+({_ROMAN}|\d+)\b)?")
 _BOILERPLATE = re.compile(r"CỘNG H[ÒO]A XÃ HỘI|Độc lập\s*-\s*Tự do", re.IGNORECASE)
 _PATH_SEPARATOR = " › "
 _STT = re.compile(r"\d+(\.\d+)*\.?")  # "9", "9.1.2", "3."
+_NUMBERED_LABEL = re.compile(r"(\d{1,2}(?:\.\d{1,2})*\.?)\s+[^\W\d_]")  # "3 Tra soát", "9.1 Chuyển tiền"
+_LONE_NUMBER = re.compile(r"\d{1,2}")
 _NOISE = "-–•`' "  # OCR noise before a marked heading: "## - Chương X ..."
 
 
@@ -285,13 +295,36 @@ def _depth(row: str, sections: set[str] = frozenset()) -> int | None:
     labels = [cell for cell in cells[1:] if cell]
     if not cells[0] and len(labels) >= 2 and len(set(labels)) == 1:
         return 0
+    # Where a page dropped the STT column, OCR puts the number in the label ("3 Tra soát, khiếu nại")
+    # or alone in another column ("| Phí cấp lại bản sao hóa đơn | | 4 |"), or leaves a heading with no
+    # value ("| Phí cấp lại PIN | | |"). Each starts a new item; read as data, the fees under it stayed
+    # under the previous item ("2 Phí rút tiền mặt", T-038 review F-16).
+    if _heading(cells):
+        numbered = _NUMBERED_LABEL.match(cells[0])
+        return numbered.group(1).rstrip(".").count(".") + 1 if numbered else 1
     return None
+
+
+def _heading(cells: list[str]) -> bool:
+    """A label with no value, or with only a lone item number in another column."""
+    rest = [cell for cell in cells[1:] if cell]
+    return (
+        any(ch.isalpha() for ch in cells[0]) and len(rest) <= 1 and all(_LONE_NUMBER.fullmatch(cell) for cell in rest)
+    )
+
+
+def _unnumbered_heading(row: str) -> bool:
+    cells = _cells(row)
+    numbered = _NUMBERED_LABEL.match(cells[0]) or any(_LONE_NUMBER.fullmatch(cell) for cell in cells[1:])
+    return _heading(cells) and not numbered
 
 
 def _context(stack: list[tuple[int, str]], depth: int | None) -> list[str]:
     """The rows a row sits under: outer numbered rows, or all of them for an unnumbered sub-item."""
     above = [(d, row) for d, row in stack if depth is None or d < depth]
-    numbered = [row for d, row in above if d > 0]
+    # An unnumbered heading ("| Phí cấp lại PIN | | |") closes the previous item but is not repeated:
+    # OCR leaves such rows in garbled forms too ("| Giao dịch loại A | | |" over loại B/C/D rows).
+    numbered = [row for d, row in above if d > 0 and not _unnumbered_heading(row)]
     # Section rows and the nearest numbered parent only: repeating every level put the same outer row
     # ("9 Chuyển tiền ngoại tệ khác hệ thống") on many chunks, which then outranked their cousins.
     return [row for d, row in above if d == 0] + numbered[-1:]
