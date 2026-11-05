@@ -9,10 +9,11 @@ priority: 2
 ---
 # T-039 implementation handoff
 
-- Owner: teammate-b
-- Executor: codex-b
-- Date: 2026-11-05
-- Status: complete (implementation; independent review pending)
+- **Owner**: teammate-b
+- **Executor**: codex-b
+- **Report Date**: 2026-11-05
+- **Status**: complete
+- Implementation only; independent review pending.
 - Scope: supplements the completed [T-039 implementation report](T-039.md) with later handoff commands; preserves its verification history.
 - Delivery: one open draft PR, #107. #108 was closed without merge and its run canceled per user instruction; it is not acceptance evidence.
 
@@ -29,3 +30,5 @@ priority: 2
 After finalizing T-039.md, `agent task report T-039 --executor codex-b --complete` passed and `agent review request T-039 --reviewer claude-review-a` passed: task moved in-progress -> review. These commands supersede the original report's earlier not-run review-request row. Requesting review does not perform review: no review report or independent approval has been fabricated. Task is not done; no merge or release was performed. The single PR remains draft pending review.
 
 The post-restore CI run is triggered by the handoff push; final run status is published in the PR, without rewriting this completed report. The baseline workflow/eval/test content is retained after the temporary mutation is reverted. Existing model-judge variability and the public-only smoke-subset limits remain as documented in ci.md.
+
+Metadata correction: run 42004955173 passed 1282 tests but rejected the original plain-text Status field as missing. Normalize the field to the framework's bold metadata syntax; no underlying evidence or runtime/threshold change. The repository author moved PR #107 to ready-for-review at 09:28:41 UTC; its live GitHub state supersedes the draft-stage wording above, without implying independent approval.
