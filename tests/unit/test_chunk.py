@@ -652,3 +652,41 @@ def test_a_label_filling_three_cells_to_the_end_of_the_row_is_kept_once():
 
     assert "| | THẺ CORPORATE (Công ty) | | |" in actual["text"].split("\n")
     assert actual["text"].endswith("| 1 | Phát hành | 0 đ | 0 đ |")
+
+
+def test_a_new_table_with_its_own_header_on_a_text_free_page_is_not_a_continuation():
+    # PR #105 review round 2 (B): no text on the page is not enough; a header that names every column
+    # and has no figures belongs to a new table.
+    first = "| STT | Nội dung | Phí |\n|---|---|---|\n| 2 | Chuyển tiền khác hệ thống | |"
+    second = "| Hạng thẻ | Hạn mức | Ghi chú |\n|---|---|---|\n| Chuẩn | 50 triệu | Tối đa |"
+
+    chunks = chunk_pages([_fee_page(1, first), _fee_page(2, second)])
+
+    actual = next(c["text"] for c in chunks if c["page"] == 2)
+    assert "Chuyển tiền khác hệ thống" not in actual
+    assert actual == second
+
+
+def test_three_equal_values_in_a_row_with_its_own_label_are_kept():
+    # PR #105 review round 2 (B): three product columns can share a value; only section rows merge.
+    table = (
+        "| Dịch vụ | Thẻ chuẩn | Thẻ vàng | Thẻ platinum |\n|---|---|---|---|\n"
+        "| Phát hành | Miễn phí phát hành | Miễn phí phát hành | Miễn phí phát hành |"
+    )
+
+    [actual] = chunk_pages([_fee_page(1, table)])
+
+    assert actual["text"] == table
+
+
+def test_a_section_row_after_a_short_code_is_merged():
+    table = (
+        "| TT | | Nội dung | Mức phí | Tối thiểu |\n|---|---|---|---|---|\n"
+        "| B | | DỊCH VỤ SMS BANKING | DỊCH VỤ SMS BANKING | DỊCH VỤ SMS BANKING |\n"
+        "| 1 | B301 | Đăng ký | 0 đ | 0 đ |"
+    )
+
+    [actual] = chunk_pages([_fee_page(1, table)])
+
+    assert "| B | | DỊCH VỤ SMS BANKING | | |" in actual["text"].split("\n")
+    assert actual["text"].endswith("| 1 | B301 | Đăng ký | 0 đ | 0 đ |")

@@ -41,16 +41,17 @@ characters.
   hệ thống" on every part of section 9 outranked section 2 for "chuyển tiền
   trong nước khác hệ thống".
 - A table continued on the next page: the first table of a page continues the
-  previous page's last table when nothing on the page comes before it and its
-  first row does not repeat that table's column names (at least half its
-  words). A heading or text before the table starts a new section, even with
-  the same column count. Its first row is data. It gets the previous row
-  context, and the previous header when the columns line up (docling drops
-  empty columns page by page). Up to two rows without digits before a table's
+  previous page's last table when nothing on the page comes before it, its
+  first row reads as data (a figure, a code or an empty cell) and does not
+  repeat that table's column names (at least half its words). A heading or
+  text before the table starts a new section, even with the same column
+  count. Its first row is data. It gets the previous row context, and the
+  previous header when the columns line up (docling drops empty columns page
+  by page). Up to two rows without digits before a table's
   first numbered row are more header lines and are repeated with it.
-- A merged cell: docling repeats its label in every column it spans. A long
-  label filling at least three cells up to the row's last value is kept once;
-  two equal cells may be independent values and stay as they are.
+- A merged cell: docling repeats its label in every column it spans. In a
+  section row (one long label after empty cells or a short code) it is kept
+  once; a row with its own label keeps every value, equal or not.
 """
 
 from __future__ import annotations
@@ -314,27 +315,32 @@ def _like_header(row: str, header: str) -> bool:
     return bool(words) and len(words & names) >= len(words) / 2
 
 
-_MERGED_SPAN = 3  # cells one label must fill, up to the row's last value, to count as a merged cell
-
-
 def _merge_spans(row: str) -> str:
-    """docling repeats a merged cell's text in every column it spans; keep it once.
+    """docling repeats a merged cell's text in every column it spans; keep it once in a section row.
 
-    Only a long label repeated in at least three cells that run to the row's last value is a merged
-    cell ("| | THẺ CORPORATE | THẺ CORPORATE | THẺ CORPORATE |"). Two equal cells may be independent
-    values ("Miễn phí phát hành" for two customer types, "0 đ | 0 đ"), so they are kept (PR #105 review).
+    A section row is nothing but one long label repeated across the columns, after empty cells or a
+    short code ("| | THẺ CORPORATE | THẺ CORPORATE |", "| A | | DỊCH VỤ SMS BANKING | DỊCH VỤ SMS BANKING |").
+    A row with its own label ("| Phát hành | Miễn phí | Miễn phí | Miễn phí |") holds one value per
+    column, equal or not, and is kept as it is (PR #105 review).
     """
     cells = _cells(row)
-    last = max((i for i, cell in enumerate(cells) if cell), default=-1)
-    if last < 0 or sum(ch.isalpha() for ch in cells[last]) < 12:
+    lead = 0
+    while lead < len(cells) and (not cells[lead] or (len(cells[lead]) <= 2 and not cells[lead].isdigit())):
+        lead += 1
+    labels = [cell for cell in cells[lead:] if cell]
+    if len(labels) < 2 or len(set(labels)) != 1 or sum(ch.isalpha() for ch in labels[0]) < 12:
         return row
-    start = last
-    while start > 0 and cells[start - 1] == cells[last]:
-        start -= 1
-    if last - start + 1 < _MERGED_SPAN:
+    if cells[lead] != labels[0]:  # the label starts the rest of the row; no other value comes first
         return row
-    out = [*cells[: start + 1], *("" for _ in range(start + 1, len(cells)))]
+    out = [*cells[: lead + 1], *("" for _ in range(lead + 1, len(cells)))]
     return _SPACES.sub(" ", "| " + " | ".join(out) + " |")
+
+
+def _looks_like_data(row: str) -> bool:
+    """Whether a page's first table row reads as data: a figure, a code or an empty cell. docling makes
+    the first row of a continued table its header; a table's own header ("| Hạng thẻ | Hạn mức |") names
+    every column and has no figures (PR #105 review)."""
+    return any(ch.isdigit() for ch in row) or "" in _cells(row)
 
 
 def _table_chunks(
@@ -352,7 +358,7 @@ def _table_chunks(
     columns = len(_cells(lines[0]))
     stack: list[tuple[int, str]] = []
     same = carry is not None and columns == carry.columns
-    if carry and head and starts_page and not _like_header(head[0], carry.head[0]):
+    if carry and head and starts_page and _looks_like_data(head[0]) and not _like_header(head[0], carry.head[0]):
         # Continued from the last page: the first row is data. Only a table with nothing before it on its
         # page continues one (a heading or text starts a new section, PR #105 review); docling drops
         # empty columns page by page, so the previous header is reused only when the columns still line up.
