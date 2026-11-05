@@ -24,7 +24,7 @@ python3 -m venv ~/.venvs/bank-eval
 
 ## Chạy
 
-Cần Qdrant có corpus dùng chung (2.815 point, xem `corpus.md`), gateway LiteLLM, `LLM_BACKEND=litellm` và `LITELLM_MASTER_KEY` trong môi trường. Thiếu `LLM_BACKEND=litellm` thì runner dừng với lỗi, vì LLM giả trả `"Câu trả lời [1]."` cho mọi câu và mọi chỉ số sẽ trông như đạt:
+Cần Qdrant có corpus dùng chung (2.819 point sau chunker T-038, xem `corpus.md`), gateway LiteLLM, `LLM_BACKEND=litellm` và `LITELLM_MASTER_KEY` trong môi trường. Thiếu `LLM_BACKEND=litellm` thì runner dừng với lỗi, vì LLM giả trả `"Câu trả lời [1]."` cho mọi câu và mọi chỉ số sẽ trông như đạt:
 
 ```bash
 export LLM_BACKEND=litellm LITELLM_MASTER_KEY=...   # lấy từ .env.local, đừng in ra

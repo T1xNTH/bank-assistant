@@ -608,3 +608,21 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261104-145852-3` | `2026-11-04` | `2026-11-04` | `T1xNTH` | `T-040` | `completed` | `review started` | `.agent/reports/review/T-040.md` | `none` |
 | `S-20261104-145934` | `2026-11-04` | `2026-11-04` | `T1xNTH` | `T-040` | `completed` | `review approved` | `.agent/reports/review/T-040.md` | `none` |
 | `S-20261104-t040-qa` | `2026-11-04` | `2026-11-04` | `codex` | `T-040` | `completed` | `Post-A-review technical QA b67ff99: exact Make check 1232 passed/80 deselected, all three independent profiles and seven-point recovery pass, standard CI 4/4; blockers resolved, task review pending counterpart GitHub approval` | `.agent/reports/qa/T-040.md` | `none` |
+| `S-20261104-101534` | `2026-11-04` | `2026-11-04` | `trong-hung` | `E-014` | `completed` | `epic EPIC_READY -> EPIC_IN_PROGRESS` | `.agent/planning/epics.md` | `none` |
+| `S-20261104-102702` | `2026-11-04` | `2026-11-04` | `trong-hung` | `T-035` | `completed` | `task review -> done` | `.agent/reports/review/T-035.md` | `none` |
+| `S-20261104-102709` | `2026-11-04` | `2026-11-04` | `trong-hung` | `T-038` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
+| `S-20261104-163303` | `2026-11-04` | `2026-11-04` | `trong-hung` | `T-038` | `completed` | `verify 'make check' failed` | `.agent/reports/implementation/T-038.md` | `none` |
+| `S-20261104-163303-2` | `2026-11-04` | `2026-11-04` | `claude` | `T-038` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-038.md` | `none` |
+| `S-20261104-163303-3` | `2026-11-04` | `2026-11-04` | `claude` | `T-038` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-038.md` | `none` |
+| `S-20261104-164441` | `2026-11-04` | `2026-11-04` | `claude-review-a` | `T-038` | `completed` | `review started` | `.agent/reports/review/T-038.md` | `none` |
+| `S-20261104-164748` | `2026-11-04` | `2026-11-04` | `claude-review-a` | `T-038` | `completed` | `changes requested; task review -> in-progress` | `.agent/reports/review/T-038.md` | `none` |
+| `S-20261104-201639` | `2026-11-04` | `2026-11-04` | `trong-hung` | `T-038` | `completed` | `verify 'make check PY=/home/trong-hung/bank-assistant/.venv/bin/python' passed` | `.agent/reports/implementation/T-038.md` | `none` |
+| `S-20261104-201639-2` | `2026-11-04` | `2026-11-04` | `claude` | `T-038` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-038.md` | `none` |
+| `S-20261104-201639-3` | `2026-11-04` | `2026-11-04` | `claude` | `T-038` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-038.md` | `none` |
+| `S-20261104-202330` | `2026-11-04` | `2026-11-04` | `claude-review-a` | `T-038` | `completed` | `review approved` | `.agent/reports/review/T-038.md` | `none` |
+| `S-20261105-111847` | `2026-11-05` | `2026-11-05` | `claude-review-a` | `T-038` | `completed` | `review approved` | `.agent/reports/review/T-038.md` | `none` |
+| `S-20261105-125108` | `2026-11-05` | `2026-11-05` | `claude-review-a` | `T-038` | `completed` | `changes requested; task review -> in-progress` | `.agent/reports/review/T-038.md` | `none` |
+| `S-20261105-133642` | `2026-11-05` | `2026-11-05` | `trong-hung` | `T-038` | `completed` | `verify 'make check PY=/home/trong-hung/bank-assistant/.venv/bin/python' passed` | `.agent/reports/implementation/T-038.md` | `none` |
+| `S-20261105-133642-2` | `2026-11-05` | `2026-11-05` | `claude` | `T-038` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-038.md` | `none` |
+| `S-20261105-133642-3` | `2026-11-05` | `2026-11-05` | `claude` | `T-038` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-038.md` | `none` |
+| `S-20261105-134050` | `2026-11-05` | `2026-11-05` | `claude-review-a` | `T-038` | `completed` | `review approved` | `.agent/reports/review/T-038.md` | `none` |

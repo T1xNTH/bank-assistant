@@ -5,7 +5,7 @@
 with reciprocal rank fusion inside Qdrant (query API, ``Fusion.RRF``). Both apply the access
 filter in the query itself, never afterwards (docs/02-architecture/architecture.md):
 ``department`` in {user's department, "public"} and ``superseded_by`` is null. ``hybrid_rerank``
-fetches ``rerank_candidates()`` hybrid results (``RERANK_CANDIDATES``, default 5) and keeps the
+fetches ``rerank_candidates()`` hybrid results (``RERANK_CANDIDATES``, default 8) and keeps the
 ``k`` that ``rerank.rerank`` scores best at or above the refusal threshold, so it may return fewer
 than ``k`` hits, or none.
 
@@ -28,9 +28,9 @@ from app.tracing import observation
 # Candidates each of dense and sparse contributes to the fusion; RRF needs more than k from
 # each branch so that a chunk ranked well by only one of them can still reach the top k.
 PREFETCH = 20
-# Hybrid results the cross-encoder rescores. NFR-08 allows 10 s for the whole /ask; on CPU, 5 measured
-# 1.9 s median (3.7 s max) and 10 measured 5.7 s (8.1 s), with the same 12/12 sample recall.
-DEFAULT_RERANK_CANDIDATES = 5
+# Hybrid results the cross-encoder rescores. NFR-08 allows 10 s for the whole /ask. On the 50 golden
+# questions (T-038, CPU): 5 -> hit@5 0.90, rerank p95 3.3 s; 8 -> 0.925, 6.2 s; 10 -> 0.95, 7.4 s.
+DEFAULT_RERANK_CANDIDATES = 8
 MAX_RERANK_CANDIDATES = 100  # a typo such as 500 would take minutes per question
 _DEPARTMENTS = set(get_args(Department))
 

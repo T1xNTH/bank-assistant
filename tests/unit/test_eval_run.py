@@ -246,7 +246,7 @@ def test_all_modes_write_report_and_results(tmp_path, monkeypatch):
     assert "| Faithfulness (NFR-01) | ≥ 0.8 | 0.90 ✅ | 0.90 ✅ | 0.90 ✅ |" in report
     assert "| Hit@5 (NFR-02) | ≥ 0.75 | 0.50 ❌ | 0.50 ❌ | 0.50 ❌ |" in report
     assert "- [cross_department, credit] Phí thẻ và lãi? — không trúng trang" in report
-    assert "RERANK_CANDIDATES**: `5`" in report
+    assert "RERANK_CANDIDATES**: `8`" in report
 
 
 def test_check_exits_1_when_a_threshold_is_missed(tmp_path):

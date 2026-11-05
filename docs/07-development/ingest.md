@@ -42,7 +42,7 @@ Trên Windows, tiến độ được in ra theo UTF-8, kể cả khi chuyển h�
 - Văn bản pháp luật được cắt ở Phần, Chương, Mục, Điều và Phụ lục, kể cả trang OCR không có `## ` và số La Mã bị OCR đọc sai (IH, VH, VỊ, H, EV). Dòng bắt đầu như tiêu đề nhưng tiếp theo là chữ thường ("Phụ lục II ban hành kèm theo…") vẫn là nội dung. Văn bản không có các đầu mục này (biểu phí, điều khoản ngân hàng) được cắt ở tiêu đề `## ` của docling; biểu phí không có tiêu đề lấy dòng đầu làm tiêu đề.
 - Mỗi chunk mở đầu bằng một dòng đường dẫn tiêu đề, ví dụ `Chương III … › Mục 1 … › Điều 13. Mức lương hưu hằng tháng`, tối đa `size // 4` ký tự. Phần mở đầu văn bản (quốc hiệu, căn cứ) không có dòng này.
 - Không mất chữ của tiêu đề nào: tiêu đề không vừa đường dẫn thì nằm ở đầu nội dung; Điều không có nội dung (ví dụ "Điều 6. (được bãi bỏ)") thành một chunk riêng.
-- Một Điều vắt qua hai trang là một khối liền; `page` là trang bắt đầu của chunk. Bảng vẫn chia giữa các hàng, lặp lại header, thêm dòng tiêu đề của đầu mục chứa bảng.
+- Một Điều vắt qua hai trang là một khối liền; `page` là trang bắt đầu của chunk. Bảng vẫn chia giữa các hàng, lặp lại header, thêm dòng tiêu đề của đầu mục chứa bảng. Từ T-038, mỗi phần bảng còn lặp lại các dòng cha theo số STT và dòng nhóm, bảng ở đầu trang không có text, dòng đầu trông như dữ liệu, nối tiếp bảng trang trước, giữ dòng cha (và header khi số cột khớp); nhãn của dòng nhóm chỉ giữ một lần, dòng có nhãn riêng giữ mọi giá trị; chi tiết trong docstring `src/app/rag/chunk.py`.
 
 Đổi cách chia thì chạy lại `scripts/ingest.py`: chỉ phải embed lại, kết quả parse lấy từ cache.
 

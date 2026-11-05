@@ -131,6 +131,48 @@ def test_answer_without_valid_citation_is_refused():
         assert (result.answer, result.found, result.citations) == (REFUSAL, False, []), reply
 
 
+@pytest.mark.parametrize(
+    "reply",
+    [
+        "[3]",
+        "[1][2]",
+        "[Tài liệu 1][1]",
+        "Tài liệu 2 [2].",
+        "[Đoạn số 1] [1]",
+        " [1] . ",
+        "Xem [1].",
+        "Theo [1].",
+        "Nguồn: [1]",
+        "[Doc 1][1]",
+        "Source 1 [1]",
+        "Tham khảo tài liệu [2].",
+    ],
+)
+def test_markers_without_words_are_refused(reply):
+    # T-038: qwen2.5:3b replied with passage numbers only; that cites but answers nothing.
+    result, _, _ = run(reply)
+    assert (result.answer, result.found, result.citations) == (REFUSAL, False, []), reply
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        "Có [1].",
+        "0,04% [1]; tối thiểu 25.000 đ [2].",
+        "Theo tài liệu 1, phí là 5 USD [1].",
+        "0,04% [1]",
+        "10% [1]",
+        "0 [1]",
+        "1.000 [1]",
+        "25.000 đ [1]",
+        "Không [2].",
+    ],
+)
+def test_short_answers_with_words_are_kept(reply):
+    result, _, _ = run(reply)
+    assert result.found and result.answer == reply.strip()
+
+
 def test_canary_in_answer_is_refused():
     spaced = " ".join(prompts.CANARY.lower())
     for leak in [prompts.CANARY, prompts.CANARY.lower(), spaced]:
@@ -181,6 +223,7 @@ def test_llm_gets_system_prompt_context_and_question():
     assert messages[1]["role"] == "user"
     assert messages[1]["content"] == prompts.user_message(QUESTION, HITS)
     assert messages[1]["content"].endswith(f"Câu hỏi: {QUESTION}")
+    assert messages[1]["content"].startswith(f'Câu hỏi: {QUESTION}\n\n<tai_lieu so="1"')
 
 
 def test_system_prompt_states_the_rules():
@@ -188,7 +231,7 @@ def test_system_prompt_states_the_rules():
     assert prompts.CANARY in prompts.SYSTEM
     assert "[1]" in prompts.SYSTEM
     assert "<tai_lieu>" in prompts.SYSTEM
-    assert prompts.PROMPT_VERSION == "1"
+    assert prompts.PROMPT_VERSION == "2"
 
 
 def test_canary_only_in_system_prompt():
@@ -257,7 +300,7 @@ def test_source_cannot_rebuild_a_tag(source):
     ans.RagAnswerer(Retrieve([dataclasses.replace(hit(1), source=source)]), llm).answer(QUESTION, USER)
     message = llm.calls[0][0][1]["content"]
     assert len(TAG.findall(message)) == 2
-    header = message.split("\n", 1)[0]
+    [header] = [line for line in message.split("\n") if line.startswith("<tai_lieu ")]  # after the question
     assert header.count('"') == 6 and header.count("<") == 1 and header.count(">") == 1
 
 

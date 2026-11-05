@@ -5,7 +5,8 @@ rerank threshold) means ``REFUSAL`` without calling the LLM. Otherwise the model
 numbered context and every ``[n]`` marker it writes becomes a ``Citation`` of ``hits[n - 1]``.
 Markers outside 1..len(hits) are dropped from the text, so each remaining marker has its citation
 (docs/04-api/contract.md). The answer becomes ``REFUSAL`` when it cites nothing (the model refused,
-or answered without grounding, and NFR-04 requires a citation on every answer) or when it contains
+or answered without grounding, and NFR-04 requires a citation on every answer), when it is only
+markers with no words (T-038), or when it contains
 ``CANARY``.
 
 An unreachable Qdrant (no connection, timeout, HTTP 404 such as a missing collection, or 5xx) or any
@@ -128,6 +129,22 @@ def _leaks_canary(text: str) -> bool:
     return CANARY.lower() in visible.lower()
 
 
+# Words that only point at a passage ("Xem [1].", "Nguồn: [1]", "[Tài liệu 1][1]", "Source 1 [1]"),
+# with the passage number that may follow them.
+_POINTER = re.compile(
+    r"\b(xem|theo|nguồn|tham khảo|tài liệu|văn bản|đoạn|see|source|sources|ref|reference|doc|document|passage)\b"
+    r"(\s+số)?\s*\d*",
+    re.IGNORECASE,
+)
+
+
+def _says_something(text: str) -> bool:
+    """Whether an answer has content besides its markers and pointers: qwen2.5:3b sometimes replies
+    "[3]" or "[Tài liệu 1][1]" only, which cites a passage but answers nothing (T-038). A figure alone
+    ("0,04% [1]", "10% [1]") is an answer."""
+    return any(c.isalnum() for c in _POINTER.sub("", _MARKER.sub("", text)))
+
+
 def cite(reply: str, hits: list[Hit]) -> tuple[str, list[Citation]]:
     """Map ``[n]`` markers in ``reply`` to citations; ``(REFUSAL, [])`` when nothing valid is cited."""
     cited: set[int] = set()
@@ -146,6 +163,6 @@ def cite(reply: str, hits: list[Hit]) -> tuple[str, list[Citation]]:
     text = text.strip()
     # A refusal that still cites a passage is a refusal: the contract pairs found=false with REFUSAL.
     # The canary is checked on the final text, after invalid markers are dropped (PR #62 review).
-    if not cited or text.startswith(REFUSAL.rstrip(".")) or _leaks_canary(text):
+    if not cited or text.startswith(REFUSAL.rstrip(".")) or _leaks_canary(text) or not _says_something(text):
         return REFUSAL, []
     return text, [Citation(n, hits[n - 1].source, hits[n - 1].page, hits[n - 1].score) for n in sorted(cited)]
