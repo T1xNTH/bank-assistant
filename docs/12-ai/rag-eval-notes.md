@@ -13,20 +13,20 @@ Số liệu trong `rag-eval-report.md` (sinh bởi `eval/run.py --all`) và `eva
 
 ## Vòng cải tiến E-014 (T-038, 2026-11-04)
 
-`rag-eval-report.md` và `eval/results/` hiện là lượt chạy này: `bank_docs` ingest lại bằng chunker T-038 sau review vòng 1 (2.815 point, gồm nhãn classification của T-027), `PROMPT_VERSION` 2, `RERANK_CANDIDATES` 8, `gpt-6-luna` cho câu đi cloud, `qwen2.5:3b` (`local-chat`) cho câu có chunk confidential, nhánh đã merge main (T-036, T-040). Máy rảnh khi đo. Phân vị là nearest-rank như `eval/run.py` (`ordered[ceil(q·n) − 1]`); bản nháp trước của notes dùng `ordered[int(q·n) − 1]`, thấp hơn một hạng, và báo nhầm NFR-08 đạt (review T-038 F-01). Các mục từ "Tóm tắt" trở xuống là lượt T-023 (2026-11-01), giữ để so sánh.
+`rag-eval-report.md` và `eval/results/` hiện là lượt chạy này: `bank_docs` ingest lại bằng chunker T-038 sau review vòng 1 và review của B trên PR #105 (2.818 point, gồm nhãn classification của T-027), `PROMPT_VERSION` 2, `RERANK_CANDIDATES` 8, `gpt-6-luna` cho câu đi cloud, `qwen2.5:3b` (`local-chat`) cho câu có chunk confidential, nhánh đã merge main (T-036, T-040). Máy rảnh khi đo. Phân vị là nearest-rank như `eval/run.py` (`ordered[ceil(q·n) − 1]`); bản nháp trước của notes dùng `ordered[int(q·n) − 1]`, thấp hơn một hạng, và báo nhầm NFR-08 đạt (review T-038 F-01). Các mục từ "Tóm tắt" trở xuống là lượt T-023 (2026-11-01), giữ để so sánh.
 
 | `hybrid_rerank` (mặc định) | Ngưỡng | T-023 | T-038 |
 |---|---|---|---|
-| Faithfulness (NFR-01) | ≥ 0,80 | 0,90 | 0,89 |
+| Faithfulness (NFR-01) | ≥ 0,80 | 0,90 | 0,85 |
 | Hit@5 (NFR-02) | ≥ 0,75 | 0,88 | **0,93** |
 | Từ chối đúng ngoài phạm vi (NFR-03) | ≥ 0,90 | 1,00 | 1,00 |
 | Có trích dẫn (NFR-04) | = 1,00 | 1,00 | 1,00 |
 | Câu trong phạm vi được trả lời | | 34/40 | **37/40** |
 | Câu trượt | | 7 | **4** |
-| p95 trong process (eval) | | 5.028 ms | 16.678 ms (cloud 8.258, local 29.416) |
-| p95 `/ask` trên Langfuse (NFR-08, < 10 s) | | chưa đo | **17.572 ms: chưa đạt** (cloud 8.193 đạt, local 20.699) |
+| p95 trong process (eval) | | 5.028 ms | cloud 8.196, local 26.062 (n = 4) |
+| p95 `/ask` trên Langfuse (NFR-08, < 10 s) | | chưa đo | **14.521 ms: chưa đạt** (cloud 8.761 đạt, local 22.135) |
 
-`eval/run.py --all --check` đạt NFR-01..04 cả 3 mode (`dense` faithfulness 0,91 / hit@5 0,88; `hybrid` 0,86 / 0,90). NFR-08 **chưa đạt**: 3/50 trace `/ask` trên 10 s, cả ba đi `local-chat`. A (trong-hung) chấp nhận báo cáo tách theo route cho T-038 và để đường local làm follow-up (2026-11-04).
+`eval/run.py --all --check` đạt NFR-01..04 cả 3 mode (`dense` faithfulness 0,88 / hit@5 0,88; `hybrid` 0,80 / 0,90, vừa chạm ngưỡng). NFR-08 **chưa đạt**: 3/50 trace `/ask` trên 10 s, cả ba đi `local-chat`. A (trong-hung) chấp nhận báo cáo tách theo route cho T-038 và để đường local làm follow-up (2026-11-04).
 
 ### 3 câu tệ nhất và nguyên nhân
 
@@ -38,18 +38,18 @@ Chọn từ lượt T-023 và kiểm lại trên trace. Ở T-023 có 5 câu tro
 
 ### Đã sửa
 
-- **Chunker bảng** (`src/app/rag/chunk.py`): mỗi phần bảng lặp lại dòng nhóm (một nhãn trên mọi cột) và dòng cha đánh số gần nhất. Lặp cả chuỗi cha ("9" › "9.1") đã thử: dòng "9 Chuyển tiền ngoại tệ khác hệ thống" có mặt trên mọi phần của mục 9 và lấn mục 2 với câu "phí chuyển tiền trong nước khác hệ thống" (`tests/integration/test_ask.py` case 10); chỉ dòng cha gần nhất cho cùng hit@5 0,925 và sửa được case đó. Bảng ở đầu một trang không có text, hoặc cùng số cột với bảng cuối trang trước, là phần tiếp theo: dòng đầu là dữ liệu, giữ dòng cha, và header cũ khi cột còn khớp. Tối đa hai dòng nhãn cột trước dòng đánh số đầu tiên là header. Nhãn ô gộp dài chỉ giữ một lần ("0 đ | 0 đ" giữ nguyên).
+- **Chunker bảng** (`src/app/rag/chunk.py`): mỗi phần bảng lặp lại dòng nhóm (một nhãn trên mọi cột) và dòng cha đánh số gần nhất. Lặp cả chuỗi cha ("9" › "9.1") đã thử: dòng "9 Chuyển tiền ngoại tệ khác hệ thống" có mặt trên mọi phần của mục 9 và lấn mục 2 với câu "phí chuyển tiền trong nước khác hệ thống" (`tests/integration/test_ask.py` case 10); chỉ dòng cha gần nhất cho cùng hit@5 0,925 và sửa được case đó. Bảng ở đầu một trang không có text là phần tiếp theo của bảng cuối trang trước (trừ khi dòng đầu lặp lại tên cột của bảng đó): dòng đầu là dữ liệu, giữ dòng cha, và header cũ khi số cột còn khớp. Trang có heading hay text trước bảng thì bảng là bảng mới, kể cả khi cùng số cột (review của B trên PR #105, F-01). Tối đa hai dòng nhãn cột không có chữ số trước dòng đánh số đầu tiên là header. Nhãn ô gộp chỉ giữ một lần khi một nhãn dài lấp ít nhất 3 ô tới cuối dòng; hai ô bằng nhau có thể là hai giá trị độc lập nên giữ nguyên (review của B, F-02).
 - **`RERANK_CANDIDATES` 5 → 8** (bảng đo trong `docs/07-development/rerank.md`): hit@5 trên 50 câu 0,90 → 0,925, rerank p95 3,3 → 6,2 s. 10 ứng viên được 0,95 nhưng 7,4 s chỉ riêng rerank. int8 và cắt chunk đã thử và bỏ.
 - **`cite()` từ chối câu trả lời chỉ có số đoạn** ("[3]", "[Tài liệu 1][1]"). `qwen2.5:3b` trả như vậy với vài câu confidential, và trước đây chúng được tính là có trích dẫn.
 - **Prompt v2**: câu hỏi đặt trước và sau tài liệu; quy tắc 7 (đọc điều kiện, ngoại lệ), 8 (câu đầy đủ, không chỉ số đoạn), 9 (câu hỏi về sản phẩm/phí của ngân hàng khác thì từ chối). Quy tắc 9 cần vì sau khi gộp nhãn ô, chunk phí phát hành VietinBank đạt 0,57 với "Mức phí mở thẻ của Techcombank" và cả prompt v1 lẫn v2 chưa có quy tắc 9 đều trả lời bằng phí VietinBank. Với `qwen2.5:3b` trên ngữ cảnh của 40 câu (đếm bằng `cite()` mới), v1 trả lời 14/39 câu trong phạm vi và v2 16/39: ngang nhau trong độ dao động giữa các lượt. Prompt không làm qwen tốt lên rõ; các câu confidential được trả lời nhiều hơn trong eval chủ yếu nhờ chunk và rerank.
 
 ### Judge
 
-Faithfulness từng câu dao động giữa các lần chấm: câu thẻ ghi nợ quốc tế Business ra 0,0 rồi 1,0 với cùng câu trả lời. Câu CIC ("tối đa 05 năm"), chép nguyên văn chunk, luôn 0,5 hoặc 0,0: judge tách thành mệnh đề "CIC cung cấp…", lấy chủ ngữ từ câu hỏi, rồi chấm mệnh đề đó là không có trong ngữ cảnh. Các lượt `hybrid_rerank` trong T-038 ra 0,93, 0,85, 0,84 và 0,89. Điểm trung bình vẫn dùng được làm báo động; điểm từng câu không dùng để chọn câu tệ.
+Faithfulness từng câu dao động giữa các lần chấm: câu thẻ ghi nợ quốc tế Business ra 0,0 rồi 1,0 với cùng câu trả lời. Câu CIC ("tối đa 05 năm"), chép nguyên văn chunk, luôn 0,5 hoặc 0,0: judge tách thành mệnh đề "CIC cung cấp…", lấy chủ ngữ từ câu hỏi, rồi chấm mệnh đề đó là không có trong ngữ cảnh. Các lượt `hybrid_rerank` trong T-038 ra 0,93, 0,85, 0,84, 0,89 và 0,85. Điểm trung bình vẫn dùng được làm báo động; điểm từng câu không dùng để chọn câu tệ.
 
 ### NFR-08 và giới hạn của đường local
 
-Langfuse (50 trace `/ask` thật qua HTTP, API key, tuần tự, nearest-rank): p50 5,6 s, **p95 17,6 s, chưa đạt**. Đường cloud (45 câu) p95 8,2 s, đạt. Đường local (5 câu): 5,2 / 6,2 / 17,6 / 19,4 / 20,7 s; ba câu cuối là các câu trên 10 s và vì 3/50 = 6% > 5% nên kéo p95 tổng lên. Đo trực tiếp Ollama: prompt 1.400–1.700 token tốn 10–16 s chỉ để đọc (~100–140 token/s trên CPU này), câu trả lời 15–165 token thêm 1–13 s, nạp lại model sau 5 phút nhàn rỗi thêm 4,6 s. Giới hạn số token trả lời không đưa được câu local dưới 10 s nên không làm. A chọn báo cáo tách route và chấp nhận deviation; tối ưu đường local là follow-up.
+Langfuse (50 trace `/ask` thật qua HTTP, API key, tuần tự, nearest-rank, sau sửa review của B): p50 5,7 s, **p95 14,5 s, chưa đạt**. Đường cloud (45 câu) p95 8,8 s, đạt. Đường local (5 câu): 5,0 / 6,5 / 14,5 / 17,5 / 22,1 s; ba câu cuối là các câu trên 10 s và vì 3/50 = 6% > 5% nên kéo p95 tổng lên. Đo trực tiếp Ollama: prompt 1.400–1.700 token tốn 10–16 s chỉ để đọc (~100–140 token/s trên CPU này), câu trả lời 15–165 token thêm 1–13 s, nạp lại model sau 5 phút nhàn rỗi thêm 4,6 s. Giới hạn số token trả lời không đưa được câu local dưới 10 s nên không làm. A chọn báo cáo tách route và chấp nhận deviation; tối ưu đường local là follow-up.
 
 ### Còn lại (follow-up)
 

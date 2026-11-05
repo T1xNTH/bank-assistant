@@ -547,11 +547,11 @@ def test_a_continuation_with_the_same_columns_reuses_the_header():
     page1 = "\n".join([FEE_HEADER, *FEE_ROWS[:3]])
     page2 = "\n".join(["| | B111 | - Trước 15h | 0,03% | 20.000 đ |", "|---|---|---|---|---|"])
 
-    chunks = chunk_pages([_page(1, tables=[page1]), _page(2, "Ghi chú cuối trang", [page2])])
+    chunks = chunk_pages([_page(1, tables=[page1]), _page(2, "", [page2])])
 
     [second] = [c["text"] for c in chunks if c["page"] == 2 and "B111" in c["text"]]
     parent = "| 2 | | Chuyển tiền VND trong nước khác hệ thống | | |"
-    assert second.endswith(f"{FEE_HEADER}\n{parent}\n| | B111 | - Trước 15h | 0,03% | 20.000 đ |")
+    assert second == f"{FEE_HEADER}\n{parent}\n| | B111 | - Trước 15h | 0,03% | 20.000 đ |"
 
 
 def test_a_new_table_after_text_on_the_page_is_not_a_continuation():
@@ -613,3 +613,42 @@ def test_a_long_carried_header_is_not_repeated_past_size():
 
     assert all(long_header not in c["text"] for c in chunks if c["page"] == 2)
     assert all(len(c["text"]) <= 400 for c in chunks)
+
+
+def _fee_page(n, table, text=""):
+    return {"source": "fees.pdf", "page": n, "text": text, "tables": [table]}
+
+
+def test_a_new_table_under_a_heading_with_the_same_columns_is_not_a_continuation():
+    # PR #105 review F-01 (B): same column count alone made a new section's table a continuation.
+    first = "| STT | Nội dung | Phí |\n|---|---|---|\n| 2 | Chuyển tiền khác hệ thống | |"
+    second = "| Hạng thẻ | Hạn mức | Ghi chú |\n|---|---|---|\n| Chuẩn | 50 triệu | Tối đa |"
+
+    chunks = chunk_pages([_fee_page(1, first), _fee_page(2, second, "## Hạn mức thẻ\nThông tin hạn mức.")])
+
+    actual = next(c["text"] for c in chunks if c["page"] == 2 and "50 triệu" in c["text"])
+    assert "Chuyển tiền khác hệ thống" not in actual
+    assert "| STT | Nội dung | Phí |" not in actual
+    assert second in actual
+
+
+def test_two_equal_independent_cells_are_kept():
+    # PR #105 review F-02 (B): two columns with the same value are not a merged cell.
+    table = "| Dịch vụ | Cá nhân | Tổ chức |\n|---|---|---|\n| Phát hành | Miễn phí phát hành | Miễn phí phát hành |"
+
+    [actual] = chunk_pages([_fee_page(1, table)])
+
+    assert actual["text"] == table
+
+
+def test_a_label_filling_three_cells_to_the_end_of_the_row_is_kept_once():
+    table = (
+        "| STT | Nội dung | Mức phí | Tối thiểu |\n|---|---|---|---|\n"
+        + "| | THẺ CORPORATE (Công ty) | THẺ CORPORATE (Công ty) | THẺ CORPORATE (Công ty) |\n"
+        + "| 1 | Phát hành | 0 đ | 0 đ |"
+    )
+
+    [actual] = chunk_pages([_fee_page(1, table)])
+
+    assert "| | THẺ CORPORATE (Công ty) | | |" in actual["text"].split("\n")
+    assert actual["text"].endswith("| 1 | Phát hành | 0 đ | 0 đ |")

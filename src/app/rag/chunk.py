@@ -41,13 +41,16 @@ characters.
   hệ thống" on every part of section 9 outranked section 2 for "chuyển tiền
   trong nước khác hệ thống".
 - A table continued on the next page: the first table of a page continues the
-  previous page's last table when its first row does not repeat that table's
-  column names (at least half its words) and the column count matches or
-  nothing on the page comes before it. Its first
-  row is data. It gets the previous row context, and the previous header when
-  the columns line up (docling drops empty columns page by page). Up to two rows without digits
-  before a table's first numbered row are more header lines and are repeated
-  with it.
+  previous page's last table when nothing on the page comes before it and its
+  first row does not repeat that table's column names (at least half its
+  words). A heading or text before the table starts a new section, even with
+  the same column count. Its first row is data. It gets the previous row
+  context, and the previous header when the columns line up (docling drops
+  empty columns page by page). Up to two rows without digits before a table's
+  first numbered row are more header lines and are repeated with it.
+- A merged cell: docling repeats its label in every column it spans. A long
+  label filling at least three cells up to the row's last value is kept once;
+  two equal cells may be independent values and stay as they are.
 """
 
 from __future__ import annotations
@@ -311,14 +314,27 @@ def _like_header(row: str, header: str) -> bool:
     return bool(words) and len(words & names) >= len(words) / 2
 
 
+_MERGED_SPAN = 3  # cells one label must fill, up to the row's last value, to count as a merged cell
+
+
 def _merge_spans(row: str) -> str:
-    """docling repeats a merged cell's text in every column it spans; keep it once (long labels only:
-    "0 đ | 0 đ" are two real values)."""
+    """docling repeats a merged cell's text in every column it spans; keep it once.
+
+    Only a long label repeated in at least three cells that run to the row's last value is a merged
+    cell ("| | THẺ CORPORATE | THẺ CORPORATE | THẺ CORPORATE |"). Two equal cells may be independent
+    values ("Miễn phí phát hành" for two customer types, "0 đ | 0 đ"), so they are kept (PR #105 review).
+    """
     cells = _cells(row)
-    out = cells[:1]
-    for prev, cell in zip(cells, cells[1:], strict=False):
-        out.append("" if cell and cell == prev and sum(ch.isalpha() for ch in cell) >= 12 else cell)
-    return _SPACES.sub(" ", "| " + " | ".join(out) + " |") if out != cells else row
+    last = max((i for i, cell in enumerate(cells) if cell), default=-1)
+    if last < 0 or sum(ch.isalpha() for ch in cells[last]) < 12:
+        return row
+    start = last
+    while start > 0 and cells[start - 1] == cells[last]:
+        start -= 1
+    if last - start + 1 < _MERGED_SPAN:
+        return row
+    out = [*cells[: start + 1], *("" for _ in range(start + 1, len(cells)))]
+    return _SPACES.sub(" ", "| " + " | ".join(out) + " |")
 
 
 def _table_chunks(
@@ -336,9 +352,10 @@ def _table_chunks(
     columns = len(_cells(lines[0]))
     stack: list[tuple[int, str]] = []
     same = carry is not None and columns == carry.columns
-    if carry and head and not _like_header(head[0], carry.head[0]) and (same or starts_page):
-        # Continued from the last page: the first row is data. docling drops empty columns page by page,
-        # so the previous header is reused only when the columns still line up; the row context always is.
+    if carry and head and starts_page and not _like_header(head[0], carry.head[0]):
+        # Continued from the last page: the first row is data. Only a table with nothing before it on its
+        # page continues one (a heading or text starts a new section, PR #105 review); docling drops
+        # empty columns page by page, so the previous header is reused only when the columns still line up.
         rows, stack = [head[0], *rows], list(carry.stack)
         # A carried header longer than a quarter of the chunk is a data row docling read as the header
         # and would push parts past ``size`` (T-038 review F-03): repeat it only when it is short.
