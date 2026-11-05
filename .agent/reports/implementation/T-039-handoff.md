@@ -9,10 +9,10 @@ priority: 2
 ---
 # T-039 implementation handoff
 
-- **Owner**: teammate-b
-- **Executor**: codex-b
-- **Report Date**: 2026-11-05
-- **Status**: complete
+- **Owner**: `teammate-b`
+- **Executor**: `codex-b`
+- **Report Date**: `2026-11-05`
+- **Status**: `complete`
 - Implementation only; independent review pending.
 - Scope: supplements the completed [T-039 implementation report](T-039.md) with later handoff commands; preserves its verification history.
 - Delivery: one open draft PR, #107. #108 was closed without merge and its run canceled per user instruction; it is not acceptance evidence.
