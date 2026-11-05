@@ -76,9 +76,41 @@ jobs:
         if: always()
         run: docker compose down --volumes --remove-orphans
 
+  eval-changes:
+    # A pull request that cannot change RAG answers (docs, UI, records) skips the paid real-model gate;
+    # pushes to main and manual runs always evaluate. Paths: docs/07-development/ci.md "Eval gate".
+    name: eval-changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      eval: ${{ steps.paths.outputs.eval }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Does this change reach RAG answers or the eval?
+        id: paths
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != pull_request ]; then
+            echo "eval=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed="$(git diff --name-only "$BASE_SHA" "$GITHUB_SHA")"
+          printf '%s\n' "$changed"
+          pattern='^(src/app/rag/|src/app/(prompts|llm|routing|contracts)\.py$|src/app/security/masking\.py$|eval/|scripts/(select_ci_golden|qdrant_backup)\.py$|infrastructure/compose\.yaml$|infrastructure/litellm/|requirements[^/]*\.txt$|data/manifest\.csv$|\.github/workflows/)'
+          if printf '%s\n' "$changed" | grep -qE "$pattern"; then
+            echo "eval=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "eval=false" >> "$GITHUB_OUTPUT"
+            echo "No RAG/eval path changed: eval-gate is skipped for this pull request." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   eval-gate:
     name: eval-gate
-    needs: quality
+    needs: [quality, eval-changes]
+    if: ${{ needs.eval-changes.outputs.eval == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -176,8 +208,9 @@ jobs:
           echo 'UI coverage: syntax here; Streamlit AppTest flows against the API run in quality (tests/unit/test_ui.py). No browser E2E.' >> "$GITHUB_STEP_SUMMARY"
 
   check:
-    # Keep the existing required-check name, but require every CI job to succeed.
-    needs: [quality, backend-smoke, ui-syntax, eval-gate]
+    # Keep the existing required-check name, but require every CI job to succeed. eval-gate may be
+    # skipped only when eval-changes ran and found no RAG/eval path in the pull request.
+    needs: [quality, backend-smoke, ui-syntax, eval-changes, eval-gate]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -188,8 +221,15 @@ jobs:
           BACKEND_RESULT: ${{ needs.backend-smoke.result }}
           UI_RESULT: ${{ needs.ui-syntax.result }}
           EVAL_RESULT: ${{ needs.eval-gate.result }}
+          CHANGES_RESULT: ${{ needs.eval-changes.result }}
+          EVAL_NEEDED: ${{ needs.eval-changes.outputs.eval }}
         run: |
           test "$QUALITY_RESULT" = success
           test "$BACKEND_RESULT" = success
           test "$UI_RESULT" = success
-          test "$EVAL_RESULT" = success
+          test "$CHANGES_RESULT" = success
+          if [ "$EVAL_NEEDED" = false ]; then
+            test "$EVAL_RESULT" = skipped
+          else
+            test "$EVAL_RESULT" = success
+          fi

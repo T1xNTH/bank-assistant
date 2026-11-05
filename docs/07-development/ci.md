@@ -15,7 +15,8 @@ Workflow `.github/workflows/ci.yml` chạy trên pull request, push vào main v�
 |---|---|
 | `quality` | Ruff, pytest mặc định (không gồm marker integration), framework validator |
 | `backend-smoke` | Build Docker image API từ Dockerfile thật; chạy API, Qdrant và Redis; gọi API qua HTTP; kiểm Qdrant readiness và Redis PONG |
-| `eval-gate` | 10 câu golden, retrieval/LLM/judge thật, mode hybrid_rerank; fail dưới ngưỡng NFR-01..04 |
+| `eval-changes` | Xác định PR có đổi phần ảnh hưởng câu trả lời RAG hay eval không; quyết định có chạy `eval-gate` |
+| `eval-gate` | 10 câu golden, retrieval/LLM/judge thật, mode hybrid_rerank; fail dưới ngưỡng NFR-01..04. Bỏ qua với PR không đổi đường dẫn RAG/eval |
 | `ui-syntax` | Compile các file Python trong `ui/` |
 | `check` | Gate tổng hợp: chỉ pass khi quality, backend-smoke (gồm Trivy), eval-gate và ui-syntax đều thành công; fail/skip không được tính là pass |
 
@@ -44,6 +45,21 @@ Workflow in trạng thái/log dịch vụ và dọn container, network, volume c
 trùng lặp, membership, tỉ lệ 8/2 và phòng ban public. Không đọc lại điểm/câu trả lời đã lưu để quyết định pass.
 Đây là smoke subset public cho hosted CI, không thay đánh giá 50 câu, RBAC/confidential, local model hay NFR-08.
 
+**Khi nào chạy.** Push lên `main` và chạy tay (`workflow_dispatch`) luôn chạy gate. Với pull request, job
+`eval-changes` so file đổi với base và chỉ chạy gate khi có đường dẫn ảnh hưởng câu trả lời hoặc cách chấm:
+`src/app/rag/`, `src/app/{prompts,llm,routing,contracts}.py`, `src/app/security/masking.py`, `eval/`,
+`scripts/{select_ci_golden,qdrant_backup}.py`, `infrastructure/compose.yaml`, `infrastructure/litellm/`,
+`requirements*.txt`, `data/manifest.csv`, `.github/workflows/`. PR chỉ đổi docs, UI, test hay record thì
+gate là `skipped` và `check` chấp nhận điều đó; nếu `eval-changes` lỗi, hoặc gate cần chạy mà không
+`success`, `check` đỏ. Thêm module mới có ảnh hưởng tới câu trả lời thì phải thêm vào mẫu này.
+
+**Judge chấm trung vị.** Mỗi câu được judge chấm faithfulness `JUDGE_REPEATS` lần (mặc định 3, số lẻ),
+lấy trung vị; lần chấm lỗi gateway hay `nan` bị bỏ qua. Lý do (review PR #107, F-01): bước tách mệnh đề
+của RAGAS chèn chi tiết của câu hỏi vào mệnh đề của câu trả lời ("cho khách hàng tổ chức dùng eFAST"), và
+kết luận về mệnh đề đó đổi giữa các lần chấm. Câu trả lời đúng một mệnh đề (Keypass 330.000 đ/thiết bị)
+bị chấm 0.0 ở cả hai lượt CI, 1/1/0 khi chấm lại ba lần trên máy. Trung vị không đổi judge, prompt hay
+ngưỡng, chỉ giảm nhiễu. Không chạy lại cả lượt eval để lấy điểm pass.
+
 Job restore snapshot `qdrant-bank_docs-2026-11-05-2819` vào Qdrant riêng của run; checksum SHA-256 ghim
 trong workflow và restore kiểm đúng 2819 point. Không ingest lại từ PDF. Khi đổi corpus/chunker, phải
 cập nhật snapshot/checksum cùng test và số liệu tương ứng; snapshot cũ không chứng minh chunker mới đúng.
@@ -55,7 +71,7 @@ với hướng dẫn cấu hình, không skip/giả kết quả. Secret không �
 
 `eval/run.py --check` chạy code RAG và prompt của PR, dùng nguyên `eval/thresholds.json`. Lỗi còn lại sau
 retry, citation văn bản superseded, judge thiếu coverage hoặc metric thiếu đều fail như runner đầy đủ.
-Không tự chạy lại một lượt fail để lấy điểm pass: judge có dao động đã ghi trong T-038. JSONL từng câu,
+Không tự chạy lại một lượt fail để lấy điểm pass: dao động của judge đã được xử lý bằng trung vị ở trên. JSONL từng câu,
 report, subset và backup manifest được upload artifact 14 ngày; report cũng vào job summary khi gate fail.
 
 Lệnh tương đương trên môi trường có real gateway/Qdrant và snapshot đã restore:

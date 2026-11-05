@@ -12,7 +12,8 @@ the question needs (its non-public source, else ``public``), against Qdrant and 
 - ``refusal_accuracy`` (NFR-03): out-of-scope questions answered with ``found: false``.
 - ``citation_rate`` (NFR-04): in-scope answers with ``found: true`` that carry at least one citation.
 - ``faithfulness`` (NFR-01): RAGAS faithfulness of in-scope answers against their retrieved chunks,
-  judged by ``JUDGE_MODEL`` (default the gateway alias ``cloud-chat``). ``--no-judge`` skips it.
+  judged by ``JUDGE_MODEL`` (default the gateway alias ``cloud-chat``), the median of ``JUDGE_REPEATS``
+  runs (default 3, odd). ``--no-judge`` skips it.
   An answer routed to ``local-chat`` (a retrieved chunk is ``confidential``, T-026/T-027) is judged by
   ``JUDGE_LOCAL_MODEL`` (default ``local-chat``, must be a ``local-*`` alias) so its contexts never reach the
   cloud judge; with no local judge it stays unscored.
@@ -197,8 +198,7 @@ def judge_records(records: list[Record], judge: Judge, local_judge: Judge | None
 
 def _score(records: list[Record], judge: Judge) -> None:
     samples = [
-        {"user_input": r.user_input, "response": r.answer, "contexts": [c["text"] for c in r.contexts]}
-        for r in records
+        {"user_input": r.user_input, "response": r.answer, "contexts": [c["text"] for c in r.contexts]} for r in records
     ]
     for record, score in zip(records, judge(samples) if samples else [], strict=True):
         if isinstance(score, (int, float)) and not isinstance(score, bool) and math.isfinite(score):
@@ -402,6 +402,36 @@ def _display(path: Path) -> Path:
 JUDGE_CONCURRENCY = 4
 # ragas defaults to 1024, which a long statement list truncates (PR #66 live QA: two NĐ 52 answers unscored).
 JUDGE_MAX_TOKENS = 4096
+# Each answer is judged this many times and scored by the median (T-039 review F-01). RAGAS copies details
+# of the question into the answer's statements ("cho khách hàng tổ chức dùng eFAST"), and the verdict on such
+# a statement flips between runs: a correct one-statement answer then scores 0 or 1 at random.
+DEFAULT_JUDGE_REPEATS = 3
+
+
+def judge_repeats() -> int:
+    """``JUDGE_REPEATS`` as an odd positive integer (a median of an even count would average two runs)."""
+    raw = os.getenv("JUDGE_REPEATS", "").strip()
+    if not raw:
+        return DEFAULT_JUDGE_REPEATS
+    try:
+        value = int(raw)
+    except ValueError:
+        raise SystemExit(f"JUDGE_REPEATS must be an odd positive integer, got {raw!r}") from None
+    if value < 1 or value % 2 == 0:
+        raise SystemExit(f"JUDGE_REPEATS must be an odd positive integer, got {raw!r}")
+    return value
+
+
+def median_score(runs: list[float | BaseException]) -> float | BaseException:
+    """The median of the runs the judge scored; the first failure when it scored none.
+
+    A failed or nan run is left out, so one gateway error among three runs still gives a score.
+    """
+    scored = [run for run in runs if isinstance(run, float) and not math.isnan(run)]
+    if scored:
+        return float(statistics.median(scored))
+    failures = [run for run in runs if isinstance(run, BaseException)]
+    return failures[0] if failures else float("nan")
 
 
 def local_judge_model() -> str:
@@ -413,13 +443,14 @@ def local_judge_model() -> str:
 
 
 def ragas_judge(  # pragma: no cover - needs the eval venv
-    model: str, base_url: str, api_key: str, reasoning_effort: str | None = "none"
+    model: str, base_url: str, api_key: str, reasoning_effort: str | None = "none", repeats: int = 1
 ) -> Judge:
     """RAGAS faithfulness through the LiteLLM gateway (OpenAI-compatible) with the JUDGE_MODEL alias.
 
     ``reasoning_effort="none"``: RAGAS sends ``top_p``, which gpt-6-luna accepts only without reasoning
     (the gateway answers 400 otherwise), as ``app.llm`` does for ``cloud-chat``. A sample the judge
-    cannot score (gateway error, unparsable output) is ``None`` and reported as unscored.
+    cannot score (gateway error, unparsable output) is ``None`` and reported as unscored. Each sample is
+    scored ``repeats`` times and the median kept (``median_score``).
     """
     import asyncio
 
@@ -440,6 +471,9 @@ def ragas_judge(  # pragma: no cover - needs the eval venv
             gate = asyncio.Semaphore(JUDGE_CONCURRENCY)
 
             async def score(sample: dict) -> float | BaseException:
+                return median_score(list(await asyncio.gather(*(score_once(sample) for _ in range(repeats)))))
+
+            async def score_once(sample: dict) -> float | BaseException:
                 async with gate:
                     try:
                         result = await metric.ascore(
@@ -488,9 +522,10 @@ def main(
     local_model = local_judge_model()
     if judge is None and not args.no_judge:
         base = os.getenv("LLM_BASE_URL", "http://127.0.0.1:4000").rstrip("/")
-        judge = ragas_judge(judge_model, base, os.getenv("LITELLM_MASTER_KEY", ""))
+        repeats = judge_repeats()
+        judge = ragas_judge(judge_model, base, os.getenv("LITELLM_MASTER_KEY", ""), repeats=repeats)
         # Ollama models take no reasoning_effort; the gateway would reject it.
-        local_judge = local_judge or ragas_judge(local_model, base, os.getenv("LITELLM_MASTER_KEY", ""), None)
+        local_judge = local_judge or ragas_judge(local_model, base, os.getenv("LITELLM_MASTER_KEY", ""), None, repeats)
     if args.no_judge:
         judge = local_judge = None
 
@@ -514,7 +549,7 @@ def main(
         "Model trả lời": "alias cloud-chat qua LiteLLM; local-chat khi có chunk confidential (decide_route)",
         "Judge (faithfulness)": "không chạy (--no-judge)"
         if judge is None
-        else f"RAGAS faithfulness, {judge_model}; câu đi local chấm bằng "
+        else f"RAGAS faithfulness, {judge_model}, trung vị của {judge_repeats()} lần chấm; câu đi local chấm bằng "
         + (local_model if local_judge is not None else "— (không chấm)"),
         "PROMPT_VERSION": prompts.PROMPT_VERSION,
         "k": K,
