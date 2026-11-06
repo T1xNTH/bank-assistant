@@ -24,9 +24,10 @@ Số liệu trong `rag-eval-report.md` (sinh bởi `eval/run.py --all`) và `eva
 | Câu trong phạm vi được trả lời | | 34/40 | **35/40** |
 | Câu trượt | | 7 | **6** |
 | p95 trong process (eval) | | 5.028 ms | cloud 8.098, local 27.717 (n = 4) |
-| p95 `/ask` trên Langfuse (NFR-08, < 10 s) | | chưa đo | **19.185 ms: chưa đạt** (cloud 8.746 đạt, local 21.899) |
+| p95 `/ask` đường OpenAI trên Langfuse (NFR-08, < 10 s) | | chưa đo | **8.746 ms: đạt** (45 câu cloud) |
+| p95 `/ask` đường local `qwen2.5:3b` / tổng (ngoài NFR-08) | | chưa đo | 21.899 ms (5 câu) / 19.185 ms (50 câu) |
 
-`eval/run.py --all --check` đạt NFR-01..04 cả 3 mode (`dense` faithfulness 0,90 / hit@5 0,88; `hybrid` 0,83 / 0,90). Một lượt trước (code trước sửa F-16) trượt `--check` vì `hybrid` faithfulness 0,756 rồi đạt khi chạy lại cùng cấu hình: judge dao động (review F-13). Câu Điều 32c TT39 bị từ chối ở lượt này dù đã lấy đúng trang (hit) và hai văn bản đó không đổi chunk: LLM dao động, câu này cũng trượt ở T-023. NFR-08 **chưa đạt**: 3/50 trace `/ask` trên 10 s, cả ba đi `local-chat`. A (trong-hung) chấp nhận báo cáo tách theo route cho T-038 và để đường local làm follow-up (2026-11-04).
+`eval/run.py --all --check` đạt NFR-01..04 cả 3 mode (`dense` faithfulness 0,90 / hit@5 0,88; `hybrid` 0,83 / 0,90). Một lượt trước (code trước sửa F-16) trượt `--check` vì `hybrid` faithfulness 0,756 rồi đạt khi chạy lại cùng cấu hình: judge dao động (review F-13). Câu Điều 32c TT39 bị từ chối ở lượt này dù đã lấy đúng trang (hit) và hai văn bản đó không đổi chunk: LLM dao động, câu này cũng trượt ở T-023. NFR-08 **đạt**: SRS định nghĩa NFR-08 là "latency p95 của `/ask` với OpenAI < 10 s, đo trên Langfuse" (`docs/01-business/srs.md`), và đường cloud có p95 8,7 s. Bản ghi trước của T-038 gọi NFR-08 là "chưa đạt" vì tính p95 trên cả 50 câu, gồm cả đường local; A thống nhất lại theo phạm vi của SRS ngày 2026-11-06 (khớp release report v1.0-mvp). Đường local chậm (3/50 trace trên 10 s, cả ba đi `local-chat`) là giới hạn riêng, ghi ở mục dưới.
 
 ### 3 câu tệ nhất và nguyên nhân
 
@@ -47,14 +48,14 @@ Chọn từ lượt T-023 và kiểm lại trên trace. Ở T-023 có 5 câu tro
 
 Faithfulness từng câu dao động giữa các lần chấm: câu thẻ ghi nợ quốc tế Business ra 0,0 rồi 1,0 với cùng câu trả lời. Câu CIC ("tối đa 05 năm"), chép nguyên văn chunk, luôn 0,5 hoặc 0,0: judge tách thành mệnh đề "CIC cung cấp…", lấy chủ ngữ từ câu hỏi, rồi chấm mệnh đề đó là không có trong ngữ cảnh. Faithfulness `hybrid_rerank` qua các lượt T-038: 0,93, 0,85, 0,84, 0,89, 0,85, 0,82, 0,85, 0,89; `hybrid` có lượt 0,756 (trượt ngưỡng) rồi 0,83 ở lượt chạy lại cùng cấu hình. Điểm trung bình vẫn dùng được làm báo động; điểm từng câu không dùng để chọn câu tệ.
 
-### NFR-08 và giới hạn của đường local
+### NFR-08 (đường OpenAI) và giới hạn của đường local
 
-Langfuse (50 trace `/ask` thật qua HTTP, API key, tuần tự, nearest-rank, lượt cuối): p50 6,1 s, **p95 19,2 s, chưa đạt**. Đường cloud (45 câu) p95 8,7 s, đạt. Đường local (5 câu): 5,3 / 6,6 / 19,2 / 20,4 / 21,9 s; ba câu cuối là các câu trên 10 s và vì 3/50 = 6% > 5% nên kéo p95 tổng lên. Đo trực tiếp Ollama: prompt 1.400–1.700 token tốn 10–16 s chỉ để đọc (~100–140 token/s trên CPU này), câu trả lời 15–165 token thêm 1–13 s, nạp lại model sau 5 phút nhàn rỗi thêm 4,6 s. Giới hạn số token trả lời không đưa được câu local dưới 10 s nên không làm. A chọn báo cáo tách route và chấp nhận deviation; tối ưu đường local là follow-up.
+Langfuse (50 trace `/ask` thật qua HTTP, API key, tuần tự, nearest-rank, lượt cuối): p50 6,1 s. **Đường OpenAI/cloud (45 câu) p95 8,7 s: NFR-08 đạt.** p95 trên cả 50 câu là 19,2 s, nhưng con số này gồm đường local, nằm ngoài phạm vi NFR-08. Đường local (5 câu): 5,3 / 6,6 / 19,2 / 20,4 / 21,9 s; ba câu cuối là các câu trên 10 s và vì 3/50 = 6% > 5% nên kéo p95 tổng lên. Đo trực tiếp Ollama: prompt 1.400–1.700 token tốn 10–16 s chỉ để đọc (~100–140 token/s trên CPU này), câu trả lời 15–165 token thêm 1–13 s, nạp lại model sau 5 phút nhàn rỗi thêm 4,6 s. Giới hạn số token trả lời không đưa được câu local dưới 10 s nên không làm. A chọn báo cáo tách route (2026-11-04); SRS chưa có yêu cầu latency cho đường local, nên đây là giới hạn đã biết, không phải NFR trượt. Tối ưu đường local là follow-up.
 
 ### Còn lại (follow-up)
 
 - Câu chuyển ngoại tệ ra nước ngoài và câu rút tiền mặt thẻ tín dụng (hạng 8–9 sau `hybrid`, ngay mép 8 ứng viên): cần cải thiện xếp hạng của `hybrid` cho bảng phí (ví dụ đưa tên sản phẩm vào đầu mỗi chunk bảng) thay vì tăng số ứng viên.
-- **NFR-08 đường local** (deviation A chấp nhận): đưa ít chunk hơn cho `local-chat` (3 thay vì 5, giảm ~40% thời gian đọc prompt), tăng `OLLAMA_KEEP_ALIVE`; đo lại chất lượng và p95.
+- **Latency đường local** (giới hạn đã biết, ngoài NFR-08): đưa ít chunk hơn cho `local-chat` (3 thay vì 5, giảm ~40% thời gian đọc prompt), tăng `OLLAMA_KEEP_ALIVE`; đo lại chất lượng và p95.
 - Các câu vẫn trượt ở `hybrid_rerank`: tất toán trả góp trước hạn (local từ chối), phí chi hộ lương (`cross_department`), NĐ 52 không trúng trang.
 - Snapshot Qdrant `qdrant-bank_docs-2026-11-01` không còn khớp chunker; cần snapshot mới sau khi merge.
 
