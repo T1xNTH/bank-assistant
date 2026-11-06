@@ -1,0 +1,81 @@
+{
+  "source_commit": "7ab8767289ca3c30cb6f5b8b4ff0abb9aa9e10ec",
+  "evidence_kind": "recomputed saved T-038 results; no new retrieval, answers or judge calls",
+  "thresholds": {
+    "faithfulness": 0.8,
+    "hit_at_5": 0.75,
+    "refusal_accuracy": 0.9,
+    "citation_rate": 1.0
+  },
+  "modes": {
+    "dense": {
+      "sha256": "df3336ed65162f80b31c9284f79e89f6b68e2dd7f53b3b0b4d63e25727c4ea1f",
+      "metrics": {
+        "questions": 50,
+        "in_scope": 40,
+        "out_of_scope": 10,
+        "errors": 0,
+        "retries": 0,
+        "faithfulness": 0.901,
+        "faithfulness_scored": 32,
+        "faithfulness_coverage": 1.0,
+        "hit_at_5": 0.875,
+        "refusal_accuracy": 1.0,
+        "citation_rate": 1.0,
+        "answer_rate": 0.8,
+        "superseded_cited": 0,
+        "latency_p50_ms": 1621,
+        "latency_p95_ms": 13688,
+        "input_tokens": 87826,
+        "output_tokens": 2069
+      },
+      "failed_thresholds": []
+    },
+    "hybrid": {
+      "sha256": "f5fbc5d42a5941a7d69791e92cafed6d9da1e8bb9a26335cfc97c07b7fd0ea24",
+      "metrics": {
+        "questions": 50,
+        "in_scope": 40,
+        "out_of_scope": 10,
+        "errors": 0,
+        "retries": 0,
+        "faithfulness": 0.8286,
+        "faithfulness_scored": 35,
+        "faithfulness_coverage": 1.0,
+        "hit_at_5": 0.9,
+        "refusal_accuracy": 1.0,
+        "citation_rate": 1.0,
+        "answer_rate": 0.875,
+        "superseded_cited": 0,
+        "latency_p50_ms": 1670,
+        "latency_p95_ms": 13750,
+        "input_tokens": 84980,
+        "output_tokens": 2185
+      },
+      "failed_thresholds": []
+    },
+    "hybrid_rerank": {
+      "sha256": "f9224d6766b3d827c5e9366b4da57a8aff2c32f5cb66e60bef98e096bdecf6c9",
+      "metrics": {
+        "questions": 50,
+        "in_scope": 40,
+        "out_of_scope": 10,
+        "errors": 0,
+        "retries": 0,
+        "faithfulness": 0.8929,
+        "faithfulness_scored": 35,
+        "faithfulness_coverage": 1.0,
+        "hit_at_5": 0.9,
+        "refusal_accuracy": 1.0,
+        "citation_rate": 1.0,
+        "answer_rate": 0.875,
+        "superseded_cited": 0,
+        "latency_p50_ms": 5692,
+        "latency_p95_ms": 15990,
+        "input_tokens": 57480,
+        "output_tokens": 2119
+      },
+      "failed_thresholds": []
+    }
+  }
+}

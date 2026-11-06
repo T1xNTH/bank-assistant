@@ -2,7 +2,9 @@
 
 Internal assistant for bank staff: answers **only from internal documents** with file/page citations, refuses when the answer is not there, enforces department permissions, masks personal data, and runs a small agent (loan calculation, transaction lookup, ticket creation with human approval). API-first, integrated with n8n.
 
-> Status: **scaffold** — roadmap `R-001` is `ROADMAP_DRAFT` until DEC-001 is approved. MVP target: 10 working days, team of two.
+> Status: MVP implementation, with release QA tracked in T-041. See the
+> [v1.0-mvp release QA report](.agent/reports/releases/RELEASE-v1.0-mvp.md)
+> for requirement evidence, known limits and release readiness.
 
 ## Synthetic banking stores
 
@@ -32,10 +34,13 @@ docker compose -f infrastructure/compose.yaml --env-file .env.local exec -T api 
 
 This streams the script into the running API without requiring it in the image.
 An existing destination fails safely with `FileExistsError`; do not delete it just
-to rerun setup. Owner B will wire first-run container initialization when integrating
-the agent endpoints in T-031; T-041 (also B) must verify seeding and synthetic-user
-lookup from a clean clone/empty volume for NFR-10. Until then, the command above is
-the required manual setup step before enabling the transaction tool in Docker.
+to rerun setup. Seeding is an explicit first-run step before using the transaction
+tool in Docker; restarting containers preserves the database. Fake authentication
+uses user `dev`, which has no seeded transactions. For transaction demos, generate
+the synthetic-user API key above, set `AUTH_BACKEND=apikey` in `.env.local`, and run
+`make up` again so the API reads the updated environment. Use that key in
+`X-API-Key`. Tool selection also needs a configured real LLM; the generic fake LLM
+does not select agent tools.
 
 `app.agent.core_banking.CoreBanking` opens SQLite with `mode=ro`; even SQL writes
 through its connection fail. `accounts(user)` and
@@ -142,15 +147,56 @@ committed ticket despite the failed HTTP response. Reconcile the existing ticket
 before creating a replacement.
 
 ## Quick start
+
+Run from Bash on Linux or WSL with Git, Python 3, GNU Make, curl and Docker Engine
+with Compose v2 available. Docker needs enough disk for the Python/ML image;
+the first build downloads its dependencies. Ports 8000, 6333, 6379 and 4000 must
+be available on loopback. Existing projects can keep their volumes: use a fresh
+`COMPOSE_PROJECT_NAME` for an isolated demo, and stop a project occupying these
+ports before starting another one.
+
+The default configuration runs fake RAG/LLM/authentication and real API, Redis,
+worker, Qdrant and gateway containers. It needs no provider key, corpus snapshot,
+model download or host Python packages. Create a private local gateway key first:
+
 ```bash
-make setup                     # .venv + dev deps
-cp .env.example .env.local     # fill in secrets later
-make check                     # ruff + pytest + framework validation
-.venv/bin/uvicorn app.main:app --app-dir src --port 8000
-curl -s localhost:8000/health
-curl -s -X POST localhost:8000/ask -H 'content-type: application/json' -d '{"question":"Phí thường niên thẻ?"}'
+git clone https://github.com/T1xNTH/bank-assistant.git
+cd bank-assistant
+cp .env.example .env.local
+python3 - <<'PY'
+from pathlib import Path
+import secrets
+path = Path(".env.local")
+path.write_text(path.read_text().replace(
+    "LITELLM_MASTER_KEY=\n",
+    "LITELLM_MASTER_KEY=sk-" + secrets.token_hex(32) + "\n",
+))
+PY
+make up
+make smoke
+docker compose -f infrastructure/compose.yaml --env-file .env.local exec -T api \
+  python - < scripts/smoke_api.py
 ```
-With fake backends (`RAG_BACKEND=fake`) `/ask` returns a canned, contract-shaped answer so the platform side can be built in parallel with RAG.
+
+`make up` waits for all five core services to be healthy. `make smoke` checks API,
+Qdrant and Redis; the final command exercises a cited fake answer, out-of-scope
+refusal, error envelopes and request IDs over HTTP. `/ask` returns a canned answer
+in this mode; these checks establish startup and wiring, not real RAG quality.
+Optional profiles, real-model configuration and synthetic banking setup are
+documented below and above. `make down` stops the core stack while keeping data.
+
+For host-side development and the full test suite, install the development
+dependencies separately:
+
+```bash
+make setup                      # .venv + dev/UI dependencies
+make check                      # Ruff + pytest + framework validation
+```
+
+The running API and worker share Redis, required even with fake backends. To run
+the API directly on the host, first stop the Compose API to free port 8000, load
+`.env.local` into the shell (`set -a; . ./.env.local; set +a`), then use
+`.venv/bin/uvicorn app.main:app --app-dir src --port 8000`. Keep Redis running.
 
 Authenticated clients can enqueue the same body at `POST /ask/jobs` and poll
 `GET /ask/jobs/{job_id}`. Queue positions start at 1; other users and expired jobs
