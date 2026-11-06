@@ -44,9 +44,10 @@ The smoke sends only a synthetic ping and checks for a nonempty answer. Cloud
 ping requests use `reasoning_effort=none` and `max_completion_tokens=2048` for the
 default economical OpenAI model `gpt-6-luna`. This affects only the smoke.
 Cloud checks call OpenAI and can consume quota. Errors print status/type without keys
-or provider response bodies. CI starts LiteLLM without credentials, and does not
-download local weights or make paid model requests. CI generates an ephemeral
-gateway key before rendering Compose.
+or provider response bodies. The backend-smoke/clean-clone CI jobs run fake backends
+without provider credentials or local weights. The separate selected-path eval-gate
+uses a real cloud provider key and pinned corpus for its ten public questions; see
+`ci.md`. CI generates an ephemeral gateway key before rendering Compose.
 
 To verify OpenAI structured output with synthetic input:
 `python3 scripts/smoke_llm.py --models cloud-chat --structured`.

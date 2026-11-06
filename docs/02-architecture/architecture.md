@@ -4,92 +4,137 @@ title: Architecture — bank-assistant MVP
 type: reference
 domain: architecture
 module: repository
-tags: [architecture, design, components]
+tags: [architecture, design, components, t-043]
 priority: 1
 ---
-# Kiến trúc — bank-assistant MVP
+# Architecture — bank-assistant MVP
 
-## Trạng thái input
+## Scope and authority
 
-- **Status**: `ingested`
-- **Authority**: `draft — pending approval in DEC-001`
-- **Source Artifact**: `docs/00-project/product-plan.md`
-- **Ingested Date**: `2026-10-24`
-- **Validated By**: `trong-hung`, `teammate-b`
+This describes the implemented source at main 5819d50 and the documentation-only
+T-043 follow-up. It records the architecture authorized by DEC-001 and existing
+approved changes, including the OpenAI gateway migration in CR-008. It does not
+approve a new architecture, contract, production release or requirement deviation.
 
-## Bối cảnh hệ thống
+## System context
 
-Nhân viên (qua UI demo hoặc cổng nội bộ) và các workflow n8n gọi API bằng API key. API trả lời dựa trên index tài liệu nội bộ, chỉ gọi LLM qua gateway, và ghi trace. Không có gì ra khỏi mạng ngoại trừ lời gọi tới LLM cloud, và LLM cloud chỉ nhận văn bản đã che; request nhạy cảm được route sang model local.
+Staff use the API directly, through the trusted local Streamlit demo, or through
+n8n. FastAPI authenticates API keys, masks request data and delegates to RAG,
+queued work or the LangGraph agent. All model requests go through `app/llm.py`
+and the authenticated LiteLLM gateway. Eligible masked public/internal context
+can go to OpenAI; sensitive requests stay on the local alias without cloud fallback.
 
 ```mermaid
 flowchart LR
-  UI[Streamlit demo UI] --> API
-  N8N[n8n workflows] --> API
-  API[FastAPI api] -->|enqueue masked| REDIS[(Redis)]
-  REDIS --> WORKER[RQ worker]
-  API --> RAG[RAG: retrieve + rerank + answer]
-  WORKER --> RAG
-  RAG --> QDRANT[(Qdrant)]
-  RAG --> GW[LiteLLM gateway]
-  API --> AGENT[LangGraph agent]
-  AGENT --> GW
-  AGENT --> SQLITE[(SQLite core_banking ro, tickets)]
-  GW --> OPENAI[OpenAI API]
-  GW --> OLLAMA[Ollama Qwen2.5 Q4]
-  API -.traces.-> LF[Langfuse]
-  WORKER -.traces.-> LF
-  INGEST[scripts/ingest.py: docling → chunk → bge-m3] --> QDRANT
+    UI[Streamlit on host / internal client] --> API[FastAPI]
+    N8N[Optional n8n approval workflow] --> API
+    API --> Auth[Authenticated User and masking]
+    Auth --> RAG[Retrieve / rerank / answer]
+    Auth --> Queue[(Redis: masked RQ jobs)]
+    Queue --> Worker[RQ worker / bounded retries]
+    Worker --> RAG
+    Auth --> Agent[LangGraph / human interrupt]
+    Agent --> RAG
+    Agent --> Bank[(SQLite banking: read-only)]
+    Agent --> Tickets[(SQLite tickets after approval)]
+    Agent --> Checkpoints[(SQLite masked checkpoints)]
+    Ingest[PDFs / Docling / chunk / bge-m3] --> Qdrant[(Qdrant dense + sparse / payload filters)]
+    RAG --> Qdrant
+    RAG --> Gateway[LiteLLM]
+    Agent --> Gateway
+    Gateway --> Cloud[OpenAI / cloud-chat]
+    Gateway --> Local[Ollama / local-chat]
+    API --> Audit[(SQLite audit)]
+    API -. masked traces .-> Trace[Optional Langfuse]
+    Worker -. masked traces .-> Trace
 ```
 
-## Thành phần và trách nhiệm
+## Components and deployment
 
-| Thành phần | Code | Owner | Runtime | Ghi chú |
-|---|---|---|---|---|
-| API | `src/app/main.py`, `schemas.py` | B | compose `api` :8000 | FastAPI, dependency xác thực, định dạng lỗi chung |
-| Auth / RBAC / audit | `src/app/security/{auth,audit}.py` | B | trong api | Key đã hash → `User`; audit trong `data/audit.db` |
-| PII | `src/app/security/pii.py` | B | trong api + worker | Presidio (regex recognizer, không dùng model spaCy) + regex VN |
-| RAG | `src/app/rag/*` | A | trong api + worker | parse_docling, chunk, embed (bge-m3 dense+sparse), store, retrieve (RRF), rerank, answer |
-| Routing | `src/app/routing.py` | A | trong api | PII/mật → `local-chat`, còn lại → `cloud-chat` |
-| Client LLM gateway | `src/app/llm.py` | B | trong api | Nơi duy nhất gọi LLM (endpoint tương thích OpenAI của LiteLLM) |
-| Agent | `src/app/agent/*` | A (graph, tools) / B (SQLite, endpoints) | trong api | LangGraph, ToolNode, `interrupt` cho `tao_ticket` |
-| Hàng chờ | `src/app/queue/*` | B | compose `redis`, `worker` | RQ, hàng chờ theo priority, giới hạn worker bằng token bucket |
-| Observability | `src/app/tracing.py`, `llm_cost.py` | B | compose profile `obs` | Langfuse tự host |
-| Tự động hoá | `infrastructure/n8n/` | B | compose profile `automation` | n8n + Mailpit |
-| UI | `ui/app.py` | A | local | Streamlit, chọn role → API key |
-| Eval | `eval/` | A | CLI / CI | Judge RAGAS = OpenAI |
+| Component | Source | Deployment / responsibility |
+|---|---|---|
+| HTTP API | `src/app/main.py`, `schemas.py`, `deps.py` | Core `api`, loopback :8000; contracts and sanitized errors |
+| Identity / masking / audit | `src/app/security/`, `log_config.py` | API/worker; hashed key registry, trusted User, fail-closed masking and audit |
+| Retrieval and answer | `src/app/rag/` | API/worker; bge-m3 dense+sparse, Qdrant RRF, reranker, citation/refusal validation |
+| Routing and LLM client | `routing.py`, `llm.py` | Select alias locally; only LLM client issues authenticated inference HTTP |
+| Agent | `src/app/agent/` | One API process; read-only tools, approved ticket writes and persistent masked checkpoints |
+| Async jobs | `src/app/queue/` | Core Redis :6379 and worker; role priority, owner-bound polling and bounded retry/rate budgets |
+| Vector store | `infrastructure/compose.yaml` | Core Qdrant v1.12.4 :6333; named persistent volume |
+| Gateway | `infrastructure/litellm/config.yaml` | Core LiteLLM :4000; provider key only in this Compose service |
+| Local inference | Compose `local-llm` profile | Ollama :11434; explicitly pull model weights |
+| Automation | `infrastructure/n8n/workflows/` | `automation` profile: n8n :5678, Mailpit :8025 / SMTP :1025 |
+| Observability | `tracing.py`, `llm_cost.py`, Compose `obs` | Self-hosted Langfuse :3000 plus its worker/data services; optional |
+| UI | `ui/app.py`, `ui/ui_api.py` | Host `make ui`, loopback :8501; role-key mapping, no independent authorization boundary |
+| Evaluation | `eval/run.py`, `eval/thresholds.json` | CLI / selected-path CI; full golden set and separate public smoke subset |
 
-## Topology triển khai
+The five core Compose services are `api`, `worker`, `redis`, `qdrant`, `litellm`.
+Each optional profile can start independently with core services. Published ports
+bind to loopback. Named volumes persist audit/agent SQLite, Qdrant, model caches
+and optional service data; host-side `data/core_banking.db` is a different file
+from the API's `/app/data/core_banking.db`.
 
-Docker Compose (`infrastructure/compose.yaml`), chỉ bind vào `127.0.0.1`. Lõi: `api`, `worker`, `redis`, `qdrant`, `litellm`. Profile: `local-llm` (`ollama`), `automation` (`n8n`, `mailpit`), `obs` (bộ Langfuse). Cổng: 8000 api, 6333 qdrant, 6379 redis, 4000 litellm, 11434 ollama, 5678 n8n, 8025 mailpit, 3000 langfuse.
+Defaults are fake RAG, LLM and authentication for reproducible startup. They do
+not establish real model, document or department behavior. `AUTH_BACKEND=apikey`
+and distinct generated identities are required for the role/approval demo.
+Gateway liveness is separate from model readiness; missing Ollama never triggers
+a cloud fallback for sensitive input.
 
-## Luồng dữ liệu và ranh giới tin cậy
+## Request and trust boundaries
 
-1. Request → xác thực (key → `User`) → **che PII** → (đồng bộ) RAG / (bất đồng bộ) đưa payload đã che vào hàng chờ.
-2. Filter khi retrieval: `department ∈ {user.department, "public"}` AND `superseded_by IS NULL`, áp ngay trong truy vấn Qdrant (không bao giờ chỉ lọc sau).
-3. Quyết định routing dựa trên loại PII trong kết quả che + `classification` cao nhất của các chunk lấy được.
-4. Chỉ gọi LLM qua gateway; cloud chỉ nhận văn bản đã che.
-5. Output được che thêm lần nữa trước khi trả về, ghi log, ghi trace.
-6. Mỗi request một dòng audit: user, endpoint, câu hỏi đã che, route, có từ chối không, latency, chi phí, trace_id.
+1. Resolve a trusted `User` from the API-key digest and registry. UI labels and
+   model arguments cannot grant a department, role or transaction owner.
+2. Mask request text before inference, queue/checkpoint storage, backend logs or
+   traces. A masking failure stops processing. The local UI still holds the raw
+   text entered by its operator in session history; it is not an anonymization service.
+3. The API applies a shared Redis token bucket to `/ask`, `/chat`, `/ask/jobs`.
+   Missing Redis fails those endpoints closed. Agent routes currently have no such bucket.
+4. Retrieval applies `department in {public, user.department}` and
+   `superseded_by IS NULL` inside each Qdrant query branch before fusion/top-k.
+   Classification controls model routing, not cross-department authorization.
+5. PII, `force_local`, confidential or unknown classification selects `local-chat`;
+   otherwise public/internal content is eligible for `cloud-chat`. Sensitive history
+   remains local across agent turns. Queue workers detect older masked PII placeholders too.
+6. An answer needs usable content plus valid file/page citations. Missing citations,
+   no permitted hits or refusal conditions return a safe refusal. A citation alone
+   does not prove factual correctness; quality is separately measured by evaluation.
+7. Free model output is masked at egress. Code-rendered loan/transaction answers
+   preserve verified amounts and already-masked strings via internal `answer_source`;
+   they are not passed through the model again. Logs/audit still mask both paths.
+8. `tao_ticket` proposes and interrupts without writing. A different authenticated
+   approver can approve/reject once. Owner binding comes from trusted thread state,
+   not the model. Unknown/foreign threads are hidden; replay returns 409.
 
-## Hợp đồng nội bộ
+`/ask/jobs` stores masked JSON, pseudonymous ownership and sanitized results in
+Redis. Approvers receive `ask-high` priority; other users use `ask-default`, with
+legacy `ask` drained last. Polling is owner-bound. Waiting/result TTL, finite retry
+budgets, shared worker rate limits and fail-closed outage behavior are explicit;
+pseudonymized user IDs are not guaranteed anonymous.
 
-Định nghĩa trong `src/app/contracts.py` và mô tả trong `docs/04-api/contract.md`. Mỗi hợp đồng có một fake trong `tests/fakes.py`; `RAG_BACKEND` / `LLM_BACKEND` chuyển giữa fake và thật để A và B không bao giờ chặn nhau.
+## Persistence and failure boundaries
 
-## Các quyết định chính
+- Core-banking SQLite is read-only and requires explicit synthetic seeding.
+  Role elevation does not grant another user's transactions.
+- Agent checkpoints persist masked state, but the amount vault is in memory and
+  expires; after restart the agent may ask for an amount again.
+- One API process supplies the approval locks. More API processes require a
+  shared locking design; this MVP does not claim that support.
+- Ticket, checkpoint and audit writes are separate transactions. A 503 may follow
+  a committed ticket; reconcile before retrying the proposal.
+- Worker health uses Redis registration/heartbeat and has a documented stale
+  registration window after an abrupt kill. Docker health failure alone is not autoheal.
+- Qdrant recovery verifies snapshot checksum, collection and exact count, refuses
+  an existing destination and requires paused writers. Equal-count concurrent
+  updates are outside that count check's guarantees.
 
-Ghi thành governance decision (ADR) trong `.agent/governance/decisions/` — Qdrant hybrid (A), routing model lai (A), RBAC dạng payload filter (B), hàng chờ bằng RQ (B).
+## Decisions, verification and limits
 
-## Related Files
+The [ADR index](adr/index.md) records four existing decisions: hybrid retrieval,
+hybrid model routing, payload RBAC and RQ jobs. [Contracts](../04-api/contract.md),
+[security design](../06-security/security-design.md), [runtime guide](../07-development/runtime-guide.md)
+and [CI](../07-development/ci.md) provide the detailed procedures and tests.
 
-- SRS: `docs/01-business/srs.md`
-- Contract: `docs/04-api/contract.md`
-- Dữ liệu: `docs/05-database/schema.md`
-- Bảo mật: `docs/06-security/security-design.md`
-
-## Forbidden Actions
-
-- Không gọi LLM ở ngoài `app/llm.py`.
-- Không chỉ áp RBAC sau khi retrieval.
-- Không ghi log hay đưa vào hàng chờ văn bản chưa che.
-
-CR-008 (approved, 2026-10-29) authorizes the cloud provider change to OpenAI. Only LiteLLM receives OPENAI_API_KEY; local routing remains unchanged. Usage is paid and subject to account quota/rate limits. The owner budget is USD 5-6; verify account spending controls before the first evaluation.
+The full saved T-038 eval has 50 questions per mode; the public CI gate has 10
+questions and current median judging. Neither a fake demo nor a subset replaces
+full-corpus, confidential/local routing or RBAC QA. Recorded OpenAI p95 8.746s
+meets its target; combined 19.185s and local 21.899s remain disclosed latency gaps.
+There is no HA, SSO, production TLS, load-test or release-certification claim.
