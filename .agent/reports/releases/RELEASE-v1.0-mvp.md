@@ -32,7 +32,7 @@ executed startup/regression checks with clearly identified earlier real-model ev
 
 - **Included Epics or Tasks**: `T-041, E-015; NFR evidence from merged T-001..T-040/T-042`
 - **Included Commits**: `main 7ab8767289ca3c30cb6f5b8b4ff0abb9aa9e10ec; T-041 documentation/evidence follow-up`
-- **Included Artifacts**: `README.md, infrastructure/compose.yaml, existing API/worker image, docs/09-testing/evidence/T-041-eval-summary.json`
+- **Included Artifacts**: `README.md, infrastructure/compose.yaml, Dockerfile pip network tolerance, scripts/smoke_release.py, release-qa.yml, docs/09-testing/evidence/T-041-eval-summary.json`
 - **Excluded or Deferred Items**: `Production deployment, tag/publish, load/penetration tests, new paid/full real-model evaluation, local-model latency optimization`
 
 ## Related Files
@@ -108,7 +108,7 @@ bounded retries; clients needing queue recovery must use `/ask/jobs`.
 
 - **Outcome**: `pending`
 - **Evidence**: `Local acceptance execution in progress; raw build/check logs under shared workspace output/t041-tools; sanitized durable summary will be linked here`
-- **Incidents or Regressions**: `README host-only quick start omitted required Redis; corrected to Compose-first setup`
+- **Incidents or Regressions**: `README host-only quick start omitted required Redis; corrected. Initial cold image build failed on PyTorch CDN read timeout; pip network tolerance raised without changing dependency requirements. Initial concurrent local make check: 1288 passed, 2 skipped, 1 tracing fork-test subprocess timeout (15 seconds); no pass claimed for that run.`
 - **Post-Release Verification**: `not-run: no release/tag/production deployment performed`
 
 ## Completion Criteria

@@ -1,0 +1,97 @@
+name: Clean clone release QA
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - README.md
+      - Makefile
+      - infrastructure/compose.yaml
+      - infrastructure/docker/Dockerfile
+      - scripts/smoke_api.py
+      - scripts/smoke_release.py
+      - scripts/seed_core_banking.py
+      - .github/workflows/release-qa.yml
+permissions:
+  contents: read
+concurrency:
+  group: release-qa-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  clean-clone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      COMPOSE_PROJECT_NAME: release-qa-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Clone only tracked candidate files into an empty directory
+        id: clone
+        run: |
+          git clone --no-local "$GITHUB_WORKSPACE" "$RUNNER_TEMP/bank-assistant-clean"
+          cd "$RUNNER_TEMP/bank-assistant-clean"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain)"
+          test ! -e .env.local
+          test ! -e data/core_banking.db
+          test -z "$(docker volume ls -q --filter label=com.docker.compose.project=$COMPOSE_PROJECT_NAME)"
+          mkdir -p output/release-qa
+          git rev-parse HEAD > output/release-qa/head.txt
+      - name: Follow README local configuration without provider credentials
+        id: configure
+        working-directory: ${{ runner.temp }}/bank-assistant-clean
+        run: |
+          cp .env.example .env.local
+          python3 - <<'PY'
+          from pathlib import Path
+          import secrets
+          path = Path('.env.local')
+          key = 'sk-' + secrets.token_hex(32)
+          print(f'::add-mask::{key}')
+          path.write_text(path.read_text().replace('LITELLM_MASTER_KEY=\n', f'LITELLM_MASTER_KEY={key}\n'))
+          PY
+      - name: Start all five core services and run Make smoke
+        working-directory: ${{ runner.temp }}/bank-assistant-clean
+        run: |
+          make up 2>&1 | tee output/release-qa/up.log
+          make smoke 2>&1 | tee output/release-qa/smoke.log
+          docker compose -f infrastructure/compose.yaml --env-file .env.local ps --format json > output/release-qa/services.jsonl
+          docker compose -f infrastructure/compose.yaml --env-file .env.local exec -T api python - < scripts/smoke_api.py | tee output/release-qa/api-demo.log
+      - name: Seed once and verify demo, queue worker and synthetic owner isolation
+        working-directory: ${{ runner.temp }}/bank-assistant-clean
+        run: |
+          docker compose -f infrastructure/compose.yaml --env-file .env.local exec -T api python - --path /app/data/core_banking.db < scripts/seed_core_banking.py
+          docker compose -f infrastructure/compose.yaml --env-file .env.local exec -T api python - < scripts/smoke_release.py | tee output/release-qa/demo.jsonl
+          if docker compose -f infrastructure/compose.yaml --env-file .env.local exec -T api python - --path /app/data/core_banking.db < scripts/seed_core_banking.py > output/release-qa/reseed.log 2>&1; then
+            echo '::error::Seeding must refuse an existing database'
+            exit 1
+          fi
+          grep -q FileExistsError output/release-qa/reseed.log
+      - name: Verify stop/start preserves seeded data
+        working-directory: ${{ runner.temp }}/bank-assistant-clean
+        run: |
+          make down
+          make up 2>&1 | tee output/release-qa/restart.log
+          make smoke
+          docker compose -f infrastructure/compose.yaml --env-file .env.local exec -T api python - < scripts/smoke_release.py | tee output/release-qa/restart-demo.jsonl
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          before = json.loads(Path('output/release-qa/demo.jsonl').read_text())
+          after = json.loads(Path('output/release-qa/restart-demo.jsonl').read_text())
+          assert before['seed_sha256'] == after['seed_sha256'], 'Seed changed during reseed/restart'
+          PY
+          echo 'Clean clone -> make up + smoke + HTTP demo + seed/owner isolation + restart: PASS' >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload sanitized startup evidence
+        if: ${{ always() && steps.clone.outcome == 'success' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-qa-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/bank-assistant-clean/output/release-qa/
+          retention-days: 14
+          if-no-files-found: error
+      - name: Remove only this run's disposable services and volumes
+        if: ${{ always() && steps.configure.outcome == 'success' }}
+        working-directory: ${{ runner.temp }}/bank-assistant-clean
+        run: docker compose -f infrastructure/compose.yaml --env-file .env.local down --volumes --remove-orphans

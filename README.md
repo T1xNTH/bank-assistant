@@ -42,6 +42,21 @@ the synthetic-user API key above, set `AUTH_BACKEND=apikey` in `.env.local`, and
 `X-API-Key`. Tool selection also needs a configured real LLM; the generic fake LLM
 does not select agent tools.
 
+In the default fake configuration, after the explicit seed command, verify the
+seeded volume and worker without model inference:
+
+```bash
+docker compose -f infrastructure/compose.yaml --env-file .env.local exec -T api \
+  python - < scripts/smoke_release.py
+```
+
+This checks chat, a queued answer completed by the actual worker, the fake agent
+greeting, three synthetic owners with five transactions each, foreign-account
+isolation and read-only SQLite. It does not exercise real-model tool selection
+or ticket approval. The `Clean clone release QA` workflow repeats startup and
+this demo from a fresh tracked-files clone and empty volumes, rejects a repeated
+seed, and verifies the database checksum survives stop/start.
+
 `app.agent.core_banking.CoreBanking` opens SQLite with `mode=ro`; even SQL writes
 through its connection fail. `accounts(user)` and
 `transactions(user, account_id=None, limit=20)` filter by the authenticated `User`;
