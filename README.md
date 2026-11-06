@@ -186,8 +186,12 @@ python3 - <<'PY'
 from pathlib import Path
 import secrets
 path = Path(".env.local")
-path.write_text(path.read_text().replace(
-    "LITELLM_MASTER_KEY=\n",
+template = path.read_text()
+marker = "LITELLM_MASTER_KEY=\n"
+if template.count(marker) != 1:
+    raise SystemExit("Expected exactly one empty LITELLM_MASTER_KEY line in .env.example")
+path.write_text(template.replace(
+    marker,
     "LITELLM_MASTER_KEY=sk-" + secrets.token_hex(32) + "\n",
 ))
 PY

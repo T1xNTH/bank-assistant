@@ -3,6 +3,21 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - .env.example
+      - requirements*.txt
+      - README.md
+      - Makefile
+      - infrastructure/compose.yaml
+      - infrastructure/docker/Dockerfile
+      - scripts/smoke_api.py
+      - scripts/smoke_release.py
+      - scripts/seed_core_banking.py
+      - .github/workflows/release-qa.yml
+  push:
+    branches: [main]
+    paths:
+      - .env.example
+      - requirements*.txt
       - README.md
       - Makefile
       - infrastructure/compose.yaml
@@ -47,9 +62,13 @@ jobs:
           from pathlib import Path
           import secrets
           path = Path('.env.local')
+          template = path.read_text()
+          marker = 'LITELLM_MASTER_KEY=\n'
+          if template.count(marker) != 1:
+              raise SystemExit('Expected exactly one empty LITELLM_MASTER_KEY line in .env.example')
           key = 'sk-' + secrets.token_hex(32)
           print(f'::add-mask::{key}')
-          path.write_text(path.read_text().replace('LITELLM_MASTER_KEY=\n', f'LITELLM_MASTER_KEY={key}\n'))
+          path.write_text(template.replace(marker, f'LITELLM_MASTER_KEY={key}\n'))
           PY
       - name: Start all five core services and run Make smoke
         working-directory: ${{ runner.temp }}/bank-assistant-clean
