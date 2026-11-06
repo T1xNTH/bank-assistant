@@ -155,6 +155,10 @@ be available on loopback. Existing projects can keep their volumes: use a fresh
 `COMPOSE_PROJECT_NAME` for an isolated demo, and stop a project occupying these
 ports before starting another one.
 
+The image build allows 120 seconds of inactivity per pip network read and five
+connection retries for large CPU PyTorch wheels. It still requires working access
+to the package indexes; an exhausted download fails the build visibly.
+
 The default configuration runs fake RAG/LLM/authentication and real API, Redis,
 worker, Qdrant and gateway containers. It needs no provider key, corpus snapshot,
 model download or host Python packages. Create a private local gateway key first:
