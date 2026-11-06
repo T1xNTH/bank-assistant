@@ -639,3 +639,6 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261106-095652` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `verify 'python scripts/validate-framework.py' passed` | `.agent/reports/implementation/T-041.md` | `none` |
 | `S-20261106-095903` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-041.md` | `none` |
 | `S-20261106-095903-2` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-041.md` | `none` |
+| `S-20261106-103319` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-034` | `completed` | `task review -> done` | `.agent/reports/review/T-034.md` | `none` |
+| `S-20261106-103319-2` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-039` | `completed` | `task review -> done` | `.agent/reports/review/T-039.md` | `none` |
+| `S-20261106-103319-3` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-040` | `completed` | `task review -> done` | `.agent/reports/review/T-040.md` | `none` |
