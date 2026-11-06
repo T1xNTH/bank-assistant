@@ -22,23 +22,25 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `63`
+- **Context Revision**: `64`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-06`
 - **Updated By**: `codex-b`
-- **Update Trigger**: `PR110 review follow-up inherits PR109 CLI closure and preserves T-041 review handoff`
+- **Update Trigger**: `PR109 merged as 1797ca2; PR110 base main, resolve record conflicts and preserve T-041 review`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-010, E-011, E-012, E-013, E-015, E-016 EPIC_IN_PROGRESS; E-014 EPIC_IN_PROGRESS (T-038 done); E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-041 review (PR110: A finds no blocking issue; final approval waits for PR109 merge and retarget); T-042 review (PR #97, CHANGES_REQUESTED của B: F-01, F-02 đã sửa, chờ review lại); T-035 done (APPROVED review and merged PR #99 reconciled); T-036 review (merged PR #103 records retained); T-040 done (A approval at 44a7901, merged PR104; QA/profile/recovery evidence retained); T-033 done (approved/merged PR #98); T-034 done (A approval at fc41ef2, merged PR101); T-039 done (A approval at 71b49a7, merged PR107; A-authored F-01 verified by B via CI/shell); T-032 done (PR #95 merged); T-027 review; T-026, T-028, T-029, T-030, T-031 done; other M-002 tasks pending`
+- **Active Task IDs**: `T-041 review (PR110 base main; PR109 merged 1797ca2; A found no blocking issue, final approval pending); T-042 review (PR #97, CHANGES_REQUESTED của B: F-01, F-02 đã sửa, chờ review lại); T-035 done (APPROVED review and merged PR #99 reconciled); T-036 review (merged PR #103 records retained); T-040 done (A approval at 44a7901, merged PR104; QA/profile/recovery evidence retained); T-033 done (approved/merged PR #98); T-034 done (A approval at fc41ef2, merged PR101); T-039 done (A approval at 71b49a7, merged PR107; A-authored F-01 verified by B via CI/shell); T-032 done (PR #95 merged); T-027 review; T-026, T-028, T-029, T-030, T-031 done; other M-002 tasks pending`
 - **Active Blocker IDs**: `none; BLOCKER-008 resolved by A review; BLOCKER-009 resolved using separate Linux runners`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261106-103319-3`
+- **Current Session ID**: `S-20261106-T041-main-merge`
 
 ## Revision Provenance
+
+Revision 64 (codex-b, 2026-11-06): user confirmed PR109 merged; verified merge commit 1797ca2 and PR110 base main. Resolve the three record conflicts by retaining all main task states except T-041 review, all session rows, and both provenance histories. PR110 prerequisite merge/retarget conditions are satisfied; final counterpart approval remains pending. No T-041 done, PR110 merge or release publication is claimed.
 
 Revision 63 (codex-b, 2026-11-06): merge PR109 review follow-up 7902d38 into the T-041 branch, preserving its three actual CLI closures and approval/context records. This child branch retains T-041 review, completed implementation evidence and the actual conditional PR110 review archive. Workflow/input-validation fixes are submitted; no new final approval, task closure or release is claimed.
 
