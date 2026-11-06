@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -508,8 +509,9 @@ def test_local_route_or_unknown_label_fails_closed_to_the_local_judge(route, lab
 
 def test_cli_answers_and_judges_confidential_questions_locally(tmp_path):
     cloud, local, llm = Recorder(), Recorder(), FakeLLM("Đáp [1].")
-    _, out, results = cli(tmp_path, ["--mode", "dense"], judge=cloud, local_judge=local, llm=llm,
-                          table=CONFIDENTIAL_TABLE)
+    _, out, results = cli(
+        tmp_path, ["--mode", "dense"], judge=cloud, local_judge=local, llm=llm, table=CONFIDENTIAL_TABLE
+    )
     assert [alias for _, alias in llm.calls] == ["local-chat", "cloud-chat"]
     assert [s["user_input"] for s in cloud.samples] == ["Phí thẻ và lãi?"]
     assert [s["user_input"] for s in local.samples] == ["Lương vùng I?"]
@@ -537,3 +539,36 @@ def test_local_judge_model_default(monkeypatch):
     assert run.local_judge_model() == "local-chat"
     monkeypatch.setenv("JUDGE_LOCAL_MODEL", "local-chat-7b")
     assert run.local_judge_model() == "local-chat-7b"
+
+
+# T-039 review F-01: the judge flips on one-statement answers, so each answer is scored by a median.
+
+
+def test_median_score_keeps_the_majority_of_the_runs():
+    assert run.median_score([1.0, 1.0, 0.0]) == 1.0
+    assert run.median_score([0.0, 0.5, 1.0]) == 0.5
+
+
+def test_median_score_leaves_out_failed_and_nan_runs():
+    assert run.median_score([RuntimeError("gateway"), 1.0, float("nan")]) == 1.0
+    assert run.median_score([0.0, RuntimeError("gateway"), 1.0]) == 0.5
+
+
+def test_median_score_is_unscored_when_no_run_scored():
+    failure = RuntimeError("gateway")
+    assert run.median_score([failure, float("nan")]) is failure
+    assert math.isnan(run.median_score([float("nan")]))
+
+
+@pytest.mark.parametrize("raw", ["0", "2", "-1", "x", "1.5"])
+def test_judge_repeats_must_be_an_odd_positive_integer(monkeypatch, raw):
+    monkeypatch.setenv("JUDGE_REPEATS", raw)
+    with pytest.raises(SystemExit):
+        run.judge_repeats()
+
+
+def test_judge_repeats_defaults_to_three(monkeypatch):
+    monkeypatch.delenv("JUDGE_REPEATS", raising=False)
+    assert run.judge_repeats() == 3
+    monkeypatch.setenv("JUDGE_REPEATS", "5")
+    assert run.judge_repeats() == 5
