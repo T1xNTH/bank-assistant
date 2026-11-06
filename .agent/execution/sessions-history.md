@@ -634,6 +634,13 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261105-164256` | `2026-11-05` | `2026-11-05` | `codex-b` | `T-039` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-039.md` | `none` |
 | `S-20261105-164256-2` | `2026-11-05` | `2026-11-05` | `codex-b` | `T-039` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-039.md` | `none` |
 | `S-20261106-T041-dependencies` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041 dependencies` | `completed` | `Reconcile T-034/T-039/T-040 review -> done using actual T1xNTH approvals and merged PR101/104/107; no new approval` | `.agent/reports/implementation/T-041-dependency-closure.md` | `none` |
+| `S-20261106-092937` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
+| `S-20261106-093600` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `implementation report draft` | `.agent/reports/implementation/T-041.md` | `none` |
+| `S-20261106-095652` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `verify 'python scripts/validate-framework.py' passed` | `.agent/reports/implementation/T-041.md` | `none` |
+| `S-20261106-095903` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-041.md` | `none` |
+| `S-20261106-095903-2` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-041.md` | `none` |
 | `S-20261106-103319` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-034` | `completed` | `task review -> done` | `.agent/reports/review/T-034.md` | `none` |
 | `S-20261106-103319-2` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-039` | `completed` | `task review -> done` | `.agent/reports/review/T-039.md` | `none` |
 | `S-20261106-103319-3` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-040` | `completed` | `task review -> done` | `.agent/reports/review/T-040.md` | `none` |
+| `S-20261106-T041-main-merge` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `Merge main 1797ca2 after PR109 squash; preserve both histories and T-041 review, PR110 base main` | `.agent/reports/implementation/T-041-main-handoff.md` | `none` |
+| `S-20261106-T041-approval-record` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `Archive actual T1xNTH approval at 206b3b5; correct checklist and review heading; task remains review pending merge` | `.agent/reports/review/T-041.md` | `none` |

@@ -1,0 +1,78 @@
+{
+  "workflow_run": "https://github.com/T1xNTH/bank-assistant/actions/runs/42152418148",
+  "candidate_head": "4deab88a1f80a86f26a7bda26b55d1177495cd8a",
+  "tested_pr_merge_commit": "39031cdc90134286d5adc6a11ee57ce758a63d93",
+  "environment": "GitHub ubuntu-latest; Docker Compose 5.1.3",
+  "fresh_tracked_files_clone": true,
+  "empty_project_volumes_before_start": true,
+  "backends": {
+    "rag": "fake",
+    "llm": "fake",
+    "auth": "fake"
+  },
+  "provider_key_required": false,
+  "services": {
+    "api": {
+      "health": "healthy",
+      "state": "running",
+      "image": "release-qa-42152418148-1-api"
+    },
+    "litellm": {
+      "health": "healthy",
+      "state": "running",
+      "image": "ghcr.io/berriai/litellm:v1.106.6"
+    },
+    "qdrant": {
+      "health": "healthy",
+      "state": "running",
+      "image": "qdrant/qdrant:v1.12.4"
+    },
+    "redis": {
+      "health": "healthy",
+      "state": "running",
+      "image": "redis:7.4-alpine"
+    },
+    "worker": {
+      "health": "healthy",
+      "state": "running",
+      "image": "release-qa-42152418148-1-worker"
+    }
+  },
+  "make_up": "passed",
+  "make_smoke": "passed",
+  "api_smoke": "answer/citations, refusal, validation, 404, request IDs passed",
+  "demo_before_restart": {
+    "chat": "passed",
+    "http_job_real_worker": "done_with_citations",
+    "agent_fake_greeting": "completed_no_tool_execution",
+    "synthetic_users": 3,
+    "transactions_per_owner": 5,
+    "foreign_account_rows": 0,
+    "sqlite_read_only": true,
+    "seed_sha256": "9870b595a3d0c4c77c8eead5b4ce5f7e59867e47d7c6782b66a6eb9f7a376082"
+  },
+  "demo_after_restart": {
+    "chat": "passed",
+    "http_job_real_worker": "done_with_citations",
+    "agent_fake_greeting": "completed_no_tool_execution",
+    "synthetic_users": 3,
+    "transactions_per_owner": 5,
+    "foreign_account_rows": 0,
+    "sqlite_read_only": true,
+    "seed_sha256": "9870b595a3d0c4c77c8eead5b4ce5f7e59867e47d7c6782b66a6eb9f7a376082"
+  },
+  "reseed": "refused with FileExistsError; checksum unchanged",
+  "cleanup": "ephemeral project services and volumes removed successfully",
+  "artifact_name": "release-qa-42152418148-1",
+  "artifact_file_sha256": {
+    "api-demo.log": "0b295c105ec6d2c7e52cfabc6dee36f70c69864b255821a91a803691ddd19d73",
+    "demo.jsonl": "fd18b4232393622c4f10f835f17bcb28c7f41062e6c6136fc761a0ced8e11be3",
+    "head.txt": "d043667b45d435589e4ed5d80d29d893c5be1c610d825d88ad9a5f0f2f11415e",
+    "reseed.log": "58a35d586dbcf5b074a1202b860b21560a40dd5e34685c3f031fb4323a969a55",
+    "restart-demo.jsonl": "fd18b4232393622c4f10f835f17bcb28c7f41062e6c6136fc761a0ced8e11be3",
+    "restart.log": "46d842186980c369bea9250cb524c15495fd2d93fe10aa4a513efcea7492b0bd",
+    "services.jsonl": "2e9356b55dc550153817bc7ec3e333324ac88a0a45ef613ce0b385c0ace3ed9d",
+    "smoke.log": "86de6f76cdea6670c7eefa04b615e6ec9c59d6c2d3e6d7550c5f4b36f1f9bf9c",
+    "up.log": "89c08fd6ed898ce7437a5a1b5a401846567dd50ab6357643adaebfe8821af177"
+  }
+}

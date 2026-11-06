@@ -22,23 +22,29 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `62`
+- **Context Revision**: `65`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-06`
 - **Updated By**: `codex-b`
-- **Update Trigger**: `PR109 owner-requested reconciliation: archive actual approvals and replay T-034/T-039/T-040 task done through CLI`
+- **Update Trigger**: `Record actual A approval of PR110 at 206b3b5; correct T-041 acceptance checklist and review heading`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-010, E-011, E-012, E-013, E-015, E-016 EPIC_IN_PROGRESS; E-014 EPIC_IN_PROGRESS (T-038 done); E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-042 review (PR #97, CHANGES_REQUESTED của B: F-01, F-02 đã sửa, chờ review lại); T-035 done (APPROVED review and merged PR #99 reconciled); T-036 review (merged PR #103 records retained); T-040 done (A approval at 44a7901, merged PR104; QA/profile/recovery evidence retained); T-033 done (approved/merged PR #98); T-034 done (A approval at fc41ef2, merged PR101); T-039 done (A approval at 71b49a7, merged PR107; A-authored F-01 verified by B via CI/shell); T-032 done (PR #95 merged); T-027 review; T-026, T-028, T-029, T-030, T-031 done; other M-002 tasks pending`
+- **Active Task IDs**: `T-041 review (A approved PR110 at 206b3b5 on 2026-11-06T04:32:22Z; CI/clean-clone green; awaiting PR110 merge before CLI closure); T-042 review (PR #97, CHANGES_REQUESTED của B: F-01, F-02 đã sửa, chờ review lại); T-035 done (APPROVED review and merged PR #99 reconciled); T-036 review (merged PR #103 records retained); T-040 done (A approval at 44a7901, merged PR104; QA/profile/recovery evidence retained); T-033 done (approved/merged PR #98); T-034 done (A approval at fc41ef2, merged PR101); T-039 done (A approval at 71b49a7, merged PR107; A-authored F-01 verified by B via CI/shell); T-032 done (PR #95 merged); T-027 review; T-026, T-028, T-029, T-030, T-031 done; other M-002 tasks pending`
 - **Active Blocker IDs**: `none; BLOCKER-008 resolved by A review; BLOCKER-009 resolved using separate Linux runners`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261106-103319-3`
+- **Current Session ID**: `S-20261106-T041-approval-record`
 
 ## Revision Provenance
+
+Revision 65 (codex-b, 2026-11-06): archive actual T1xNTH approval PRR_kwDOVVrnos8AAAABWXRNog at 206b3b5, correct the T-041 acceptance/completion checklists from passing evidence and repair the malformed review heading. T-041 remains review pending PR110 merge; no new reviewer approval, task closure, release authorization or tag is performed.
+
+Revision 64 (codex-b, 2026-11-06): user confirmed PR109 merged; verified merge commit 1797ca2 and PR110 base main. Resolve the three record conflicts by retaining all main task states except T-041 review, all session rows, and both provenance histories. PR110 prerequisite merge/retarget conditions are satisfied; final counterpart approval remains pending. No T-041 done, PR110 merge or release publication is claimed.
+
+Revision 63 (codex-b, 2026-11-06): merge PR109 review follow-up 7902d38 into the T-041 branch, preserving its three actual CLI closures and approval/context records. This child branch retains T-041 review, completed implementation evidence and the actual conditional PR110 review archive. Workflow/input-validation fixes are submitted; no new final approval, task closure or release is claimed.
 
 Revision 62 (codex-b, 2026-11-06), explicitly requested in PR109 comment 6675996015: T-034/T-039/T-040 approvals and merges are archived, completion checklists match their evidence, and all three closures were replayed through `agent task done`. The CLI updates task-board and sessions-history; this context is synchronized explicitly because the CLI does not write it. A authored T-039 F-01; B CI/shell verification is distinct from A owner approval. T-041 implementation/review is tracked on child PR110; this prerequisite branch does not advance its task. No new independent approval or PR109/PR110 merge is claimed.
 
