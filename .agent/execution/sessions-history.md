@@ -643,3 +643,4 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261106-103319-2` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-039` | `completed` | `task review -> done` | `.agent/reports/review/T-039.md` | `none` |
 | `S-20261106-103319-3` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-040` | `completed` | `task review -> done` | `.agent/reports/review/T-040.md` | `none` |
 | `S-20261106-T041-main-merge` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `Merge main 1797ca2 after PR109 squash; preserve both histories and T-041 review, PR110 base main` | `.agent/reports/implementation/T-041-main-handoff.md` | `none` |
+| `S-20261106-T041-approval-record` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `Archive actual T1xNTH approval at 206b3b5; correct checklist and review heading; task remains review pending merge` | `.agent/reports/review/T-041.md` | `none` |
