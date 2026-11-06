@@ -62,13 +62,14 @@ jobs:
           from pathlib import Path
           import secrets
           path = Path('.env.local')
-          template = path.read_text()
+          lines = path.read_text().splitlines(keepends=True)
           marker = 'LITELLM_MASTER_KEY=\n'
-          if template.count(marker) != 1:
+          if lines.count(marker) != 1:
               raise SystemExit('Expected exactly one empty LITELLM_MASTER_KEY line in .env.example')
           key = 'sk-' + secrets.token_hex(32)
           print(f'::add-mask::{key}')
-          path.write_text(template.replace(marker, f'LITELLM_MASTER_KEY={key}\n'))
+          lines[lines.index(marker)] = f'LITELLM_MASTER_KEY={key}\n'
+          path.write_text(''.join(lines))
           PY
       - name: Start all five core services and run Make smoke
         working-directory: ${{ runner.temp }}/bank-assistant-clean
