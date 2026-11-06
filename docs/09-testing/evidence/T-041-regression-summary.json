@@ -1,0 +1,43 @@
+{
+  "source_candidate": "4deab88a1f80a86f26a7bda26b55d1177495cd8a",
+  "environment": "WSL Ubuntu 24.04, disposable Python 3.11 QA container; real Docker Redis/RQ for integration",
+  "runs": {
+    "nfr_05_06_07_regression": {
+      "tests": 411,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "xml_sha256": "8deb92bdfbe983a6df843d78b73d43e039756811ffd0d7f2b67040f2782eea94",
+      "modules": {
+        "tests.api.test_agent": 34,
+        "tests.api.test_ask_routing": 18,
+        "tests.api.test_jobs": 30,
+        "tests.security.test_audit": 26,
+        "tests.security.test_auth": 25,
+        "tests.security.test_no_pii_leak": 13,
+        "tests.security.test_pii": 125,
+        "tests.unit.test_agent_graph": 99,
+        "tests.unit.test_queue_policy": 19,
+        "tests.unit.test_retrieve": 22
+      }
+    },
+    "real_redis_rq_worker": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "xml_sha256": "1c15061a9861af5e5e9b5eb700baffc63176651013cd27d4e993529cf58e39b8",
+      "modules": {
+        "tests.integration.test_worker": 5
+      },
+      "cases": [
+        "test_burst_30_jobs_completes_with_zero_failures_against_429_fake_llm",
+        "test_production_entrypoint_post_worker_poll_and_masked_storage",
+        "test_waiting_expiry_recovers_capacity_without_worker",
+        "test_actual_worker_consumes_high_before_default_and_legacy",
+        "test_worker_bucket_is_shared_and_spaces_real_attempts"
+      ],
+      "provider_simulation": "First two LLM attempts per question raise typed 429; 30 jobs, three attempts each, zero failed jobs"
+    }
+  }
+}

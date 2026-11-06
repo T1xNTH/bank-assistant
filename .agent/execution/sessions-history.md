@@ -636,3 +636,6 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261106-T041-dependencies` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041 dependencies` | `completed` | `Reconcile T-034/T-039/T-040 review -> done using actual T1xNTH approvals and merged PR101/104/107; no new approval` | `.agent/reports/implementation/T-041-dependency-closure.md` | `none` |
 | `S-20261106-092937` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
 | `S-20261106-093600` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `implementation report draft` | `.agent/reports/implementation/T-041.md` | `none` |
+| `S-20261106-095652` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `verify 'python scripts/validate-framework.py' passed` | `.agent/reports/implementation/T-041.md` | `none` |
+| `S-20261106-095903` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-041.md` | `none` |
+| `S-20261106-095903-2` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-041.md` | `none` |
