@@ -18,7 +18,7 @@ Workflow `.github/workflows/ci.yml` chạy trên pull request, push vào main v�
 | `eval-changes` | Xác định PR có đổi phần ảnh hưởng câu trả lời RAG hay eval không; quyết định có chạy `eval-gate` |
 | `eval-gate` | 10 câu golden, retrieval/LLM/judge thật, mode hybrid_rerank; fail dưới ngưỡng NFR-01..04. Bỏ qua với PR không đổi đường dẫn RAG/eval |
 | `ui-syntax` | Compile các file Python trong `ui/` |
-| `check` | Gate tổng hợp: chỉ pass khi quality, backend-smoke (gồm Trivy), eval-gate và ui-syntax đều thành công; fail/skip không được tính là pass |
+| `check` | Gate tổng hợp: quality, backend-smoke (gồm Trivy), ui-syntax và eval-changes phải thành công; eval-gate phải thành công hoặc được bỏ qua khi eval-changes xác nhận PR không đổi đường dẫn RAG/eval |
 
 Giữ tên required check `check` để cấu hình branch protection hiện có tiếp tục chặn merge khi backend smoke thất bại. Tên job lint/test cũ được đổi thành `quality`.
 
@@ -71,6 +71,8 @@ với hướng dẫn cấu hình, không skip/giả kết quả. Secret không �
 
 `eval/run.py --check` chạy code RAG và prompt của PR, dùng nguyên `eval/thresholds.json`. Lỗi còn lại sau
 retry, citation văn bản superseded, judge thiếu coverage hoặc metric thiếu đều fail như runner đầy đủ.
+Workflow không ghim `RERANK_CANDIDATES` hay `REFUSAL_THRESHOLD`: gate dùng default từ code RAG hiện tại,
+và report ghi giá trị thực tế để reviewer kiểm tra khi default thay đổi.
 Không tự chạy lại một lượt fail để lấy điểm pass: dao động của judge đã được xử lý bằng trung vị ở trên. JSONL từng câu,
 report, subset và backup manifest được upload artifact 14 ngày; report cũng vào job summary khi gate fail.
 

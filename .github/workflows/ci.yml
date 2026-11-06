@@ -121,8 +121,6 @@ jobs:
       QDRANT_URL: http://127.0.0.1:6333
       QDRANT_COLLECTION: bank_docs
       LLM_BASE_URL: http://127.0.0.1:4000
-      RERANK_CANDIDATES: '8'
-      REFUSAL_THRESHOLD: '0.5'
       JUDGE_MODEL: cloud-chat
       TOKENIZERS_PARALLELISM: 'false'
       HF_HUB_DISABLE_PROGRESS_BARS: '1'
