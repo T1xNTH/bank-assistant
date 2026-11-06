@@ -633,3 +633,7 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261105-161735` | `2026-11-05` | `2026-11-05` | `teammate-b` | `T-039` | `completed` | `verify 'wsl -d Ubuntu-24.04 -- bash /mnt/d/D/Desktop/bank-assistant/output/t039-tools/check.sh' passed` | `.agent/reports/implementation/T-039.md` | `none` |
 | `S-20261105-164256` | `2026-11-05` | `2026-11-05` | `codex-b` | `T-039` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-039.md` | `none` |
 | `S-20261105-164256-2` | `2026-11-05` | `2026-11-05` | `codex-b` | `T-039` | `completed` | `review requested from claude-review-a` | `.agent/reports/implementation/T-039.md` | `none` |
+| `S-20261106-T041-dependencies` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041 dependencies` | `completed` | `Reconcile T-034/T-039/T-040 review -> done using actual T1xNTH approvals and merged PR101/104/107; no new approval` | `.agent/reports/implementation/T-041-dependency-closure.md` | `none` |
+| `S-20261106-103319` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-034` | `completed` | `task review -> done` | `.agent/reports/review/T-034.md` | `none` |
+| `S-20261106-103319-2` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-039` | `completed` | `task review -> done` | `.agent/reports/review/T-039.md` | `none` |
+| `S-20261106-103319-3` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-040` | `completed` | `task review -> done` | `.agent/reports/review/T-040.md` | `none` |
