@@ -32,7 +32,7 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-010, E-011, E-012, E-013, E-015, E-016 EPIC_IN_PROGRESS; E-014 EPIC_IN_PROGRESS (T-038 done); E-001..E-009 EPIC_DONE`
 - **Active Task IDs**: `T-043 review (PR112 stacked on PR111; implementation complete and independent review requested, unavailable under BLOCKER-010); T-041 review (approved PR110 merged as 5819d50; separate CLI closure pending); T-042 done (PR97 final counterpart approval at b256783; merged 36bd041; scoped FR-12 clarification preserved); T-035 done (APPROVED review and merged PR #99 reconciled); T-036 review (merged PR #103 records retained); T-040 done (A approval at 44a7901, merged PR104; QA/profile/recovery evidence retained); T-033 done (approved/merged PR #98); T-034 done (A approval at fc41ef2, merged PR101); T-039 done (A approval at 71b49a7, merged PR107; A-authored F-01 verified by B via CI/shell); T-032 done (PR #95 merged); T-027 review; T-026, T-028, T-029, T-030, T-031 done; other M-002 tasks pending`
-- **Active Blocker IDs**: `BLOCKER-010 open (T-043 separate Claude OAuth; no source review); BLOCKER-008 resolved by A review; BLOCKER-009 resolved using separate Linux runners`
+- **Active Blocker IDs**: `none; BLOCKER-010 resolved by separate claude-review-b review of T-043 (APPROVED at 21df34b); BLOCKER-008 resolved by A review; BLOCKER-009 resolved using separate Linux runners`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`

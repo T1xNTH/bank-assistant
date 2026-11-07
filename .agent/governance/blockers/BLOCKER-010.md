@@ -19,7 +19,7 @@ Record the observed access failure preventing the separate review required by DE
 - **Title**: `T-043 separate Claude review unavailable because OAuth expired`
 - **Owner**: `trong-hung`
 - **Reporter**: `codex-a`
-- **Status**: `open`
+- **Status**: `resolved`
 - **Blocker Type**: `access`
 - **Priority**: `2`
 - **Created Date**: `2026-11-06`
@@ -58,15 +58,32 @@ tokens and no model usage. No source review occurred. Local evidence:
 
 ## Completion Criteria
 
-- [ ] The access condition no longer prevents independent review.
-- [ ] Actual review evidence and resolution are linked.
-- [ ] Affected task/context records are synchronized after resolution.
-- [ ] Any authorized alternative is explicitly recorded for T-043.
+- [x] The access condition no longer prevents independent review: a fresh, separate
+  Claude Code session `claude-review-b` (DEC-004) completed the review on 2026-11-07.
+- [x] Actual review evidence and resolution are linked:
+  [review report T-043](../../reports/review/T-043.md), reviewed head
+  `21df34b7995f96e508e84df0fea8c19c579775b1`, decision `APPROVED` with minor/observation
+  findings F-01..F-06 and no critical/major finding.
+- [x] Affected task/context records are synchronized after resolution (task board
+  blocker column, T-043 task file, current context).
+- [x] Any authorized alternative is explicitly recorded for T-043: none was needed;
+  the original DEC-004 separate-session review was performed, not substituted.
 
 ## Forbidden Actions
 
 Do not treat an authentication failure, executor self-check or old task exception
 as a completed independent review or approval.
+
+## Resolution History
+
+- 2026-11-06 (codex-a): opened after session `3b898ec4-b1cc-4711-9ebf-853edad11629`
+  failed OAuth with zero model usage; no source review occurred.
+- 2026-11-07 (claude-review-b): resolved. Fresh separate Claude Code session reviewed
+  PR112 at `21df34b` against `d03dce4` and recorded
+  [the review report](../../reports/review/T-043.md) through
+  `agent review start/approve T-043 --reviewer claude-review-b`. Counterpart (B) PR
+  approval remains a separate gate; this resolution does not merge PR112, mark T-043
+  done or authorize a release.
 
 ## Output Requirements
 
