@@ -7,17 +7,20 @@ module: repository
 tags: [architecture, design, decisions]
 priority: 2
 ---
-# Kiến trúc
+# Architecture
 
-## Mục đích
+## Purpose
 
-Mục lục cho kiến trúc hệ thống chính thức, các quyết định, sơ đồ, ràng buộc và ranh giới kỹ thuật.
+Entry points for the implemented MVP architecture, trust boundaries and existing
+design decisions. Documentation updates do not authorize new requirements or scope.
 
-## Nội dung
+## Contents
 
-- `architecture.md` - Tài liệu kiến trúc và trạng thái nạp/kiểm tra
-- `system-design.md` - Thiết kế hệ thống, khi được cung cấp
-- `decisions.md` - Các quyết định kiến trúc, khi được cung cấp
-- `diagrams/` - Sơ đồ kiến trúc, khi được cung cấp
+- [Implemented architecture](architecture.md): components, flows, storage and limits.
+- [ADR index](adr/index.md): four retrospective decisions for hybrid retrieval,
+  local/cloud routing, payload RBAC and Redis/RQ jobs.
+- [Five-minute demo](../00-project/demo-script.md): real-model preflight, presentation
+  sequence and controlled rehearsal evidence boundaries.
 
-Hiện chỉ có `architecture.md`; input kiến trúc chính thức vẫn đang bị chặn bởi `BLOCKER-003`.
+Prior scaffold references to missing design files and BLOCKER-003 are superseded
+by the implemented architecture and merged gateway/retrieval/UI work linked above.

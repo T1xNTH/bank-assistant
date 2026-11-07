@@ -645,3 +645,11 @@ Các dòng record bên dưới là nhật ký kiểm toán nên được giữ n
 | `S-20261106-T041-main-merge` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `Merge main 1797ca2 after PR109 squash; preserve both histories and T-041 review, PR110 base main` | `.agent/reports/implementation/T-041-main-handoff.md` | `none` |
 | `S-20261106-T041-approval-record` | `2026-11-06` | `2026-11-06` | `codex-b` | `T-041` | `completed` | `Archive actual T1xNTH approval at 206b3b5; correct checklist and review heading; task remains review pending merge` | `.agent/reports/review/T-041.md` | `none` |
 | `S-20261106-120818` | `2026-11-06` | `2026-11-06` | `codex-a` | `T-042` | `completed` | `task review -> done` | `.agent/reports/review/T-042.md` | `none` |
+| `S-20261106-121120` | `2026-11-06` | `2026-11-06` | `codex-a` | `T-043` | `completed` | `task pending -> in-progress` | `.agent/execution/task-board.md` | `none` |
+| `S-20261106-132112` | `2026-11-06` | `2026-11-06` | `codex-a` | `T-043` | `completed` | `implementation report draft` | `.agent/reports/implementation/T-043.md` | `none` |
+| `S-20261106-133346` | `2026-11-06` | `2026-11-06` | `codex-a` | `T-043` | `completed` | `verify 'python scripts/validate-framework.py' passed` | `.agent/reports/implementation/T-043.md` | `none` |
+| `S-20261106-133939` | `2026-11-06` | `2026-11-06` | `codex-a` | `T-043` | `completed` | `verify 'python scripts/validate-framework.py' passed` | `.agent/reports/implementation/T-043.md` | `none` |
+| `S-20261106-134049` | `2026-11-06` | `2026-11-06` | `codex-a` | `T-043` | `completed` | `implementation report complete` | `.agent/reports/implementation/T-043.md` | `none` |
+| `S-20261106-134049-2` | `2026-11-06` | `2026-11-06` | `codex-a` | `T-043` | `completed` | `review requested from claude-review-b` | `.agent/reports/implementation/T-043.md` | `none` |
+| `S-20261107-224754` | `2026-11-07` | `2026-11-07` | `claude-review-b` | `T-043` | `completed` | `review started` | `.agent/reports/review/T-043.md` | `none` |
+| `S-20261107-225036` | `2026-11-07` | `2026-11-07` | `claude-review-b` | `T-043` | `completed` | `review approved` | `.agent/reports/review/T-043.md` | `none` |
