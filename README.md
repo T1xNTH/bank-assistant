@@ -219,9 +219,14 @@ outages can still fail jobs.
 For full host-side development dependencies and required checks:
 
 ```bash
-make setup
-make check
+make setup                      # .venv + dev/UI dependencies
+make check                      # Ruff + pytest + framework validation
 ```
+
+To run the API directly on the host, first stop the Compose API to free port 8000,
+load `.env.local` into the shell (`set -a; . ./.env.local; set +a`), then use
+`.venv/bin/uvicorn app.main:app --app-dir src --port 8000`. Keep the Compose Redis
+running: `/ask`, `/chat` and jobs need it even with fake backends.
 
 Use [CONTRIBUTING.md](CONTRIBUTING.md) and the [team workflow](docs/07-development/team-workflow.md)
 for lifecycle, independent review and counterpart approval. [AGENT.md](AGENT.md)
@@ -240,3 +245,11 @@ do not authorize new scope or a release.
 | Integrations and tracing | [n8n](docs/11-integrations/n8n.md), [observability](docs/13-observability/observability.md) |
 | Evaluation | [Runner instructions](docs/07-development/eval.md), [quality notes](docs/12-ai/rag-eval-notes.md) |
 | Release evidence | [v1.0-mvp QA](.agent/reports/releases/RELEASE-v1.0-mvp.md), [CI](docs/07-development/ci.md) |
+| Team process | [Team workflow](docs/07-development/team-workflow.md), [`scripts/agent` lifecycle CLI](docs/07-development/agent-cli.md) |
+| Code and infrastructure | `src/app/` (application), `ui/` (Streamlit), `infrastructure/` (Dockerfile, Compose, LiteLLM, n8n), `.agent/` (planning, task board, governance, reports) |
+
+## Process
+
+Managed with [Agentic SDLC Kit](https://github.com/toilatrung/agentic-sdlc-kit); `AGENT.md` is the
+operating policy: roadmap → milestone → epic → task; executor → independent reviewer in a separate
+session (DEC-004) → counterpart approval → QA per epic → release report.

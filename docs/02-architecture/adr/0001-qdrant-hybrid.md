@@ -11,7 +11,7 @@ priority: 2
 
 - **Date**: `2026-11-06`
 - **Owner**: `trong-hung`
-- **Status**: `Retrospective implemented-design record; T-043 review pending`
+- **Status**: `Retrospective implemented-design record; reviewed in T-043 (claude-review-b, APPROVED)`
 - **Authority**: Existing SRS/DEC-001 and merged retrieval/T-038 work; no new approval.
 
 ## Context
