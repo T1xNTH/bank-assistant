@@ -27,6 +27,8 @@ PHONE = "0912345678"  # synthetic canary; must not reach model/checkpoint/ticket
 KEYPASS = "Phí cung ứng thiết bị xác thực Keypass cho khách hàng tổ chức dùng eFAST là bao nhiêu?"
 WAGE = "Mức lương tối thiểu tháng vùng I là bao nhiêu?"
 LOAN = "Vay 100 triệu, lãi 12%/năm, 12 tháng trả góp đều thì mỗi tháng trả bao nhiêu?"
+# The demo's out-of-scope question, taken from eval/golden.jsonl (in_scope: false).
+OUT_OF_SCOPE = "Giá vàng SJC hôm nay mua vào bán ra bao nhiêu?"
 
 
 class DemoModel:
@@ -144,9 +146,16 @@ def test_five_minute_demo_sequence(monkeypatch, tmp_path):
             assert connection.execute("SELECT count(*) FROM tickets").fetchone()[0] == 1
         at.sidebar.radio(key="role").set_value(CREDIT)
         at.run()
-        refusal = ask("Câu hỏi ngoài phạm vi")
+        refusal = ask(OUT_OF_SCOPE)
         assert not refusal["found"] and not refusal["citations"]
         assert [alias for _, alias in model.calls] == [
             "cloud-chat", "cloud-chat", "local-chat", "cloud-chat", "local-chat",
         ]
         assert all(PHONE not in json.dumps(messages) for messages, _ in model.calls)
+
+
+def test_demo_out_of_scope_question_is_an_out_of_scope_golden_row():
+    rows = [json.loads(line) for line in (UI.parent / "eval/golden.jsonl").read_text(encoding="utf-8").splitlines()]
+    [row] = [r for r in rows if r["user_input"] == OUT_OF_SCOPE]
+    assert row["in_scope"] is False
+    assert OUT_OF_SCOPE in (UI.parent / "docs/00-project/demo-script.md").read_text(encoding="utf-8")
