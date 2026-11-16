@@ -22,21 +22,21 @@ Cung cấp trạng thái đồng bộ tối thiểu cho phần thực thi đang 
 
 ## Current State
 
-- **Context Revision**: `69`
+- **Context Revision**: `70`
 - **Context Status**: `current`
 - **Last Updated**: `2026-11-08`
 - **Updated By**: `codex-a`
-- **Update Trigger**: `PR112 follow-up: independent review approved, BLOCKER-010 resolved, findings addressed and final-source CI/clean-clone passed; counterpart approval pending`
+- **Update Trigger**: `PR112 approved by A at 1787fb6 and merged as 1462643; T-043 closed via CLI`
 - **Planning Roadmap ID**: `R-001`
 - **Planning Roadmap Status**: `ROADMAP_ACTIVE`
 - **Onboarding State**: `completed`
 - **Active Epic IDs**: `E-010, E-011, E-012, E-013, E-015, E-016 EPIC_IN_PROGRESS; E-014 EPIC_IN_PROGRESS (T-038 done); E-001..E-009 EPIC_DONE`
-- **Active Task IDs**: `T-043 review (PR112 targets main after PR111 merged; independent review APPROVED at 21df34b, findings resolved, final-source CI/clean-clone pass; counterpart PR approval pending); T-041 review (approved PR110 merged as 5819d50; separate CLI closure pending); T-042 done (PR97 final counterpart approval at b256783; merged 36bd041; scoped FR-12 clarification preserved); T-035 done (APPROVED review and merged PR #99 reconciled); T-036 review (merged PR #103 records retained); T-040 done (A approval at 44a7901, merged PR104; QA/profile/recovery evidence retained); T-033 done (approved/merged PR #98); T-034 done (A approval at fc41ef2, merged PR101); T-039 done (A approval at 71b49a7, merged PR107; A-authored F-01 verified by B via CI/shell); T-032 done (PR #95 merged); T-027 review; T-026, T-028, T-029, T-030, T-031 done; other M-002 tasks pending`
+- **Active Task IDs**: `T-043 done (PR112 approved by A at 1787fb6, merged 1462643; independent review claude-review-b APPROVED); T-041 review (approved PR110 merged as 5819d50; separate CLI closure pending); T-042 done (PR97 final counterpart approval at b256783; merged 36bd041; scoped FR-12 clarification preserved); T-035 done (APPROVED review and merged PR #99 reconciled); T-036 review (merged PR #103 records retained); T-040 done (A approval at 44a7901, merged PR104; QA/profile/recovery evidence retained); T-033 done (approved/merged PR #98); T-034 done (A approval at fc41ef2, merged PR101); T-039 done (A approval at 71b49a7, merged PR107; A-authored F-01 verified by B via CI/shell); T-032 done (PR #95 merged); T-027 review; T-026, T-028, T-029, T-030, T-031 done; other M-002 tasks pending`
 - **Active Blocker IDs**: `none; BLOCKER-010 resolved by separate claude-review-b review of T-043 (APPROVED at 21df34b); BLOCKER-008 resolved by A review; BLOCKER-009 resolved using separate Linux runners`
 - **Active Decision IDs**: `none`
 - **Active Risk IDs**: `RISK-001, RISK-002, RISK-003, RISK-004`
 - **Active Change Request IDs**: `CR-001, CR-002, CR-003, CR-004, CR-005 (proposed; CR-008 approved, chờ sửa baseline và T-011; CR-009 approved, làm sau T-010; task review hoàn tất không phê duyệt các CR)`
-- **Current Session ID**: `S-20261106-134049-2`
+- **Current Session ID**: `S-20261108-135020`
 
 ## Revision Provenance
 
@@ -257,3 +257,5 @@ PR #96 follow-up (2026-11-03): A independently reviewed head 181c440 and reporte
 T-035 handoff (2026-11-03): implementation 9bc44f5; final lifecycle verify passes 1087 tests/79 deselected, Ruff and framework. Four Compose config cases and live local ingestion pass; screenshots show p95 and worker wait/processing on synthetic data. Report complete and review requested from claude-review-t035. Fresh separate Claude session failed OAuth before any source/model work (BLOCKER-007); draft PR prepared, no self-review/QA approval/merge or done.
 
 T-035 requested recheck (2026-11-03): A peer review of 7ae9279 found no blocker but explicitly does not replace DEC-004 independent review. eb00db1 addresses all three minor comments. Technical validation passes: 1091 regression cases/79 deselected, 22 focused cases (18 overlap regression plus 4 Compose), live ingestion 1 pass/23 traces, Ruff/framework/diff clean. Fresh Claude session again fails OAuth before source/model work (BLOCKER-007 remains open). Supplemental implementation/T-035-review-followup.md and qa/T-035-recheck.md record evidence; formal QA report is blocked, not an executor self-approval. Task review and draft PR #99 remain pending independent approval.
+
+Revision 70 (claude/A, 2026-11-08): T-043 closed through `agent task done` after PR #112 approval by A (`PRR_kwDOVVrnos8AAAABWreRxQ`, 1787fb6) and merge `1462643`. E-016 (T-042, T-043 done) left EPIC_IN_PROGRESS pending A's epic decision.

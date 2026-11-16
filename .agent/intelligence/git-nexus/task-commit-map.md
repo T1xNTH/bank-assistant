@@ -140,3 +140,4 @@ priority: 3
 | `T-043` | `21df34b` | `PR #112; A-side fix` | `docs/00-project/demo-script.md` | `Demo's last step uses the golden out-of-scope question (gold price) instead of the literal placeholder; test locks it to golden and script` |
 | `T-043` | `8e68bcd` | `PR #112` | `.agent/reports/review/T-043.md` | `Independent review claude-review-b (fresh session, DEC-004) APPROVED at 21df34b; BLOCKER-010 resolved` |
 | `T-043` | `cf95b36; 91f4d1b; f385ac1` | `PR #112 review follow-up` | `.agent/reports/implementation/T-043-PR112-followup.md` | `Restore README guidance, synchronize review records and ADR status; A accepts controlled rehearsal for F-04; merge prerequisite main after PR111. Final-source CI 42390088591: 1293 passed, Ruff/framework pass; clean-clone 42390088676 success. Counterpart approval pending.` |
+| `T-043` | `1462643` | `PR #112; issue #84` | `.agent/reports/review/T-043.md` | `Squash merge PR #112 after A approval at 1787fb6; T-043 done via CLI` |
